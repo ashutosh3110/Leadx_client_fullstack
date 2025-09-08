@@ -68,6 +68,17 @@ export const loginUser = async (req, res, next) => {
     next(err)
   }
 }
+// 👤 Get Own Profile
+export const getMyProfile = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id).select("-password")
+    if (!user) return next(errGen(404, "User not found"))
+
+    res.status(200).json(respo(true, "Profile fetched successfully", user))
+  } catch (err) {
+    next(err)
+  }
+}
 
 // 📋 Get All Users (Admin only)
 export const getAllUsers = async (req, res, next) => {

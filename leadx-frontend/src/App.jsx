@@ -15,10 +15,13 @@ import Profile from "./pages/ambassador/Profile"
 import Rewards from "./pages/ambassador/Rewards"
 import Chat from "./pages/ambassador/Chat"
 import ManageAmbassadors from "./pages/superadmin/ManageAmbassadors"
-
+import { ToastContainer } from "react-toastify"
+import "react-toastify/dist/ReactToastify.css"
 function App() {
   return (
     <Router>
+      <ToastContainer position="top-right" autoClose={3000} newestOnTop />
+
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<Login />} />

@@ -6,6 +6,8 @@ import {
   getMessages,
   getMyChats,
   deleteChat,
+  editMessage,
+  deleteMessage,
 } from "../controllers/Chat.js"
 
 const router = Router()
@@ -15,5 +17,6 @@ router.post("/send", authenticate, sendMessage)
 router.get("/my", authenticate, getMyChats)
 router.get("/:chatId", authenticate, getMessages)
 router.delete("/:chatId", authenticate, deleteChat)
-
+router.put("/message/:messageId", authenticate, editMessage)
+router.delete("/message/:messageId", authenticate, deleteMessage)
 export default router

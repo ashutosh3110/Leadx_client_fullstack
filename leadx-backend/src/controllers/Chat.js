@@ -2,9 +2,10 @@ import { Chat } from "../models/Chat.js"
 import { Message } from "../models/Message.js"
 import { User } from "../models/user.js"
 import { sendEmail } from "../utils/mailer.js"
-import sendWhatsApp from "../utils/sendWhatsApp.js" // custom util
+import sendWhatsApp from "../utils/sendWhatsApp.js" // optional
 import errGen from "../utils/errGen.js"
 import respo from "../utils/respo.js"
+import { onlineUsers } from "../sockets/chatSocket.js"
 
 // 🔹 Start or get chat between user & ambassador
 export const startChat = async (req, res, next) => {
@@ -20,58 +21,137 @@ export const startChat = async (req, res, next) => {
       chat = await Chat.create({ participants: [userId, ambassadorId] })
     }
 
-    res.status(200).json(respo(true, "Chat started", chat))
+    const populatedChat = await Chat.findById(chat._id).populate(
+      "participants",
+      "name email role profileImage"
+    )
+
+    res.status(200).json(respo(true, "Chat started", populatedChat))
   } catch (err) {
     next(err)
   }
 }
 
 // 🔹 Send a message
-export const sendMessage = async (req, res, next) => {
+export const sendMessage = async (req, res) => {
   try {
-    const { chatId, content, receiverId } = req.body
-    const senderId = req.user.id
+    const { chatId, sender, receiver, content } = req.body
 
-    if (!content) return next(errGen(400, "Message content required"))
+    if (!chatId || !sender || !receiver || !content) {
+      return res.status(400).json({
+        success: false,
+        message: "chatId, sender, receiver and content are required",
+      })
+    }
 
-    const message = await Message.create({
+    const newMessage = await Message.create({
       chatId,
-      sender: senderId,
-      receiver: receiverId,
+      sender,
+      receiver,
       content,
     })
 
-    await Chat.findByIdAndUpdate(chatId, { lastMessage: content })
+    // ✅ Populate sender/receiver before returning
+    const populatedMessage = await Message.findById(newMessage._id).populate(
+      "sender receiver",
+      "name email role profileImage"
+    )
 
-    // 🔔 Notify ambassador (email + WhatsApp)
-    const ambassador = await User.findById(receiverId)
-    if (ambassador) {
-      if (ambassador.email) {
-        try {
-          await sendEmail(
-            ambassador.email,
-            "New Message",
-            `You have a new message: "${content}"`
-          )
-        } catch (emailErr) {
-          console.error("Email send failed:", emailErr.message)
-        }
+    // ✅ Update chat last activity
+    await Chat.findByIdAndUpdate(chatId, { updatedAt: new Date() })
+
+    // ✅ Check if receiver is online
+    const receiverSocket = onlineUsers.get(receiver.toString())
+    if (receiverSocket) {
+      receiverSocket.emit("newMessage", populatedMessage)
+    } else {
+      const ambassador = await User.findById(receiver)
+      if (ambassador?.email) {
+        await sendEmail(
+          ambassador.email,
+          "📩 New Message on LeadX",
+          `You received a new message: ${content}`
+        )
       }
-
-      //   if (ambassador.phone) {
-      //     await sendWhatsApp(
-      //       ambassador.phone,
-      //       `📩 New message from a user: "${content}"`
-      //     )
-      //   }
     }
 
-    // ✅ Emit via socket.io
-    req.io.to(receiverId.toString()).emit("newMessage", message)
+    return res.json({ success: true, message: populatedMessage })
+  } catch (error) {
+    console.error(error)
+    return res.status(500).json({ success: false, message: error.message })
+  }
+}
 
-    res.status(201).json(respo(true, "Message sent", message))
-  } catch (err) {
-    next(err)
+// 🔹 Edit message
+export const editMessage = async (req, res) => {
+  try {
+    const { messageId } = req.params
+    const { content } = req.body
+
+    if (!content) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Content required" })
+    }
+
+    const msg = await Message.findById(messageId)
+    if (!msg)
+      return res
+        .status(404)
+        .json({ success: false, message: "Message not found" })
+
+    if (String(msg.sender) !== String(req.user.id)) {
+      return res.status(403).json({ success: false, message: "Not allowed" })
+    }
+
+    msg.content = content
+    await msg.save()
+
+    const populatedMsg = await Message.findById(msg._id).populate(
+      "sender receiver",
+      "name email role profileImage"
+    )
+
+    // socket broadcast bhi update ke liye
+    const receiverSocket = onlineUsers.get(msg.receiver.toString())
+    if (receiverSocket) {
+      receiverSocket.emit("messageUpdated", populatedMsg)
+    }
+
+    return res.json({ success: true, message: populatedMsg })
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ success: false, message: error.message })
+  }
+}
+
+// 🔹 Delete message
+export const deleteMessage = async (req, res) => {
+  try {
+    const { messageId } = req.params
+
+    const msg = await Message.findById(messageId)
+    if (!msg)
+      return res
+        .status(404)
+        .json({ success: false, message: "Message not found" })
+
+    if (String(msg.sender) !== String(req.user.id)) {
+      return res.status(403).json({ success: false, message: "Not allowed" })
+    }
+
+    await msg.deleteOne()
+
+    // socket broadcast delete ke liye
+    const receiverSocket = onlineUsers.get(msg.receiver.toString())
+    if (receiverSocket) {
+      receiverSocket.emit("messageDeleted", msg._id)
+    }
+
+    return res.json({ success: true, message: "Message deleted" })
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ success: false, message: error.message })
   }
 }
 
@@ -79,10 +159,9 @@ export const sendMessage = async (req, res, next) => {
 export const getMessages = async (req, res, next) => {
   try {
     const { chatId } = req.params
-    const messages = await Message.find({ chatId }).populate(
-      "sender receiver",
-      "name email role"
-    )
+    const messages = await Message.find({ chatId })
+      .populate("sender receiver", "name email role profileImage")
+      .sort({ createdAt: 1 })
 
     res.status(200).json(respo(true, "Messages fetched", messages))
   } catch (err) {
@@ -90,7 +169,7 @@ export const getMessages = async (req, res, next) => {
   }
 }
 
-// 🔹 Get all chats for current user (user or ambassador)
+// 🔹 Get all chats for current user
 export const getMyChats = async (req, res, next) => {
   try {
     const chats = await Chat.find({ participants: req.user.id })
@@ -103,7 +182,7 @@ export const getMyChats = async (req, res, next) => {
   }
 }
 
-// 🔹 Delete chat (admin only or participant)
+// 🔹 Delete chat
 export const deleteChat = async (req, res, next) => {
   try {
     const { chatId } = req.params

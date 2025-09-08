@@ -16,7 +16,8 @@ import {
   verifyResetCode,
   resetPassword,
   deleteAccount,
-  createAdmin, // NEW
+  createAdmin,
+  getMyProfile,
 } from "../controllers/user.js"
 
 const router = Router()
@@ -27,7 +28,7 @@ const router = Router()
 router.post("/register", registerUser)
 router.post("/login", loginUser)
 router.post("/logout", authenticate, logout)
-
+router.get("/me", authenticate, getMyProfile)
 /* ==========================
    👤 USER PROFILE ROUTES
 ========================== */

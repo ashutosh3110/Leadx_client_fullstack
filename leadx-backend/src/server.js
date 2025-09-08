@@ -47,6 +47,8 @@ app.use((req, res, next) => {
   req.io = io
   next()
 })
+console.log("MAIL_USER:", process.env.MAIL_USER)
+console.log("MAIL_PASS:", process.env.MAIL_PASS ? "✅ Loaded" : "❌ Missing")
 
 // DB Connection + Server Start
 const startServer = async () => {
