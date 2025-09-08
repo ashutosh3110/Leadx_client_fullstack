@@ -44,15 +44,10 @@ const Register = () => {
         const res = await api.post("/auth/register", values)
         toast.success("Registration successful! 🎉")
         resetForm()
-        setTimeout(() => {
-          navigate("/login")
-        }, 1500)
+        navigate("/login")
       } catch (err) {
         console.error(err)
-        toast.error(err.response?.data?.message || "Registration failed", {
-          position: "top-right",
-          autoClose: 3000,
-        })
+        toast.error(err.response?.data?.message || "Registration failed")
       } finally {
         setLoading(false)
       }

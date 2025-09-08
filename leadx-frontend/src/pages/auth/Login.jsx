@@ -37,15 +37,14 @@ const Login = () => {
         setAuth(token, user)
 
         toast.success("Login successful! 🎉")
-        setTimeout(() => {
-          if (role === "admin") {
-            navigate("/admin")
-          } else if (role === "ambassador") {
-            navigate("/ambassador")
-          } else {
-            navigate("/unauthorized")
-          }
-        }, 1500)
+
+        if (role === "admin") {
+          navigate("/admin")
+        } else if (role === "ambassador") {
+          navigate("/ambassador")
+        } else {
+          navigate("/unauthorized")
+        }
 
         resetForm()
       } catch (err) {

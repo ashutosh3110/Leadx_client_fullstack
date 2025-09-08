@@ -2,7 +2,8 @@ import React, { useEffect, useState, useRef } from "react"
 import { io } from "socket.io-client"
 import { FaEdit, FaTrash } from "react-icons/fa"
 import api from "../utils/Api"
-const API_URL = import.meta.env.VITE_API_URL
+import { getToken, getUser } from "../utils/auth"
+
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL
 
 const Chat = () => {
@@ -14,13 +15,15 @@ const Chat = () => {
   const [editingMessage, setEditingMessage] = useState(null)
   const messageEndRef = useRef(null)
 
-  const token = localStorage.getItem("token")
-  const decodedUser = token ? JSON.parse(atob(token.split(".")[1])) : null
-  const userId = decodedUser?.id
+  const token = getToken()
+  const user = getUser()
+  const userId = user?.id
+
   const getImageUrl = (path) => {
     if (!path) return "/default-avatar.png"
     return `http://localhost:5000/${path.replace(/^public\//, "")}`
   }
+
   // Scroll to bottom on new messages
   useEffect(() => {
     messageEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -118,8 +121,8 @@ const Chat = () => {
             chatId: selectedChat._id,
             content: newMessage,
             receiver: receiver._id,
-          },
-          { headers: { Authorization: `Bearer ${token}` } }
+          }
+          // { headers: { Authorization: `Bearer ${token}` } }
         )
         if (res.data.success) {
           setMessages((prev) => [...prev, res.data.message])
@@ -158,7 +161,6 @@ const Chat = () => {
     }
   }
 
-  // Normalize sender check
   const isMine = (msg) =>
     String(msg.sender?._id || msg.sender) === String(userId)
 
@@ -213,7 +215,6 @@ const Chat = () => {
       <div className="flex-1 flex flex-col">
         {selectedChat ? (
           <>
-            {/* Header */}
             <div className="p-4 border-b flex items-center gap-3 bg-white">
               <img
                 src={getImageUrl(
@@ -223,13 +224,11 @@ const Chat = () => {
                 alt="profile"
                 className="w-10 h-10 rounded-full object-cover"
               />
-
               <p className="font-semibold">
                 {selectedChat.participants.find((p) => p._id !== userId)?.name}
               </p>
             </div>
 
-            {/* Messages List */}
             <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-gray-50">
               {messages.map((msg) => (
                 <div
@@ -275,7 +274,6 @@ const Chat = () => {
               <div ref={messageEndRef} />
             </div>
 
-            {/* Input */}
             <div className="p-4 border-t flex gap-2 bg-white">
               <input
                 type="text"
