@@ -5,6 +5,7 @@ import api from "../utils/Api"
 import { getToken, getUser } from "../utils/auth"
 
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL
+const API_BASE_URL = import.meta.env.VITE_API_URL
 
 const Chat = () => {
   const [chats, setChats] = useState([])
@@ -21,10 +22,13 @@ const Chat = () => {
 
   const getImageUrl = (path) => {
     if (!path) return "/default-avatar.png"
-    return `http://localhost:5000/${path.replace(/^public\//, "")}`
+    const normalized = String(path)
+      .replace(/^\.\/+/, "")
+      .replace(/^\/+/, "")
+    return `${API_BASE_URL}/${normalized}`
   }
 
-  // Scroll to bottom on new messages
+  // Auto scroll to bottom when messages update
   useEffect(() => {
     messageEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
@@ -41,6 +45,7 @@ const Chat = () => {
       if (msg.chatId === selectedChat?._id) {
         setMessages((prev) => [...prev, msg])
       }
+      fetchChats()
     })
 
     s.on("messageUpdated", (updated) => {
@@ -54,7 +59,7 @@ const Chat = () => {
     })
 
     return () => s.disconnect()
-  }, [selectedChat, token])
+  }, [token, selectedChat?._id])
 
   // Fetch chats
   const fetchChats = async () => {
@@ -97,7 +102,6 @@ const Chat = () => {
 
     try {
       if (editingMessage) {
-        // Update message
         const res = await api.put(
           `/chat/message/${editingMessage._id}`,
           { content: newMessage },
@@ -113,20 +117,17 @@ const Chat = () => {
           setNewMessage("")
         }
       } else {
-        // Send new message
-        const res = await api.post(
-          `/chat/send`,
-          {
-            sender: userId,
-            chatId: selectedChat._id,
-            content: newMessage,
-            receiver: receiver._id,
-          }
-          // { headers: { Authorization: `Bearer ${token}` } }
-        )
+        const res = await api.post(`/chat/send`, {
+          sender: userId,
+          chatId: selectedChat._id,
+          content: newMessage,
+          receiver: receiver._id,
+        })
+
         if (res.data.success) {
           setMessages((prev) => [...prev, res.data.message])
           setNewMessage("")
+          fetchChats()
         }
       }
     } catch (err) {
@@ -184,26 +185,22 @@ const Chat = () => {
                   onClick={() => handleSelectChat(chat)}
                 >
                   <img
-                    src={getImageUrl(
-                      chat.participants.find((p) => p._id !== userId)
-                        ?.profileImage
-                    )}
+                    src={getImageUrl(other.profileImage)}
                     alt="profile"
                     className="w-10 h-10 rounded-full object-cover"
                   />
-
-                  <div>
+                  <div className="flex flex-col">
                     <p className="font-medium">{other.name}</p>
                     <p className="text-xs text-gray-500 truncate w-40">
-                      {chat.lastMessage || "No messages yet"}
+                      {chat.lastMessage?.content || "No messages yet"}
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={() => handleDeleteChat(chat._id)}
-                  className="text-red-500 text-sm hover:underline ml-2"
+                  className="text-red-500 hover:text-red-700 ml-2"
                 >
-                  Delete
+                  <FaTrash size={16} />
                 </button>
               </div>
             )
@@ -215,6 +212,7 @@ const Chat = () => {
       <div className="flex-1 flex flex-col">
         {selectedChat ? (
           <>
+            {/* Chat header */}
             <div className="p-4 border-b flex items-center gap-3 bg-white">
               <img
                 src={getImageUrl(
@@ -229,6 +227,7 @@ const Chat = () => {
               </p>
             </div>
 
+            {/* Chat messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-gray-50">
               {messages.map((msg) => (
                 <div
@@ -274,6 +273,7 @@ const Chat = () => {
               <div ref={messageEndRef} />
             </div>
 
+            {/* Input box */}
             <div className="p-4 border-t flex gap-2 bg-white">
               <input
                 type="text"

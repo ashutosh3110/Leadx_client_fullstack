@@ -2,7 +2,7 @@ import { Chat } from "../models/Chat.js"
 import { Message } from "../models/Message.js"
 import { User } from "../models/user.js"
 import { sendEmail } from "../utils/mailer.js"
-import sendWhatsApp from "../utils/sendWhatsApp.js" // optional
+import sendWhatsApp from "../utils/sendWhatsApp.js"
 import errGen from "../utils/errGen.js"
 import respo from "../utils/respo.js"
 import { onlineUsers } from "../sockets/chatSocket.js"
@@ -51,16 +51,19 @@ export const sendMessage = async (req, res) => {
       content,
     })
 
-    // ✅ Populate sender/receiver before returning
+    // ✅ Populate sender/receiver
     const populatedMessage = await Message.findById(newMessage._id).populate(
       "sender receiver",
       "name email role profileImage"
     )
 
-    // ✅ Update chat last activity
-    await Chat.findByIdAndUpdate(chatId, { updatedAt: new Date() })
+    // ✅ Update chat with reference of lastMessage
+    await Chat.findByIdAndUpdate(chatId, {
+      updatedAt: new Date(),
+      lastMessage: newMessage._id,
+    })
 
-    // ✅ Check if receiver is online
+    // ✅ Emit to receiver if online
     const receiverSocket = onlineUsers.get(receiver.toString())
     if (receiverSocket) {
       receiverSocket.emit("newMessage", populatedMessage)
@@ -174,6 +177,14 @@ export const getMyChats = async (req, res, next) => {
   try {
     const chats = await Chat.find({ participants: req.user.id })
       .populate("participants", "name email role profileImage")
+      .populate({
+        path: "lastMessage",
+        select: "content sender createdAt",
+        populate: {
+          path: "sender",
+          select: "name email profileImage",
+        },
+      })
       .sort({ updatedAt: -1 })
 
     res.status(200).json(respo(true, "Chats fetched", chats))
