@@ -8,6 +8,8 @@ import Login from "./pages/auth/Login"
 import Register from "./pages/auth/Register"
 import Dashboard from "./pages/ambassador/Dashboard"
 import AdminDashboard from "./pages/superadmin/Dashboard"
+// import ManageAmbassadors from "./pages/superadmin/ManageAmbassadors"
+import AdminChat from "./pages/superadmin/AdminChat"
 import ProtectedRoute from "./components/ProtectedRoute"
 import Unauthorized from "./pages/Unauthorized"
 import Layout from "./pages/ambassador/Layout"
@@ -41,8 +43,8 @@ function App() {
         <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
           <Route path="/admin" element={<Layout />}>
             <Route index element={<AdminDashboard />} />
-            <Route path="users" element={<ManageAmbassadors />} />
-            {/* <Route path="reports" element={<Reports />} /> */}
+            <Route path="ambassadors" element={<ManageAmbassadors />} />
+            <Route path="chat" element={<AdminChat />} />
           </Route>
         </Route>
 

@@ -6,6 +6,7 @@ import {
   registerUser,
   loginUser,
   getAllUsers,
+  getAmbassadors,
   getUserById,
   updateUser,
   deleteUser,
@@ -58,9 +59,12 @@ router.post("/reset-password", resetPassword)
 // Create admin (only admin can create new admin dynamically)
 router.post("/admin/create", authenticate, checkRole("admin"), createAdmin)
 
+// Ambassadors list
+router.get("/ambassadors", getAmbassadors)
+
 // Manage users
-router.get("/admin", authenticate, checkRole("admin"), getAllUsers)
-router.get("/admin/:id", authenticate, checkRole("admin"), getUserById)
+// router.get("/admin", authenticate, checkRole("admin"), getAllUsers)
+router.get("/admin/:id", getUserById)
 router.put("/admin/:id", authenticate, checkRole("admin"), updateUser)
 router.delete("/admin/:id", authenticate, checkRole("admin"), deleteUser)
 

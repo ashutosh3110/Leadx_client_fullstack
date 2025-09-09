@@ -18,7 +18,7 @@ const Chat = () => {
 
   const token = getToken()
   const user = getUser()
-  const userId = user?.id
+  const userId = user?._id || user?.id
 
   const getImageUrl = (path) => {
     if (!path) return "/default-avatar.png"
@@ -118,7 +118,6 @@ const Chat = () => {
         }
       } else {
         const res = await api.post(`/chat/send`, {
-          sender: userId,
           chatId: selectedChat._id,
           content: newMessage,
           receiver: receiver._id,

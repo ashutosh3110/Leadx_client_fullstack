@@ -35,21 +35,17 @@ export const startChat = async (req, res, next) => {
 // 🔹 Send a message
 export const sendMessage = async (req, res) => {
   try {
-    const { chatId, sender, receiver, content } = req.body
+    const { chatId, receiver, content } = req.body
+    const sender = req.user.id
 
-    if (!chatId || !sender || !receiver || !content) {
+    if (!chatId || !receiver || !content) {
       return res.status(400).json({
         success: false,
-        message: "chatId, sender, receiver and content are required",
+        message: "chatId, receiver and content are required",
       })
     }
 
-    const newMessage = await Message.create({
-      chatId,
-      sender,
-      receiver,
-      content,
-    })
+    const newMessage = await Message.create({ chatId, sender, receiver, content })
 
     // ✅ Populate sender/receiver
     const populatedMessage = await Message.findById(newMessage._id).populate(
@@ -202,6 +198,82 @@ export const deleteChat = async (req, res, next) => {
     await Message.deleteMany({ chatId })
 
     res.status(200).json(respo(true, "Chat deleted"))
+  } catch (err) {
+    next(err)
+  }
+}
+
+// ==========================
+// ADMIN HELPERS
+// ==========================
+
+// 🔹 Admin: Get chats of any ambassador
+export const adminGetChatsByAmbassador = async (req, res, next) => {
+  try {
+    if (req.user.role !== "admin") return next(errGen(403, "Forbidden"))
+    const { ambassadorId } = req.params
+    const chats = await Chat.find({ participants: ambassadorId })
+      .populate("participants", "name email role profileImage")
+      .populate({
+        path: "lastMessage",
+        select: "content sender createdAt",
+        populate: { path: "sender", select: "name email profileImage" },
+      })
+      .sort({ updatedAt: -1 })
+    res.status(200).json(respo(true, "Chats fetched", chats))
+  } catch (err) {
+    next(err)
+  }
+}
+
+// 🔹 Admin: Get messages of a chat (any)
+export const adminGetMessages = async (req, res, next) => {
+  try {
+    if (req.user.role !== "admin") return next(errGen(403, "Forbidden"))
+    const { chatId } = req.params
+    const messages = await Message.find({ chatId })
+      .populate("sender receiver", "name email role profileImage")
+      .sort({ createdAt: 1 })
+    res.status(200).json(respo(true, "Messages fetched", messages))
+  } catch (err) {
+    next(err)
+  }
+}
+
+// 🔹 Admin: Send message as ambassador (impersonate)
+export const adminSendAsAmbassador = async (req, res, next) => {
+  try {
+    if (req.user.role !== "admin") return next(errGen(403, "Forbidden"))
+    const { chatId, asAmbassadorId, toUserId, content } = req.body
+    if (!chatId || !asAmbassadorId || !toUserId || !content) {
+      return res.status(400).json(
+        respo(false, "chatId, asAmbassadorId, toUserId, content required")
+      )
+    }
+
+    const newMessage = await Message.create({
+      chatId,
+      sender: asAmbassadorId,
+      receiver: toUserId,
+      content,
+    })
+
+    const populatedMessage = await Message.findById(newMessage._id).populate(
+      "sender receiver",
+      "name email role profileImage"
+    )
+
+    await Chat.findByIdAndUpdate(chatId, {
+      updatedAt: new Date(),
+      lastMessage: newMessage._id,
+    })
+
+    const receiverSocket = onlineUsers.get(toUserId.toString())
+    if (receiverSocket) {
+      receiverSocket.emit("newMessage", populatedMessage)
+    }
+
+    res.status(200).json(respo(true, "Message sent", populatedMessage))
   } catch (err) {
     next(err)
   }
