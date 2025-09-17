@@ -111,7 +111,7 @@ console.log(ambassador);
                         {/* Profile Image */}
                         <div className="relative w-18 h-18 md:w-20 md:h-20 rounded-full border-4 border-white shadow-xl overflow-hidden">
                             <img
-                                src={getBackgroundImageUrl()}
+                                src={getProfileImage()}
                                 alt={ambassador.name}
                                 className="w-full h-full object-cover"
                                 onError={(e) => {

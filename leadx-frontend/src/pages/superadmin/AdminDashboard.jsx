@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 import { Outlet, useNavigate } from 'react-router-dom';
 
-import { ambassadorAPI, approvalAPI } from '../../utils/apicopy';
+import { ambassadorAPI, approvalAPI } from '../utils/apicopy';
 
 // import api from '../pages/utils/apicopy';
 

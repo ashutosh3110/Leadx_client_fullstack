@@ -3,7 +3,7 @@ import AmbassadorCard from './AmbassadorCard';
 import Pagination from './Pagination';
 import ChatModal from './ChatModal';
 import ProfileModal from './ProfileModal';
-import { ambassadorAPI } from '../../utils/apicopy';
+import { ambassadorAPI } from '../utils/apicopy';
 
 // Comprehensive ambassador data with all card content
 

@@ -3,8 +3,11 @@ import { useFormik } from "formik"
 import * as Yup from "yup"
 import { useNavigate, Link } from "react-router-dom"
 import { toast } from "react-toastify"
+import axios from "axios"
 import api from "../utils/Api"
 import { setAuth } from "../utils/auth" // ✅ import setAuth
+
+const API_URL = "http://localhost:5000"
 
 const Login = () => {
   const navigate = useNavigate()
@@ -29,10 +32,11 @@ const Login = () => {
         setLoading(true)
         const res = await axios.post(`${API_URL}/api/auth/login`, values)
         const token = res.data.data.token
-        const role = res.data.data.user.role
+        const user = res.data.data.user
+        const role = user.role
         
-        localStorage.setItem("token", token)
-        localStorage.setItem("role", role)
+        // Use setAuth function to properly store auth data
+        setAuth(token, user)
         
         if (role === "admin") {
           navigate("/admin")

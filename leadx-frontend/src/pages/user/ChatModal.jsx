@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { useColorContext } from '../../context/ColorContext';
 
 const ChatModal = ({ isOpen, onClose, ambassador }) => {
+  const { ambassadorDashboardColor } = useColorContext();
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     message: '',
@@ -37,7 +39,10 @@ const ChatModal = ({ isOpen, onClose, ambassador }) => {
       setCurrentStep(currentStep - 1);
     }
   };
-
+const getProfileImage=()=>{
+  const url=`http://localhost:5000/${ambassador.profileImage}`
+  return url;
+}
   const handleClose = () => {
     setCurrentStep(1);
     setFormData({
@@ -58,14 +63,25 @@ const ChatModal = ({ isOpen, onClose, ambassador }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] flex flex-col overflow-hidden">
+    <div 
+      className="fixed inset-0 flex items-center justify-center z-50 backdrop-blur-sm"
+      style={{ backgroundColor: 'rgba(0, 0, 0, 0.4)' }}
+      onClick={handleClose}
+    >
+      <div 
+        className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-4 max-h-[85vh] flex flex-col overflow-hidden border border-gray-100 animate-in fade-in-0 zoom-in-95 duration-300"
+        onClick={(e) => e.stopPropagation()}
+        style={{ 
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+          backdropFilter: 'blur(10px)'
+        }}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 rounded-full overflow-hidden">
               <img 
-                src={ambassador?.profileImage || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'} 
+                src={getProfileImage()} 
                 alt={ambassador?.name}
                 className="w-full h-full object-cover"
               />
@@ -76,7 +92,7 @@ const ChatModal = ({ isOpen, onClose, ambassador }) => {
           </div>
           <button 
             onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600 text-xl"
+            className="text-gray-400 hover:text-gray-600 text-2xl font-light hover:bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center transition-colors"
           >
             ×
           </button>
@@ -86,11 +102,14 @@ const ChatModal = ({ isOpen, onClose, ambassador }) => {
         <div className="flex items-center justify-center p-3 border-b">
           <div className="flex items-center space-x-3">
             {/* Step 1 */}
-            <div className={`flex items-center space-x-1 ${currentStep >= 1 ? 'text-red-500' : 'text-gray-400'}`}>
+            <div className={`flex items-center space-x-1 ${currentStep >= 1 ? 'text-blue-500' : 'text-gray-400'}`}>
               <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
-                currentStep > 1 ? 'bg-red-500 text-white' : 
-                currentStep === 1 ? 'bg-red-500 text-white' : 'bg-gray-200 text-gray-400'
-              }`}>
+                currentStep > 1 ? 'text-white' : 
+                currentStep === 1 ? 'text-white' : 'bg-gray-200 text-gray-400'
+              }`}
+              style={{ 
+                backgroundColor: currentStep >= 1 ? ambassadorDashboardColor : undefined 
+              }}>
                 {currentStep > 1 ? '✓' : '1'}
               </div>
               <span className="text-xs font-medium">Your Message</span>
@@ -99,11 +118,14 @@ const ChatModal = ({ isOpen, onClose, ambassador }) => {
             <div className="w-3 h-0.5 bg-gray-300"></div>
 
             {/* Step 2 */}
-            <div className={`flex items-center space-x-1 ${currentStep >= 2 ? 'text-red-500' : 'text-gray-400'}`}>
+            <div className={`flex items-center space-x-1 ${currentStep >= 2 ? 'text-blue-500' : 'text-gray-400'}`}>
               <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
-                currentStep > 2 ? 'bg-red-500 text-white' : 
-                currentStep === 2 ? 'bg-red-500 text-white' : 'bg-gray-200 text-gray-400'
-              }`}>
+                currentStep > 2 ? 'text-white' : 
+                currentStep === 2 ? 'text-white' : 'bg-gray-200 text-gray-400'
+              }`}
+              style={{ 
+                backgroundColor: currentStep >= 2 ? ambassadorDashboardColor : undefined 
+              }}>
                 {currentStep > 2 ? '✓' : '2'}
               </div>
               <span className="text-xs font-medium">Your Information</span>
@@ -112,11 +134,14 @@ const ChatModal = ({ isOpen, onClose, ambassador }) => {
             <div className="w-3 h-0.5 bg-gray-300"></div>
 
             {/* Step 3 */}
-            <div className={`flex items-center space-x-1 ${currentStep >= 3 ? 'text-red-500' : 'text-gray-400'}`}>
+            <div className={`flex items-center space-x-1 ${currentStep >= 3 ? 'text-blue-500' : 'text-gray-400'}`}>
               <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
-                currentStep > 3 ? 'bg-red-500 text-white' : 
-                currentStep === 3 ? 'bg-red-500 text-white' : 'bg-gray-200 text-gray-400'
-              }`}>
+                currentStep > 3 ? 'text-white' : 
+                currentStep === 3 ? 'text-white' : 'bg-gray-200 text-gray-400'
+              }`}
+              style={{ 
+                backgroundColor: currentStep >= 3 ? ambassadorDashboardColor : undefined 
+              }}>
                 {currentStep > 3 ? '✓' : '3'}
               </div>
               <span className="text-xs font-medium">Receive an Answer</span>
@@ -133,7 +158,10 @@ const ChatModal = ({ isOpen, onClose, ambassador }) => {
                   value={formData.message}
                   onChange={(e) => handleInputChange('message', e.target.value)}
                   placeholder="Ask me about university courses, campus life and more!"
-                  className="w-full h-24 p-3 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+                  className="w-full h-24 p-3 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 text-sm"
+                  style={{ 
+                    focusRingColor: ambassadorDashboardColor
+                  }}
                 />
               </div>
 

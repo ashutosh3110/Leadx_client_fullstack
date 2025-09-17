@@ -3,6 +3,7 @@ import { io } from "socket.io-client"
 import { FaEdit, FaTrash } from "react-icons/fa"
 import api from "../utils/Api"
 import { getToken, getUser } from "../utils/auth"
+import { useColorContext } from "../../context/ColorContext"
 
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL
 const API_BASE_URL = import.meta.env.VITE_API_URL
@@ -15,6 +16,7 @@ const Chat = () => {
   const [socket, setSocket] = useState(null)
   const [editingMessage, setEditingMessage] = useState(null)
   const messageEndRef = useRef(null)
+  const { ambassadorDashboardColor } = useColorContext()
 
   const token = getToken()
   const user = getUser()
@@ -197,7 +199,8 @@ const Chat = () => {
                 </div>
                 <button
                   onClick={() => handleDeleteChat(chat._id)}
-                  className="text-red-500 hover:text-red-700 ml-2"
+                  className="hover:opacity-70 ml-2"
+                  style={{ color: ambassadorDashboardColor }}
                 >
                   <FaTrash size={16} />
                 </button>
@@ -239,9 +242,12 @@ const Chat = () => {
                     <div
                       className={`max-w-xs px-3 py-2 rounded-lg break-words ${
                         isMine(msg)
-                          ? "bg-red-600 text-white"
+                          ? "text-white"
                           : "bg-gray-200 text-gray-800"
                       }`}
+                      style={{
+                        backgroundColor: isMine(msg) ? ambassadorDashboardColor : undefined
+                      }}
                     >
                       {msg.content}
                     </div>
@@ -252,14 +258,16 @@ const Chat = () => {
                             setEditingMessage(msg)
                             setNewMessage(msg.content)
                           }}
-                          className="hover:text-blue-500"
+                          className="hover:opacity-70"
+                          style={{ color: ambassadorDashboardColor }}
                           title="Edit"
                         >
                           <FaEdit size={16} />
                         </button>
                         <button
                           onClick={() => handleDeleteMessage(msg._id)}
-                          className="hover:text-red-500"
+                          className="hover:opacity-70"
+                          style={{ color: ambassadorDashboardColor }}
                           title="Delete"
                         >
                           <FaTrash size={16} />
@@ -279,12 +287,17 @@ const Chat = () => {
                 placeholder="Type a message..."
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
-                className="flex-1 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-600"
+                className="flex-1 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2"
+                style={{ 
+                  borderColor: `${ambassadorDashboardColor}40`,
+                  focusRingColor: ambassadorDashboardColor
+                }}
                 onKeyDown={(e) => e.key === "Enter" && handleSend()}
               />
               <button
                 onClick={handleSend}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg"
+                className="px-4 py-2 text-white rounded-lg"
+                style={{ backgroundColor: ambassadorDashboardColor }}
               >
                 {editingMessage ? "Update" : "Send"}
               </button>

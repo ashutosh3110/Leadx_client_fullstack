@@ -11,11 +11,13 @@ import {
   FaUsers,
   FaCog,
 } from "react-icons/fa"
+import { useColorContext } from "../context/ColorContext"
 
 const Sidebar = () => {
   const [open, setOpen] = useState(false)
   const location = useLocation()
   const sidebarRef = useRef(null)
+  const { ambassadorDashboardColor } = useColorContext()
 
   // ✅ Correct way to read role
   const authUser = JSON.parse(localStorage.getItem("authUser"))
@@ -84,36 +86,45 @@ const Sidebar = () => {
 
       <div
         ref={sidebarRef}
-        className={`fixed lg:static top-0 left-0 h-full w-72 bg-red-700 text-white shadow-2xl transform ${
+        className={`fixed lg:static top-0 left-0 h-screen w-64 text-white shadow-2xl transform ${
           open ? "translate-x-0" : "-translate-x-full"
-        } lg:translate-x-0 transition-transform duration-300 ease-in-out z-50`}
+        } lg:translate-x-0 transition-transform duration-300 ease-in-out z-50 flex flex-col`}
+        style={{ 
+          background: `linear-gradient(135deg, ${ambassadorDashboardColor}, ${ambassadorDashboardColor}dd)`
+        }}
       >
-        <div className="flex justify-between items-center p-5 lg:p-6 border-b border-red-600">
-          <h2 className="text-xl lg:text-2xl font-extrabold tracking-tight">
+        <div 
+          className="flex justify-between items-center p-4 border-b flex-shrink-0"
+          style={{ borderColor: `${ambassadorDashboardColor}80` }}
+        >
+          <h2 className="text-xl font-extrabold tracking-tight">
             Dashboard
           </h2>
           <button
             onClick={() => setOpen(false)}
-            className="text-2xl lg:hidden hover:text-red-200 transition-colors"
+            className="text-2xl lg:hidden hover:opacity-70 transition-colors"
             aria-label="Close sidebar"
           >
             <FaTimes />
           </button>
         </div>
 
-        <nav className="flex flex-col gap-2 p-4 mt-4">
+        <nav className="flex flex-col gap-2 p-4 flex-1 overflow-y-auto">
           {menus.map((menu, i) => (
             <Link
               key={i}
               to={menu.path}
               onClick={() => setOpen(false)}
-              className={`flex items-center gap-4 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+              className={`flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
                 location.pathname === menu.path
-                  ? "bg-white text-red-700 font-semibold shadow-md"
-                  : "hover:bg-red-600 hover:text-white hover:shadow-md"
+                  ? "bg-white font-semibold shadow-lg"
+                  : "hover:opacity-80 hover:shadow-md"
               }`}
+              style={{
+                color: location.pathname === menu.path ? ambassadorDashboardColor : "white"
+              }}
             >
-              <span className="text-xl">{menu.icon}</span>
+              <span className="text-lg">{menu.icon}</span>
               <span className="tracking-wide">{menu.name}</span>
             </Link>
           ))}

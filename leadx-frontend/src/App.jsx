@@ -20,7 +20,7 @@ import AmbassadorList from "./pages/user/AmbassadorList"
 function App() {
   return (
     <Router>
-      <ToastContainer position="top-right" autoClose={3000} newestOnTop />
+      {/* <ToastContainer position="top-right" autoClose={3000} newestOnTop /> */}
 
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
