@@ -6,19 +6,52 @@ import sendWhatsApp from "../utils/sendWhatsApp.js"
 import errGen from "../utils/errGen.js"
 import respo from "../utils/respo.js"
 import { onlineUsers } from "../sockets/chatSocket.js"
-
-// 🔹 Start or get chat between user & ambassador
+import bcrypt from "bcryptjs"
+import crypto from "crypto"
+// helper to generate random password
+const generatePassword = () => crypto.randomBytes(4).toString("hex")
+// startChat controller update
 export const startChat = async (req, res, next) => {
   try {
-    const { ambassadorId } = req.body
-    const userId = req.user.id
+    const { ambassadorId, name, email, phone } = req.body
+
+    let user = await User.findOne({ email })
+    if (!user) {
+      const plainPassword = generatePassword()
+      const hashedPassword = await bcrypt.hash(plainPassword, 10)
+
+      user = await User.create({
+        name,
+        email,
+        phone,
+        role: "user",
+        password: hashedPassword,
+      })
+
+      // send password via email (placeholder)
+      if (email) {
+        await sendEmail(
+          email,
+          "Welcome to LeadX",
+          `Hello ${name},\n\nYour account has been created.\nLogin with:\nEmail: ${email}\nPassword: ${plainPassword}`
+        )
+      }
+
+      // send password via WhatsApp (placeholder)
+      if (phone) {
+        await sendWhatsApp(
+          phone,
+          `Hello ${name}, welcome to LeadX!\n\nYour login details:\nEmail: ${email}\nPassword: ${plainPassword}`
+        )
+      }
+    }
 
     let chat = await Chat.findOne({
-      participants: { $all: [userId, ambassadorId] },
+      participants: { $all: [user._id, ambassadorId] },
     })
 
     if (!chat) {
-      chat = await Chat.create({ participants: [userId, ambassadorId] })
+      chat = await Chat.create({ participants: [user._id, ambassadorId] })
     }
 
     const populatedChat = await Chat.findById(chat._id).populate(
@@ -45,31 +78,44 @@ export const sendMessage = async (req, res) => {
       })
     }
 
-    const newMessage = await Message.create({ chatId, sender, receiver, content })
+    const newMessage = await Message.create({
+      chatId,
+      sender,
+      receiver,
+      content,
+    })
 
-    // ✅ Populate sender/receiver
     const populatedMessage = await Message.findById(newMessage._id).populate(
       "sender receiver",
-      "name email role profileImage"
+      "name email role profileImage phone"
     )
 
-    // ✅ Update chat with reference of lastMessage
     await Chat.findByIdAndUpdate(chatId, {
       updatedAt: new Date(),
       lastMessage: newMessage._id,
     })
 
-    // ✅ Emit to receiver if online
+    // emit to receiver if online
     const receiverSocket = onlineUsers.get(receiver.toString())
     if (receiverSocket) {
       receiverSocket.emit("newMessage", populatedMessage)
     } else {
-      const ambassador = await User.findById(receiver)
-      if (ambassador?.email) {
+      const receiverUser = await User.findById(receiver)
+
+      // fallback to email
+      if (receiverUser?.email) {
         await sendEmail(
-          ambassador.email,
+          receiverUser.email,
           "📩 New Message on LeadX",
           `You received a new message: ${content}`
+        )
+      }
+
+      // fallback to WhatsApp
+      if (receiverUser?.phone) {
+        await sendWhatsApp(
+          receiverUser.phone,
+          `New message from ${populatedMessage.sender.name}: ${content}`
         )
       }
     }
@@ -246,9 +292,11 @@ export const adminSendAsAmbassador = async (req, res, next) => {
     if (req.user.role !== "admin") return next(errGen(403, "Forbidden"))
     const { chatId, asAmbassadorId, toUserId, content } = req.body
     if (!chatId || !asAmbassadorId || !toUserId || !content) {
-      return res.status(400).json(
-        respo(false, "chatId, asAmbassadorId, toUserId, content required")
-      )
+      return res
+        .status(400)
+        .json(
+          respo(false, "chatId, asAmbassadorId, toUserId, content required")
+        )
     }
 
     const newMessage = await Message.create({

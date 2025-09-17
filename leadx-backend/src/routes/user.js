@@ -5,8 +5,8 @@ import uploader from "../utils/uploader.js"
 import {
   registerUser,
   loginUser,
-  getAllUsers,
-  getAmbassadors,
+  getVerifiedAmbassadors,
+  getAllAmbassadors,
   getUserById,
   updateUser,
   deleteUser,
@@ -19,6 +19,8 @@ import {
   deleteAccount,
   createAdmin,
   getMyProfile,
+  approveAmbassador,
+  rejectAmbassador,
 } from "../controllers/user.js"
 
 const router = Router()
@@ -57,15 +59,27 @@ router.post("/reset-password", resetPassword)
    👥 ADMIN ROUTES
 ========================== */
 // Create admin (only admin can create new admin dynamically)
-router.post("/admin/create", authenticate, checkRole("admin"), createAdmin)
+router.post("/create", authenticate, checkRole("admin"), createAdmin)
 
-// Ambassadors list
-router.get("/ambassadors", getAmbassadors)
+// Ambassadors list (Admin)
+router.get("/ambassadors", getAllAmbassadors)
 
 // Manage users
-// router.get("/admin", authenticate, checkRole("admin"), getAllUsers)
-router.get("/admin/:id", getUserById)
-router.put("/admin/:id", authenticate, checkRole("admin"), updateUser)
-router.delete("/admin/:id", authenticate, checkRole("admin"), deleteUser)
-
+router.get(
+  "/verify/ambassadors",
+  authenticate,
+  checkRole("admin"),
+  getVerifiedAmbassadors
+)
+router.get("/:id", getUserById)
+router.put("/:id", authenticate, checkRole("admin"), updateUser)
+router.delete("/:id", authenticate, checkRole("admin"), deleteUser)
+// 🔐 Protected routes (admin only)
+router.patch(
+  "/:id/approve",
+  authenticate,
+  checkRole("admin"),
+  approveAmbassador
+)
+router.patch("/:id/reject", authenticate, checkRole("admin"), rejectAmbassador)
 export default router
