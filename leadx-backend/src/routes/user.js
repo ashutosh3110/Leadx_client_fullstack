@@ -9,6 +9,7 @@ import {
   getUserById,
   updateUser,
   deleteUser,
+  getAmbassadors,
   updateProfile,
   logout,
   forgotPassword,
@@ -56,6 +57,7 @@ router.post("/reset-password", resetPassword)
 ========================== */
 // Create admin (only admin can create new admin dynamically)
 router.post("/admin/create", authenticate, checkRole("admin"), createAdmin)
+router.get("/ambassadors", getAmbassadors)
 
 // Manage users
 router.get("/admin", authenticate, checkRole("admin"), getAllUsers)

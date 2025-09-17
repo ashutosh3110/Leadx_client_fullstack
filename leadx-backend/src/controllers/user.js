@@ -187,6 +187,27 @@ export const forgotPassword = async (req, res, next) => {
     next(err)
   }
 }
+// 👥 Get Ambassadors (Admin only)
+export const getAmbassadors = async (req, res, next) => {
+  try {
+    const { search = "" } = req.query
+    const query = {
+      role: "ambassador",
+      $or: [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+        { phone: { $regex: search, $options: "i" } },
+      ],
+    }
+    // If no search, remove $or to return all ambassadors
+    if (!search) delete query.$or
+
+    const users = await User.find(query).select("-password")
+    res.status(200).json(respo(true, "Ambassadors fetched", users))
+  } catch (err) {
+    next(err)
+  }
+}
 
 // 🔹 Resend Reset Code
 export const resendResetCode = async (req, res, next) => {

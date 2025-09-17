@@ -32,15 +32,13 @@ const Login = () => {
     onSubmit: async (values, { resetForm }) => {
       try {
         setLoading(true)
-        // const res = await axios.post(`${API_URL}/auth/login`, values)
-        // const token = res.data.data.token
-        // const role = res.data.data.user.role
-        // Save token in localStorage
-        localStorage.setItem("token", "dummyToken123")
-        localStorage.setItem("role", "ambassador")
-        // localStorage.setItem("token", token)
-        // localStorage.setItem("role", role)
-        const role = "ambassador"
+        const res = await axios.post(`${API_URL}/api/auth/login`, values)
+        const token = res.data.data.token
+        const role = res.data.data.user.role
+        
+        localStorage.setItem("token", token)
+        localStorage.setItem("role", role)
+        
         if (role === "admin") {
           navigate("/admin")
         } else if (role === "ambassador") {
