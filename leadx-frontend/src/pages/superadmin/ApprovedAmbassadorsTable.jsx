@@ -1,11 +1,11 @@
 import React from 'react';
 
-const ApprovedAmbassadorsTable = ({ 
-    ambassadors, 
-    handleEditAmbassador, 
-    handleDeleteAmbassador, 
-    loading, 
-    handleViewAmbassadorDetails 
+const ApprovedAmbassadorsTable = ({
+    ambassadors,
+    handleEditAmbassador,
+    handleDeleteAmbassador,
+    loading,
+    handleViewAmbassadorDetails
 }) => {
     return (
         <div>
@@ -70,7 +70,7 @@ const ApprovedAmbassadorsTable = ({
                                             )}
                                         </div>
                                         <div className="ml-3 min-w-0 flex-1">
-                                            <button 
+                                            <button
                                                 onClick={() => handleViewAmbassadorDetails(ambassador)}
                                                 className="text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors cursor-pointer text-left truncate block w-full"
                                             >
@@ -81,11 +81,10 @@ const ApprovedAmbassadorsTable = ({
                                     </div>
                                 </td>
                                 <td className="px-4 py-4 whitespace-nowrap">
-                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                        ambassador.isVerified 
-                                            ? 'bg-green-100 text-green-800 border border-green-200' 
+                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${ambassador.isVerified
+                                            ? 'bg-green-100 text-green-800 border border-green-200'
                                             : 'bg-yellow-100 text-yellow-800 border border-yellow-200'
-                                    }`}>
+                                        }`}>
                                         {ambassador.isVerified ? 'Verified' : 'Unverified'}
                                     </span>
                                 </td>

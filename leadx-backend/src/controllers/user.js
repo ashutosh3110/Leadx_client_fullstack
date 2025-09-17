@@ -68,12 +68,58 @@ export const loginUser = async (req, res, next) => {
     next(err)
   }
 }
-
-// 📋 Get All Users (Admin only)
-export const getAllUsers = async (req, res, next) => {
+// 👤 Get Own Profile
+export const getMyProfile = async (req, res, next) => {
   try {
-    const users = await User.find().select("-password")
-    res.status(200).json(respo(true, "Users fetched successfully", users))
+    const user = await User.findById(req.user.id).select("-password")
+    if (!user) return next(errGen(404, "User not found"))
+
+    res.status(200).json(respo(true, "Profile fetched successfully", user))
+  } catch (err) {
+    next(err)
+  }
+}
+
+// 👥 Get All Ambassadors (Admin only)
+export const getAllAmbassadors = async (req, res, next) => {
+  try {
+    const { search = "" } = req.query
+    const query = {
+      role: "ambassador",
+      $or: [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+        { phone: { $regex: search, $options: "i" } },
+      ],
+    }
+    if (!search) delete query.$or
+
+    const ambassadors = await User.find(query).select("-password")
+    res.status(200).json(respo(true, "All Ambassadors fetched", ambassadors))
+  } catch (err) {
+    next(err)
+  }
+}
+
+// 👥 Get Verified Ambassadors (Admin only)
+export const getVerifiedAmbassadors = async (req, res, next) => {
+  try {
+    const { search = "" } = req.query
+    const query = {
+      role: "ambassador",
+      isVerified: true,
+      $or: [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+        { phone: { $regex: search, $options: "i" } },
+      ],
+    }
+    if (!search) delete query.$or
+
+    const ambassadors = await User.find(query).select("-password")
+    res
+      .status(200)
+      .json(respo(true, "Verified Ambassadors fetched", ambassadors))
   } catch (err) {
     next(err)
   }
@@ -310,6 +356,61 @@ export const createAdmin = async (req, res, next) => {
     }
 
     res.status(201).json(respo(true, "Admin created successfully", safeUser))
+  } catch (err) {
+    next(err)
+  }
+}
+
+// 👉 Approve Ambassador
+export const approveAmbassador = async (req, res, next) => {
+  try {
+    const { id } = req.params
+
+    // only admin can approve
+    if (req.user.role !== "admin") {
+      return next(errGen(403, "Only admins can approve ambassadors"))
+    }
+
+    const user = await User.findById(id)
+    if (!user) return next(errGen(404, "User not found"))
+
+    if (user.role !== "ambassador") {
+      return next(errGen(400, "User is not an ambassador"))
+    }
+
+    user.isVerified = true
+    await user.save()
+
+    return res
+      .status(200)
+      .json(respo(true, "Ambassador approved successfully", user))
+  } catch (err) {
+    next(err)
+  }
+}
+
+// 👉 Reject Ambassador
+export const rejectAmbassador = async (req, res, next) => {
+  try {
+    const { id } = req.params
+
+    if (req.user.role !== "admin") {
+      return next(errGen(403, "Only admins can reject ambassadors"))
+    }
+
+    const user = await User.findById(id)
+    if (!user) return next(errGen(404, "User not found"))
+
+    if (user.role !== "ambassador") {
+      return next(errGen(400, "User is not an ambassador"))
+    }
+
+    user.isVerified = false
+    await user.save()
+
+    return res
+      .status(200)
+      .json(respo(true, "Ambassador rejected successfully", user))
   } catch (err) {
     next(err)
   }

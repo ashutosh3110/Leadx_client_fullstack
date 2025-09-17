@@ -9,12 +9,12 @@ const userSchema = new Schema(
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     phone: { type: String, required: true },
-    password: { type: String, required: true },
+    password: { type: String }, // ❌ not required for normal users
 
-    // Program / Education Info
-    program: { type: String, required: true }, // e.g., B.Tech, MBA, etc.
-    course: { type: String }, // specialization
-    year: { type: String }, // current year/semester
+    // Program / Education Info (only for ambassadors)
+    program: { type: String },
+    course: { type: String },
+    year: { type: String },
     graduationYear: { type: String },
 
     // Profile Info
@@ -25,17 +25,21 @@ const userSchema = new Schema(
     about: { type: String },
 
     // Profile Images
-    profileImage: { type: String }, // file path or URL
+    profileImage: { type: String },
     thumbnailImage: { type: String },
 
     // Roles
     role: {
       type: String,
-      enum: ["ambassador", "admin"],
-      default: "ambassador",
+      enum: ["user", "ambassador", "admin"], // ✅ added "user"
+      default: "user",
     },
 
     isVerified: { type: Boolean, default: false },
+
+    // For reset password (only if user/ambassador registered with password)
+    resetCode: { type: String },
+    resetCodeExpires: { type: Date },
   },
   { timestamps: true }
 )
@@ -51,9 +55,9 @@ const userValidationSchema = Joi.object({
   phone: Joi.string()
     .pattern(/^[0-9]{10,15}$/)
     .required(),
-  password: Joi.string().min(6).required(),
+  password: Joi.string().min(6).optional(), // ✅ optional
 
-  program: Joi.string().required(),
+  program: Joi.string().allow(""),
   course: Joi.string().allow(""),
   year: Joi.string().allow(""),
   graduationYear: Joi.string().allow(""),
@@ -67,7 +71,7 @@ const userValidationSchema = Joi.object({
   profileImage: Joi.string().uri().allow(""),
   thumbnailImage: Joi.string().uri().allow(""),
 
-  role: Joi.string().valid("ambassador", "admin").default("ambassador"),
+  role: Joi.string().valid("user", "ambassador", "admin").default("user"),
   isVerified: Joi.boolean().default(false),
 })
 

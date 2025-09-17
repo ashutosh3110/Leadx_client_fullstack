@@ -17,9 +17,10 @@ const Sidebar = () => {
   const location = useLocation()
   const sidebarRef = useRef(null)
 
-  const role = localStorage.getItem("role") // get user role
+  // ✅ Correct way to read role
+  const authUser = JSON.parse(localStorage.getItem("authUser"))
+  const role = authUser?.user?.role || ""
 
-  // Menus role-wise
   const menusByRole = {
     ambassador: [
       { name: "Overview", path: "/ambassador", icon: <FaHome /> },

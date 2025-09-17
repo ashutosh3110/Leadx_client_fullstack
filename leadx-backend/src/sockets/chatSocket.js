@@ -1,20 +1,21 @@
+import { Server } from "socket.io"
+
+// ✅ Global onlineUsers map
+export const onlineUsers = new Map()
+
 export const initChatSocket = (io) => {
   io.on("connection", (socket) => {
     console.log("🟢 User connected:", socket.id)
 
-    // Join room for personal messages
-    socket.on("join", (userId) => {
-      socket.join(userId)
-      console.log(`User ${userId} joined their personal room`)
-    })
-
-    // Handle sending messages
-    socket.on("sendMessage", ({ chatId, senderId, receiverId, content }) => {
-      io.to(receiverId).emit("newMessage", { chatId, senderId, content })
-    })
+    // Token se userId nikalna (abhi dummy)
+    const userId = socket.handshake.auth?.tokenUserId
+    if (userId) {
+      onlineUsers.set(userId, socket.id)
+    }
 
     socket.on("disconnect", () => {
-      console.log("🔴 User disconnected")
+      console.log("🔴 User disconnected:", socket.id)
+      if (userId) onlineUsers.delete(userId)
     })
   })
 }

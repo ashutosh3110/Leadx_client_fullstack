@@ -1,11 +1,10 @@
 import React, { useState } from "react"
 import { useFormik } from "formik"
 import * as Yup from "yup"
-import axios from "axios"
 import { useNavigate, Link } from "react-router-dom"
-
-// API endpoint
-const API_URL = import.meta.env.VITE_API_URL
+import { toast } from "react-toastify"
+import api from "../utils/Api"
+import { setAuth } from "../utils/auth" // ✅ import setAuth
 
 const Login = () => {
   const navigate = useNavigate()
@@ -22,12 +21,8 @@ const Login = () => {
       .required("Password is required"),
   })
 
-  // Formik setup
   const formik = useFormik({
-    initialValues: {
-      email: "",
-      password: "",
-    },
+    initialValues: { email: "", password: "" },
     validationSchema,
     onSubmit: async (values, { resetForm }) => {
       try {
@@ -50,7 +45,7 @@ const Login = () => {
         resetForm()
       } catch (err) {
         console.error(err)
-        alert(err.response?.data?.message || "Login failed")
+        toast.error(err.response?.data?.message || "Login failed")
       } finally {
         setLoading(false)
       }
@@ -68,7 +63,6 @@ const Login = () => {
         </p>
 
         <form onSubmit={formik.handleSubmit} className="space-y-4">
-          {/* Email */}
           <div>
             <label
               htmlFor="email"
@@ -95,7 +89,6 @@ const Login = () => {
             )}
           </div>
 
-          {/* Password */}
           <div>
             <label
               htmlFor="password"
@@ -133,7 +126,6 @@ const Login = () => {
             )}
           </div>
 
-          {/* Submit */}
           <button
             type="submit"
             disabled={loading}
@@ -151,7 +143,6 @@ const Login = () => {
           </p>
         </form>
 
-        {/* Signup link */}
         <p className="text-sm text-center text-gray-700 mt-6">
           Don’t have an account?{" "}
           <Link

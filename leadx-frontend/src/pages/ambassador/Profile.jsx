@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react"
-
+import axios from "axios"
+import { toast } from "react-toastify"
+import api from ".././utils/Api"
 const Profile = () => {
   const [profile, setProfile] = useState(null)
   const [isEditing, setIsEditing] = useState(false)
@@ -8,98 +10,118 @@ const Profile = () => {
   const [profileImage, setProfileImage] = useState(null)
   const [thumbnailImage, setThumbnailImage] = useState(null)
 
-  useEffect(() => {
-    // Mock API data (replace with real API call)
-    const mockData = {
-      name: "Priya Sharma",
-      email: "priya@example.com",
-      programme: "",
-      course: "",
-      year: "",
-      graduationYear: "",
-      languages: [],
-      extracurriculars: [],
-      country: "",
-      state: "",
-      about: "",
-      profileImage: null,
-      thumbnailImage: null,
-    }
-    setProfile(mockData)
-    setLanguages(mockData.languages || [""])
-    setExtracurriculars(mockData.extracurriculars || [""])
-  }, [])
+  const API_URL = import.meta.env.VITE_API_URL
+  const IMAGE_URL = import.meta.env.VITE_IMAGE_URL
 
-  const handleAddField = (setter, values) => {
-    setter([...values, ""])
+  // helper for proper image url
+  const getImageUrl = (path) => {
+    if (!path) return null
+    if (path.startsWith("http")) return path
+    return `${IMAGE_URL.replace(/\/$/, "")}/${path.replace(/^\/+/, "")}`
   }
 
-  const handleChangeField = (setter, values, index, value) => {
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await api.get("/auth/me")
+
+        const data = res.data.data
+        setProfile(data)
+        setLanguages(data.languages?.length ? data.languages : [""])
+        setExtracurriculars(
+          data.extracurriculars?.length ? data.extracurriculars : [""]
+        )
+      } catch (err) {
+        console.error(err)
+        toast.error("Failed to fetch profile ❌")
+      }
+    }
+    fetchProfile()
+  }, [])
+
+  const handleAddField = (setter, values) => setter([...values, ""])
+  const handleChangeField = (setter, values, i, v) => {
     const updated = [...values]
-    updated[index] = value
+    updated[i] = v
     setter(updated)
   }
 
   const handleFileChange = (e, setter) => {
-    setter(e.target.files[0])
+    const file = e.target.files[0]
+    if (file) setter(file)
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    const updatedProfile = {
-      ...profile,
-      name: e.target.name.value,
-      programme: e.target.programme.value,
-      course: e.target.course.value,
-      year: e.target.year.value,
-      graduationYear: e.target.graduationYear.value,
-      languages,
-      extracurriculars,
-      country: e.target.country.value,
-      state: e.target.state.value,
-      about: e.target.about.value,
-      profileImage,
-      thumbnailImage,
+    const formData = new FormData()
+
+    // basic fields
+    ;[
+      "name",
+      "program",
+      "course",
+      "year",
+      "graduationYear",
+      "country",
+      "state",
+      "about",
+    ].forEach((f) => formData.append(f, e.target[f].value))
+
+    // arrays
+    languages.forEach(
+      (lang, i) => lang.trim() && formData.append(`languages[${i}]`, lang)
+    )
+    extracurriculars.forEach(
+      (act, i) => act.trim() && formData.append(`extracurriculars[${i}]`, act)
+    )
+
+    // files
+    if (profileImage) formData.append("profileImage", profileImage)
+    if (thumbnailImage) formData.append("thumbnailImage", thumbnailImage)
+
+    try {
+      const res = await api.patch("/auth/update-profile", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      })
+      setProfile(res.data.data)
+      setProfileImage(null)
+      setThumbnailImage(null)
+      setIsEditing(false)
+      toast.success("Profile Updated Successfully ✅")
+    } catch (err) {
+      console.error(err)
+      toast.error("Failed to update profile ❌")
     }
-    setProfile(updatedProfile)
-    setIsEditing(false)
-    console.log("Updated Profile:", updatedProfile)
-    alert("Profile Updated (check console)")
   }
 
   if (!profile) return <p className="text-center mt-8">Loading profile...</p>
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Cover Photo */}
+      {/* Cover */}
       <div className="relative h-48 md:h-64 bg-gray-200">
-        {profile.thumbnailImage && (
+        <img
+          src={
+            thumbnailImage
+              ? URL.createObjectURL(thumbnailImage)
+              : getImageUrl(profile.thumbnailImage)
+          }
+          alt="Cover"
+          className="w-full h-full object-cover"
+        />
+
+        {/* Profile Image */}
+        <div className="absolute -bottom-16 left-6 flex items-center gap-4">
           <img
             src={
-              typeof profile.thumbnailImage === "string"
-                ? profile.thumbnailImage
-                : URL.createObjectURL(profile.thumbnailImage)
+              profileImage
+                ? URL.createObjectURL(profileImage)
+                : getImageUrl(profile.profileImage)
             }
-            alt="Cover"
-            className="w-full h-full object-cover"
+            alt="Profile"
+            className="w-32 h-32 rounded-full border-4 border-white shadow-lg object-cover"
           />
-        )}
-        <div className="absolute -bottom-16 left-6 flex items-center gap-4">
-          {profile.profileImage ? (
-            <img
-              src={
-                typeof profile.profileImage === "string"
-                  ? profile.profileImage
-                  : URL.createObjectURL(profile.profileImage)
-              }
-              alt="Profile"
-              className="w-32 h-32 rounded-full border-4 border-white shadow-lg object-cover"
-            />
-          ) : (
-            <div className="w-32 h-32 rounded-full border-4 border-white shadow-lg bg-gray-300 flex items-center justify-center text-gray-600">
-              No Image
-            </div>
-          )}
+
           <div>
             <h1 className="text-2xl md:text-3xl font-bold">{profile.name}</h1>
             <p className="text-sm text-gray-600">{profile.email}</p>
@@ -107,72 +129,56 @@ const Profile = () => {
         </div>
       </div>
 
+      {/* Content */}
       <div className="max-w-5xl mx-auto px-6 pt-20 pb-10">
-        {/* Header Actions */}
-        <div className="flex justify-between items-center mb-6">
-          {/* <div className="flex gap-3">
-            <button className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700">
-              Share Profile
-            </button>
-            <button className="px-4 py-2 rounded-lg bg-[rgb(188,23,32)] text-white">
-              Send Message
-            </button>
-          </div> */}
+        {/* Edit button */}
+        <div className="flex justify-end mb-6">
           <button
             onClick={() => setIsEditing(true)}
             className="px-4 py-2 rounded-lg bg-gray-800 text-white"
           >
-            {profile.programme ? "Update Profile" : "Complete Profile"}
+            {profile.program ? "Update Profile" : "Complete Profile"}
           </button>
         </div>
 
-        {/* Profile Info */}
         {!isEditing ? (
-          <div className="bg-white rounded-xl shadow p-6 space-y-4">
-            <h2 className="text-lg font-semibold mb-4 border-b pb-2">
+          // View Mode
+          <div className="bg-white rounded-xl shadow p-6 space-y-3">
+            <h2 className="text-lg font-semibold border-b pb-2 mb-2">
               Profile
             </h2>
             <p>
-              <span className="font-semibold">Programme:</span>{" "}
-              {profile.programme || "Not added"}
+              <b>Program:</b> {profile.program || "Not added"}
             </p>
             <p>
-              <span className="font-semibold">Course:</span>{" "}
-              {profile.course || "Not added"}
+              <b>Course:</b> {profile.course || "Not added"}
             </p>
             <p>
-              <span className="font-semibold">Year:</span>{" "}
-              {profile.year || "Not added"}
+              <b>Year:</b> {profile.year || "Not added"}
             </p>
             <p>
-              <span className="font-semibold">Graduation Year:</span>{" "}
-              {profile.graduationYear || "Not added"}
+              <b>Graduation Year:</b> {profile.graduationYear || "Not added"}
             </p>
             <p>
-              <span className="font-semibold">Languages:</span>{" "}
-              {languages.length ? languages.join(", ") : "Not added"}
+              <b>Languages:</b>{" "}
+              {languages[0] ? languages.join(", ") : "Not added"}
             </p>
             <p>
-              <span className="font-semibold">Extracurriculars:</span>{" "}
-              {extracurriculars.length
-                ? extracurriculars.join(", ")
-                : "Not added"}
+              <b>Extracurriculars:</b>{" "}
+              {extracurriculars[0] ? extracurriculars.join(", ") : "Not added"}
             </p>
             <p>
-              <span className="font-semibold">Country:</span>{" "}
-              {profile.country || "Not added"}
+              <b>Country:</b> {profile.country || "Not added"}
             </p>
             <p>
-              <span className="font-semibold">State:</span>{" "}
-              {profile.state || "Not added"}
+              <b>State:</b> {profile.state || "Not added"}
             </p>
             <p>
-              <span className="font-semibold">About:</span>{" "}
-              {profile.about || "Not added"}
+              <b>About:</b> {profile.about || "Not added"}
             </p>
           </div>
         ) : (
-          // Edit Form with ALL FIELDS
+          // Edit Mode
           <form
             onSubmit={handleSubmit}
             className="bg-white rounded-xl shadow p-6 space-y-6"
@@ -207,76 +213,42 @@ const Profile = () => {
               </div>
             </div>
 
-            {/* Basic Info */}
-            <div className="grid md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium">Name</label>
-                <input
-                  type="text"
-                  name="name"
-                  defaultValue={profile.name}
-                  className="w-full border rounded-lg p-2"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium">Programme</label>
-                <input
-                  type="text"
-                  name="programme"
-                  defaultValue={profile.programme}
-                  className="w-full border rounded-lg p-2"
-                />
-              </div>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium">Course</label>
-                <input
-                  type="text"
-                  name="course"
-                  defaultValue={profile.course}
-                  className="w-full border rounded-lg p-2"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium">
-                  Year / Semester
+            {/* Text fields */}
+            {[
+              "name",
+              "program",
+              "course",
+              "year",
+              "graduationYear",
+              "country",
+              "state",
+            ].map((f) => (
+              <div key={f}>
+                <label className="block text-sm font-medium capitalize">
+                  {f}
                 </label>
                 <input
                   type="text"
-                  name="year"
-                  defaultValue={profile.year}
+                  name={f}
+                  defaultValue={profile[f]}
                   className="w-full border rounded-lg p-2"
                 />
               </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium">
-                Expected Year of Graduation
-              </label>
-              <input
-                type="text"
-                name="graduationYear"
-                defaultValue={profile.graduationYear}
-                className="w-full border rounded-lg p-2"
-              />
-            </div>
+            ))}
 
             {/* Languages */}
             <div>
               <label className="block text-sm font-medium">Languages</label>
-              {languages.map((lang, idx) => (
+              {languages.map((lang, i) => (
                 <input
-                  key={idx}
+                  key={i}
                   type="text"
                   value={lang}
                   onChange={(e) =>
                     handleChangeField(
                       setLanguages,
                       languages,
-                      idx,
+                      i,
                       e.target.value
                     )
                   }
@@ -297,16 +269,16 @@ const Profile = () => {
               <label className="block text-sm font-medium">
                 Extracurriculars
               </label>
-              {extracurriculars.map((act, idx) => (
+              {extracurriculars.map((act, i) => (
                 <input
-                  key={idx}
+                  key={i}
                   type="text"
                   value={act}
                   onChange={(e) =>
                     handleChangeField(
                       setExtracurriculars,
                       extracurriculars,
-                      idx,
+                      i,
                       e.target.value
                     )
                   }
@@ -322,28 +294,6 @@ const Profile = () => {
               >
                 + Add Activity
               </button>
-            </div>
-
-            {/* Country & State */}
-            <div className="grid md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium">Country</label>
-                <input
-                  type="text"
-                  name="country"
-                  defaultValue={profile.country}
-                  className="w-full border rounded-lg p-2"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium">State</label>
-                <input
-                  type="text"
-                  name="state"
-                  defaultValue={profile.state}
-                  className="w-full border rounded-lg p-2"
-                />
-              </div>
             </div>
 
             {/* About */}
