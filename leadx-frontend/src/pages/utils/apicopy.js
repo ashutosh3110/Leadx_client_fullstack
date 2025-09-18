@@ -131,13 +131,13 @@ export const rewardsAPI = {
 export const approvalAPI = {
   // Approve ambassador application
   approveAmbassador: async (userId) => {
-    const response = await api.patch(`/api/auth/approve/${userId}`);
+    const response = await api.patch(`/api/auth/${userId}/approve`);
     return response.data;
   },
 
   // Reject ambassador application
   rejectAmbassador: async (userId) => {
-    const response = await api.patch(`/api/auth/reject/${userId}`);
+    const response = await api.patch(`/api/auth/${userId}/reject`);
     return response.data;
   },
 

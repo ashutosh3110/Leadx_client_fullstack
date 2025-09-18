@@ -12,13 +12,14 @@ const AdminSidebar = ({
 }) => {
     return (
         <div 
-            className="w-64 shadow-lg flex flex-col"
+            className="w-64 h-screen shadow-lg flex flex-col fixed left-0 top-0 z-40 hidden lg:flex"
             style={{ 
-                backgroundColor: adminDashboardColor,
-                borderRight: `1px solid ${adminDashboardColor}80`
+                backgroundColor: '#4682B4',
+                borderRight: `1px solid #4682B480`
             }}
         >
-            <div className="p-6">
+            <div className="p-4 lg:p-6">
+
                 {/* Logo */}
                 <div className="flex items-center space-x-3 mb-8">
                     <div 
@@ -51,7 +52,7 @@ const AdminSidebar = ({
                                 className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 text-left ${
                                     activeTab === item.id
                                         ? 'shadow-lg bg-white/20 text-white'
-                                        : 'text-white/80 hover:bg-white/10 hover:text-white'
+                                        : 'text-white/80 hover:text-white'
                                 }`}
                             >
                                 {item.icon}
@@ -90,31 +91,11 @@ const AdminSidebar = ({
                 </nav>
             </div>
 
-            {/* User Profile */}
-            <div className="mt-auto p-6">
-                <div className="rounded-xl p-4 bg-white/10 backdrop-blur-sm border border-white/20">
-                    <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 rounded-full flex items-center justify-center bg-white/20">
-                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
-                        </div>
-                        <div className="flex-1">
-                            <p className="text-sm font-semibold text-white">Admin User</p>
-                            <p className="text-xs text-white/70">admin@leadx.com</p>
-                        </div>
-                        <button className="text-white/60 hover:text-white">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-            </div>
         </div>
     );
 };
 
 export default AdminSidebar;
+
 
 

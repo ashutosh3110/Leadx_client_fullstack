@@ -187,9 +187,25 @@ export const updateProfile = async (req, res, next) => {
   try {
     const updates = req.body
 
-    // 🔐 Hash password if provided
-    if (updates.password) {
+    // 🔐 Hash password if provided (and not empty)
+    if (updates.password && updates.password.trim() !== '') {
       updates.password = await bcrypt.hash(updates.password, 10)
+    } else {
+      // Remove password field if empty or undefined
+      delete updates.password
+    }
+
+    // 🏠 Handle state field (ensure it's a string, not array)
+    if (updates.state) {
+      if (Array.isArray(updates.state)) {
+        // If it's an array, take the first non-empty value
+        updates.state = updates.state.find(val => val && val.trim() !== '') || ''
+      } else {
+        // Ensure it's a string
+        updates.state = String(updates.state)
+      }
+    } else {
+      updates.state = ''
     }
 
     // 🖼️ Handle uploaded files

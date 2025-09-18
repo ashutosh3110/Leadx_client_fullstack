@@ -11,8 +11,8 @@ export const useColorContext = () => {
 };
 
 export const ColorProvider = ({ children }) => {
-    const [adminDashboardColor, setAdminDashboardColor] = useState('#3B82F6'); // Default blue
-    const [ambassadorDashboardColor, setAmbassadorDashboardColor] = useState('#3B82F6'); // Same as admin - blue
+    const [adminDashboardColor, setAdminDashboardColor] = useState('#4682B4'); // Steel Blue (same as sidebar)
+    const [ambassadorDashboardColor, setAmbassadorDashboardColor] = useState('#4682B4'); // Same as admin - Steel Blue
 
     // Load colors from localStorage on mount
     useEffect(() => {
@@ -25,9 +25,9 @@ export const ColorProvider = ({ children }) => {
         if (savedAmbassadorColor) {
             setAmbassadorDashboardColor(savedAmbassadorColor);
         } else {
-            // Set default blue color (same as admin) if no saved color
-            setAmbassadorDashboardColor('#3B82F6');
-            localStorage.setItem('ambassadorDashboardColor', '#3B82F6');
+            // Set default Steel Blue color (same as admin) if no saved color
+            setAmbassadorDashboardColor('#4682B4');
+            localStorage.setItem('ambassadorDashboardColor', '#4682B4');
         }
     }, []);
 

@@ -22,7 +22,10 @@ import ApprovedAmbassadorsTable from './ApprovedAmbassadorsTable';
 
 import AmbassadorDetailModal from './AmbassadorDetailModal';
 import AddRewardModal from './AddRewardModal';
-
+import RewardsTab from './RewardTab';
+import UserManagement from './UserMannagement';
+import Overview from './Overview';
+import sidebarItems from './Sidebaritems';
 
 import { useColorContext } from '../../context/ColorContext';
 
@@ -70,22 +73,13 @@ const AdminDashboard = () => {
 
 
     const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
-    
+
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
     // Color context
 
-const { adminDashboardColor, adminTextColor } = useColorContext();
+    const { adminDashboardColor, adminTextColor } = useColorContext();
 
-
-
-    // Handle logout
-
-    const handleLogout = () => {
-
-        localStorage.removeItem('authToken');
-
-        navigate('/login');
-
-    };
 
 
 
@@ -142,26 +136,26 @@ const { adminDashboardColor, adminTextColor } = useColorContext();
             console.log('Approving ambassador:', userId);
 
 
-            
+
             const response = await approvalAPI.approveAmbassador(userId);
 
             console.log('Approval response:', response);
-            
+
             if (response.success) {
 
                 // Find the user being approved
 
                 const approvedUser = pendingApplications.find(user => user._id === userId);
 
-          
-                
+
+
                 if (approvedUser) {
 
                     // Update the user's verification status and add approval timestamp
 
-                    const updatedUser = { 
+                    const updatedUser = {
 
-                        ...approvedUser, 
+                        ...approvedUser,
 
                         isVerified: true,
 
@@ -170,7 +164,7 @@ const { adminDashboardColor, adminTextColor } = useColorContext();
                     };
 
 
-                    
+
                     // Update UI immediately - remove from pending, add to TOP of approved list
 
                     setPendingApplications(prev => prev.filter(user => user._id !== userId));
@@ -192,7 +186,7 @@ const { adminDashboardColor, adminTextColor } = useColorContext();
                 }
 
 
-                
+
                 alert('✅ Ambassador approved successfully!');
 
             } else {
@@ -225,13 +219,13 @@ const { adminDashboardColor, adminTextColor } = useColorContext();
 
             console.log('Rejecting ambassador:', userId);
 
-            
+
             const response = await approvalAPI.rejectAmbassador(userId);
 
             console.log('Rejection response:', response);
 
 
-            
+
             if (response.success) {
 
                 // Update UI immediately - remove from pending
@@ -307,7 +301,7 @@ const { adminDashboardColor, adminTextColor } = useColorContext();
         try {
             setLoading(true);
             console.log('Submitting reward:', rewardData);
-            
+
             // Create new reward object
             const newReward = {
                 id: Date.now(),
@@ -315,10 +309,10 @@ const { adminDashboardColor, adminTextColor } = useColorContext();
                 status: 'completed',
                 createdAt: new Date().toISOString()
             };
-            
+
             // Add to rewards state
             setRewards(prev => [newReward, ...prev]);
-            
+
             // TODO: Implement API call to save reward
             // const response = await fetch('/api/rewards', {
             //     method: 'POST',
@@ -328,10 +322,10 @@ const { adminDashboardColor, adminTextColor } = useColorContext();
             //     },
             //     body: JSON.stringify(rewardData)
             // });
-            
+
             // Show success message
             alert(`Reward of ${rewardData.currency} ${rewardData.amount} added successfully for ${rewardData.ambassadorName}!`);
-            
+
         } catch (error) {
             console.error('Error submitting reward:', error);
             throw error;
@@ -381,6 +375,15 @@ const { adminDashboardColor, adminTextColor } = useColorContext();
 
     };
 
+    // Mobile menu handlers
+    const handleMobileMenuToggle = () => {
+        setIsMobileMenuOpen(!isMobileMenuOpen);
+    };
+
+    const handleCloseMobileMenu = () => {
+        setIsMobileMenuOpen(false);
+    };
+
 
 
     // Edit and Delete functionality for approved ambassadors
@@ -408,12 +411,12 @@ const { adminDashboardColor, adminTextColor } = useColorContext();
                 console.log('Deleting ambassador:', ambassadorId);
 
 
-                
+
                 // TODO: Implement delete API call
 
                 // const response = await ambassadorAPI.deleteAmbassador(ambassadorId);
 
-                
+
                 // For now, just remove from local state
 
                 setAmbassadors(prev => prev.filter(ambassador => ambassador._id !== ambassadorId));
@@ -429,7 +432,7 @@ const { adminDashboardColor, adminTextColor } = useColorContext();
                 }));
 
 
-                
+
                 alert('✅ Ambassador deleted successfully!');
 
             } catch (error) {
@@ -456,7 +459,7 @@ const { adminDashboardColor, adminTextColor } = useColorContext();
 
             setLoading(true);
 
-            
+
             // Fetch all ambassadors from the single API endpoint
 
             const response = await ambassadorAPI.getAllAmbassadors();
@@ -464,47 +467,38 @@ const { adminDashboardColor, adminTextColor } = useColorContext();
             console.log('All ambassadors response:', response);
 
 
-            
+
             let allAmbassadors = [];
 
-            if (response.success && response.data && Array.isArray(response.data)) {
-
+            // ✅ Since your backend always returns { success, data: [...] }
+            if (response.success && Array.isArray(response.data)) {
                 allAmbassadors = response.data;
-
-            } else if (Array.isArray(response)) {
-
-                allAmbassadors = response;
-
-            } else if (response.data && Array.isArray(response.data)) {
-
-                allAmbassadors = response.data;
-
             }
 
 
-            
+
             console.log('All ambassadors:', allAmbassadors);
 
 
-            
+
             // Filter ambassadors based on verification status
 
-            const verifiedAmbassadors = allAmbassadors.filter(user => 
+            const verifiedAmbassadors = allAmbassadors.filter(user =>
 
                 user.role === 'ambassador' && user.isVerified === true
 
             );
 
 
-            
-            const pendingAmbassadors = allAmbassadors.filter(user => 
+
+            const pendingAmbassadors = allAmbassadors.filter(user =>
 
                 user.role === 'ambassador' && user.isVerified === false
 
             );
 
 
-            
+
             // Sort verified ambassadors by most recently updated first
 
             const sortedVerifiedAmbassadors = verifiedAmbassadors.sort((a, b) => {
@@ -518,13 +512,13 @@ const { adminDashboardColor, adminTextColor } = useColorContext();
             });
 
 
-            
+
             console.log('Verified ambassadors (sorted):', sortedVerifiedAmbassadors);
 
             console.log('Pending ambassadors:', pendingAmbassadors);
 
 
-            
+
             // Set the data
 
             setAmbassadors(sortedVerifiedAmbassadors);
@@ -532,7 +526,7 @@ const { adminDashboardColor, adminTextColor } = useColorContext();
             setPendingApplications(pendingAmbassadors);
 
 
-            
+
             // Update stats
 
             setStats({
@@ -550,9 +544,9 @@ const { adminDashboardColor, adminTextColor } = useColorContext();
                 monthlyGrowth: Math.floor(Math.random() * 25) + 5
 
             });
-            
 
-            
+
+
         } catch (error) {
 
             console.error('Failed to fetch dashboard data:', error);
@@ -567,167 +561,32 @@ const { adminDashboardColor, adminTextColor } = useColorContext();
 
     };
 
-
-
-
-
-
-    const sidebarItems = [
-
-        { 
-
-            id: 'overview', 
-
-            name: 'Dashboard', 
-
-            icon: (
-
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
-
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5a2 2 0 012-2h4a2 2 0 012 2v0a2 2 0 01-2 2H10a2 2 0 01-2-2v0z" />
-
-                </svg>
-
-            )
-
-        },
-
-        { 
-
-            id: 'ambassadors', 
-
-            name: 'Ambassadors', 
-
-            icon: (
-
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-
-                </svg>
-
- )
-
- },
-
- // { 
-
- //     id: 'analytics', 
-
- //     name: 'Analytics', 
-
- //     icon: (
-
-//         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-
-//             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-
-//         </svg>
-
-//     )
-
- // },
-
- // { 
-
- //     id: 'messages', 
- //     name: 'Messages', 
-
- //     icon: (
-
- //         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-
- //             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-
- //         </svg>
-
- //     )
-
- // },
-
- {
-
-            id: 'rewards', 
-
-            name: 'Rewards', 
-
-            icon: (
-
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-
-                </svg>
-
-            )
-
-        },
-
-        { 
-
-            id: 'users', 
-
-            name: 'User Management', 
-
-            icon: (
-
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-
-                </svg>
-            )
-
-},
-
-// { 
-
-//     id: 'reports', 
-
-//     name: 'Reports', 
-
- //     icon: (
-
- //         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-
- //             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
- //         </svg>
-
- //     )
-
- // },
-
- {
-
-            id: 'settings', 
-
-            name: 'Settings', 
-
-            icon: (
-
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-
-                </svg>
-
-            )
-
-        }
-
-    ];
-
+    <AdminSidebar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        adminDashboardColor={adminDashboardColor}
+        adminTextColor={adminTextColor}
+        isSettingsDropdownOpen={isSettingsDropdownOpen}
+        handleSettingsClick={handleSettingsClick}
+        handleCustomizeClick={handleCustomizeClick}
+        sidebarItems={sidebarItems}
+    />
 
 
     return (
 
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex">
 
-            <AdminSidebar 
+            {/* Mobile Menu Overlay */}
+            {isMobileMenuOpen && (
+                <div 
+                    className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+                    onClick={handleCloseMobileMenu}
+                />
+            )}
+
+            {/* Fixed Desktop Sidebar */}
+            <AdminSidebar
                 activeTab={activeTab}
                 setActiveTab={setActiveTab}
                 adminDashboardColor={adminDashboardColor}
@@ -738,15 +597,57 @@ const { adminDashboardColor, adminTextColor } = useColorContext();
                 sidebarItems={sidebarItems}
             />
 
+            {/* Mobile Sidebar */}
+            {isMobileMenuOpen && (
+                <div className="fixed inset-y-0 left-0 z-50 w-64 lg:hidden">
+                    <div 
+                        className="w-64 h-screen shadow-lg flex flex-col"
+                        style={{ 
+                            backgroundColor: '#4682B4',
+                            borderRight: `1px solid #4682B480`
+                        }}
+                    >
+                        {/* Mobile Close Button */}
+                        <div className="flex justify-end p-4">
+                            <button
+                                onClick={handleCloseMobileMenu}
+                                className="p-2 rounded-lg hover:bg-white/10 transition-colors duration-200"
+                            >
+                                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                        <AdminSidebar
+                            activeTab={activeTab}
+                            setActiveTab={(tab) => {
+                                if (tab === 'close') {
+                                    handleCloseMobileMenu();
+                                } else {
+                                    setActiveTab(tab);
+                                    handleCloseMobileMenu();
+                                }
+                            }}
+                            adminDashboardColor={adminDashboardColor}
+                            adminTextColor={adminTextColor}
+                            isSettingsDropdownOpen={isSettingsDropdownOpen}
+                            handleSettingsClick={handleSettingsClick}
+                            handleCustomizeClick={handleCustomizeClick}
+                            sidebarItems={sidebarItems}
+                        />
+                    </div>
+                </div>
+            )}
+
 
 
             {/* Main Content Area */}
 
-            <div 
+            <div
 
-                className="flex-1 flex flex-col"
+                className="flex-1 flex flex-col lg:ml-64"
 
-                style={{ 
+                style={{
 
                     background: `linear-gradient(135deg, ${adminDashboardColor}15, ${adminDashboardColor}10)`
 
@@ -756,46 +657,55 @@ const { adminDashboardColor, adminTextColor } = useColorContext();
 
                 {/* Header */}
 
-                <div 
+                <div
                     className="backdrop-blur-sm border-b sticky top-0 z-30"
-                style={{ 
+                    style={{
                         background: `linear-gradient(135deg, ${adminDashboardColor}25, ${adminDashboardColor}15)`,
                         borderColor: `${adminDashboardColor}40`
-                }}
-            >
+                    }}
+                >
 
-                    <div className="px-6 py-4">
+                    <div className="px-4 lg:px-6 py-4">
 
                         <div className="flex items-center justify-between">
 
-                            <div>
+                            <div className="flex items-center gap-4">
 
-                                <h1 className="text-2xl font-bold text-slate-800 capitalize">{activeTab}</h1>
+                                {/* Mobile Menu Button */}
+                                <button
+                                    onClick={handleMobileMenuToggle}
+                                    className="lg:hidden p-2 rounded-lg hover:bg-slate-100 transition-colors duration-200"
+                                >
+                                    <svg className="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                                    </svg>
+                                </button>
 
-                                <p className="text-sm text-slate-500 mt-1">
+                                <div>
 
-                                    {activeTab === 'overview' && 'Overview of your platform'}
+                                    <h1 className="text-xl lg:text-2xl font-bold text-slate-800 capitalize">{activeTab}</h1>
 
-                                    {activeTab === 'ambassadors' && 'Manage your ambassadors'}
+                                    <p className="text-sm text-slate-500 mt-1">
 
-                                    {activeTab === 'analytics' && 'View detailed analytics'}
+                                        {activeTab === 'overview' && 'Overview of your platform'}
 
-                                    {activeTab === 'messages' && 'Monitor conversations'}
+                                        {activeTab === 'ambassadors' && 'Manage your ambassadors'}
 
-                                    {activeTab === 'rewards' && 'Manage reward system'}
+                                        {activeTab === 'rewards' && 'Manage reward system'}
 
-                                    {activeTab === 'users' && 'User management and roles'}
+                                        {activeTab === 'users' && 'User management and roles'}
 
-                                    {activeTab === 'reports' && 'Generate and view reports'}
 
-                                    {activeTab === 'settings' && 'Configure platform settings'}
+                                        {activeTab === 'settings' && 'Configure platform settings'}
 
-                                </p>
+                                    </p>
+
+                                </div>
 
                             </div>
 
 
-                            
+
                             {/* Profile Icon */}
 
                             <div className="relative profile-dropdown">
@@ -835,12 +745,12 @@ const { adminDashboardColor, adminTextColor } = useColorContext();
                                 </button>
 
 
-                                
-                                <ProfileDropdown 
 
-                                    isOpen={isProfileDropdownOpen} 
+                                <ProfileDropdown
 
-                                    onClose={handleCloseProfileDropdown} 
+                                    isOpen={isProfileDropdownOpen}
+
+                                    onClose={handleCloseProfileDropdown}
 
                                 />
 
@@ -856,115 +766,16 @@ const { adminDashboardColor, adminTextColor } = useColorContext();
 
                 {/* Content Area */}
 
-                <div className="flex-1 p-6 overflow-y-auto">
+                <div className="flex-1 p-4 lg:p-6 overflow-y-auto">
 
                     {/* Render nested routes */}
 
                     <Outlet />
 
 
-                    
-                    {/* Overview Tab */}
 
-                    {activeTab === 'overview' && (
 
-                        <div className="space-y-6">
-
-                            {/* Stats Grid */}
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-
-                                <StatCard
-
-                                    title="Total Ambassadors"
-
-                                    value={stats.totalAmbassadors}
-
-                                    trend={stats.monthlyGrowth}
-
-                                    color="from-slate-100 to-slate-200"
-
-                                    icon={
-
-                                        <svg className="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-
-                                        </svg>
-
-                                    }
-
-                                />
-
-                                <StatCard
-
-                                    title="Active Ambassadors"
-
-                                    value={stats.activeAmbassadors}
-
-                                    trend={15}
-
-                                    color="from-slate-100 to-slate-200"
-
-                                    icon={
-
-                                        <svg className="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-
-                                        </svg>
-
-                                    }
-
-                                />
-
-                                <StatCard
-
-                                    title="Pending Applications"
-
-                                    value={stats.pendingApplications}
-
-                                    color="from-slate-100 to-slate-200"
-
-                                    icon={
-
-                                        <svg className="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-
-                                        </svg>
-
-                                    }
-
-                                />
-
-                                <StatCard
-
-                                    title="Total Conversations"
-
-                                    value={stats.totalConversations}
-
-                                    trend={8}
-
-                                    color="from-slate-100 to-slate-200"
-
-                                    icon={
-
-                                        <svg className="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-
-                                        </svg>
-
-                                    }
-
-                                />
-
-                                </div>
-
-                        </div>
-                    )}
-
+                    {activeTab === 'overview' && <Overview stats={stats} />}
 
 
                     {/* Ambassadors Tab */}
@@ -973,7 +784,7 @@ const { adminDashboardColor, adminTextColor } = useColorContext();
 
                         <div className="space-y-6">
 
-                            <PendingApplicationsTable 
+                            <PendingApplicationsTable
                                 pendingApplications={pendingApplications}
                                 handleApproveApplication={handleApproveApplication}
                                 handleRejectApplication={handleRejectApplication}
@@ -983,7 +794,7 @@ const { adminDashboardColor, adminTextColor } = useColorContext();
 
 
 
-                            <ApprovedAmbassadorsTable 
+                            <ApprovedAmbassadorsTable
                                 ambassadors={ambassadors}
                                 handleEditAmbassador={handleEditAmbassador}
                                 handleDeleteAmbassador={handleDeleteAmbassador}
@@ -991,259 +802,25 @@ const { adminDashboardColor, adminTextColor } = useColorContext();
                                 handleViewAmbassadorDetails={handleViewAmbassadorDetails}
                             />
 
-                                                            </div>
+                        </div>
 
                     )}
-
-
-
-                    {/* Other Tabs */}
-
-                    {activeTab === 'analytics' && (
-
-                        <div className="space-y-6">
-
-                            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-200 shadow-lg">
-
-                                <div className="text-center py-12">
-
-                                    <svg className="w-16 h-16 text-slate-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-
-                                    </svg>
-
-                                    <h4 className="text-lg font-semibold text-slate-800 mb-2">Analytics & Reports</h4>
-
-                                    <p className="text-slate-600">View detailed analytics and performance metrics</p>
-
-                                                            </div>
-
-                                                        </div>
-
-                                                        </div>
-
-                    )}
-
-
-
-                    {activeTab === 'messages' && (
-
-                        <div className="space-y-6">
-
-                            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-200 shadow-lg">
-
-                                <div className="text-center py-12">
-
-                                    <svg className="w-16 h-16 text-slate-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-
-                                                            </svg>
-
-                                    <h4 className="text-lg font-semibold text-slate-800 mb-2">Message Management</h4>
-
-                                    <p className="text-slate-600">Monitor and manage conversations</p>
-
-                                                        </div>
-
-                                </div>
-
-                            </div>
-
-                    )}
-
 
 
                     {activeTab === 'rewards' && (
-
-                        <div className="space-y-6">
-
-                            {/* Rewards Header */}
-                            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-200 shadow-lg">
-                                <div className="flex items-center justify-between mb-4">
-                                    <h3 className="text-lg font-semibold text-slate-800 flex items-center">
-                                        <svg className="w-5 h-5 text-yellow-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                                        </svg>
-                                        Ambassador Rewards ({rewards.length})
-                                    </h3>
-                                    <div className="text-sm text-slate-600">
-                                        Total Rewards: {rewards.length}
-                                        </div>
-                                    </div>
-                                </div>
-
-                            {/* Rewards Table */}
-                            <div 
-                                className="backdrop-blur-sm rounded-2xl shadow-lg border overflow-hidden"
-                                style={{ 
-                                    background: `linear-gradient(135deg, ${adminDashboardColor}15, ${adminDashboardColor}10)`,
-                                    borderColor: `${adminDashboardColor}30`
-                                }}
-                            >
-                                {rewards.length > 0 ? (
-                                    <table className="min-w-full divide-y divide-slate-200">
-                                        <thead 
-                                            style={{ 
-                                                background: `linear-gradient(135deg, ${adminDashboardColor}25, ${adminDashboardColor}15)`
-                                            }}
-                                        >
-                                            <tr>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Ambassador</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Amount</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Category</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Country/State</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-200">
-                                            {rewards.map((reward) => (
-                                                <tr 
-                                                    key={reward.id} 
-                                                    className="transition-colors duration-200"
-                                                    style={{ 
-                                                        '--hover-bg': `${adminDashboardColor}10`
-                                                    }}
-                                                    onMouseEnter={(e) => {
-                                                        e.target.style.backgroundColor = `${adminDashboardColor}20`;
-                                                    }}
-                                                    onMouseLeave={(e) => {
-                                                        e.target.style.backgroundColor = 'transparent';
-                                                    }}
-                                                >
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        <div className="flex items-center">
-                                                            <div 
-                                                                className="w-8 h-8 rounded-full overflow-hidden border-2 mr-3"
-                                                                style={{ borderColor: `${adminDashboardColor}40` }}
-                                                            >
-                                                                <div 
-                                                                    className="w-full h-full flex items-center justify-center text-white text-xs font-bold"
-                                                                    style={{ 
-                                                                        background: `linear-gradient(135deg, ${adminDashboardColor}, ${adminDashboardColor}dd)`
-                                                                    }}
-                                                                >
-                                                                    {reward.ambassadorName.charAt(0).toUpperCase()}
-                                                                </div>
-                                                            </div>
-                                                            <div>
-                                                                <div className="text-sm font-semibold text-slate-900">{reward.ambassadorName}</div>
-                                                                <div className="text-xs text-slate-500">ID: {reward.ambassadorId}</div>
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        <div className="text-sm font-semibold text-slate-900">
-                                                            {reward.currency === 'INR' ? '₹' : '$'}{reward.amount}
-                                                        </div>
-                                                        <div className="text-xs text-slate-500">{reward.currency}</div>
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        <span 
-                                                            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-white"
-                                                            style={{ backgroundColor: adminDashboardColor }}
-                                                        >
-                                                            {reward.category.charAt(0).toUpperCase() + reward.category.slice(1)}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
-                                                        <div>{reward.country}</div>
-                                                        {reward.state && <div className="text-xs text-slate-500">{reward.state}</div>}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                                                        {new Date(reward.createdAt).toLocaleDateString()}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                            {reward.status.charAt(0).toUpperCase() + reward.status.slice(1)}
-                                                        </span>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                ) : (
-                                <div className="text-center py-12">
-                                    <svg className="w-16 h-16 text-slate-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                                    </svg>
-                                        <h4 className="text-lg font-semibold text-slate-800 mb-2">No Rewards Yet</h4>
-                                        <p className="text-slate-600">Start adding rewards to ambassadors to see them here</p>
-                        </div>
+                        <RewardsTab
+                            rewards={rewards}
+                            adminDashboardColor={adminDashboardColor}
+                        />
                     )}
-                                </div>
-
-                                </div>
-
-                    )}
-
-
-
-                    {activeTab === 'users' && (
-
-                        <div className="space-y-6">
-
-                            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-200 shadow-lg">
-
-                                <div className="text-center py-12">
-
-                                    <svg className="w-16 h-16 text-slate-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-
-                                    </svg>
-
-                                    <h4 className="text-lg font-semibold text-slate-800 mb-2">User Management</h4>
-
-                                    <p className="text-slate-600">Manage user accounts and permissions</p>
-
-                                </div>
-
-                            </div>
-
-                        </div>
-
-                    )}
-
-
-
-                    {activeTab === 'reports' && (
-
-                        <div className="space-y-6">
-
-                            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-200 shadow-lg">
-
-                                <div className="text-center py-12">
-
-                                    <svg className="w-16 h-16 text-slate-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-
-                                    </svg>
-
-                                    <h4 className="text-lg font-semibold text-slate-800 mb-2">Reports & Analytics</h4>
-
-                                    <p className="text-slate-600">Generate and export detailed reports</p>
-
-                                </div>
-
-                            </div>
-
-                        </div>
-
-                    )}
-
-
-
+                    {activeTab === 'users' && <UserManagement />}
                     {activeTab === 'settings' && (
 
                         <div className="space-y-6">
 
- <SimpleSettingsForm />
+                            <SimpleSettingsForm />
 
-                                </div>
+                        </div>
 
                     )}
 
@@ -1257,13 +834,13 @@ const { adminDashboardColor, adminTextColor } = useColorContext();
 
                     )}
 
-                        </div>
+                </div>
 
-                        </div>
+            </div>
 
 
 
-            <AmbassadorDetailModal 
+            <AmbassadorDetailModal
                 isOpen={isDetailModalOpen}
                 ambassador={selectedAmbassador}
                 onClose={handleCloseDetailModal}
@@ -1273,7 +850,7 @@ const { adminDashboardColor, adminTextColor } = useColorContext();
                 loading={loading}
             />
 
-            <AddRewardModal 
+            <AddRewardModal
                 isOpen={isAddRewardModalOpen}
                 ambassador={selectedAmbassador}
                 onClose={handleCloseAddRewardModal}
@@ -1283,7 +860,7 @@ const { adminDashboardColor, adminTextColor } = useColorContext();
 
 
 
-                        </div>
+        </div>
 
     );
 
