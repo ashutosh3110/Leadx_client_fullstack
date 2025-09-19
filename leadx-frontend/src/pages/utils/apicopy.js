@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getToken } from './auth';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -11,9 +12,12 @@ const api = axios.create({
 
 // Add auth token to requests
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('authToken');
+  const token = getToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+    console.log('API Request - Token added:', token ? 'Present' : 'Missing');
+  } else {
+    console.log('API Request - No token found');
   }
   return config;
 });
@@ -103,27 +107,45 @@ export const rewardsAPI = {
     return response.data;
   },
 
-  // Get ambassador rewards
-  getAmbassadorRewards: async (ambassadorId) => {
-    const response = await api.get(`/api/rewards/${ambassadorId}`);
+  // Get all rewards (admin only)
+  getAllRewards: async (params) => {
+    const response = await api.get('/api/rewards', { params });
     return response.data;
   },
 
-  // Get reward summary
-  getRewardSummary: async (ambassadorId) => {
-    const response = await api.get(`/api/rewards/summary/${ambassadorId}`);
+  // Get reward statistics (admin only)
+  getRewardStats: async () => {
+    const response = await api.get('/api/rewards/stats');
+    return response.data;
+  },
+
+  // Get my rewards (ambassador only)
+  getMyRewards: async (params) => {
+    const response = await api.get('/api/rewards/my', { params });
+    return response.data;
+  },
+
+  // Get reward by ID (admin only)
+  getRewardById: async (rewardId) => {
+    const response = await api.get(`/api/rewards/${rewardId}`);
+    return response.data;
+  },
+
+  // Get rewards by ambassador (admin only)
+  getRewardsByAmbassador: async (ambassadorId, params) => {
+    const response = await api.get(`/api/rewards/ambassador/${ambassadorId}`, { params });
     return response.data;
   },
 
   // Update reward status (admin only)
-  updateRewardStatus: async (rewardId, status) => {
-    const response = await api.patch(`/api/rewards/${rewardId}`, { status });
+  updateRewardStatus: async (rewardId, data) => {
+    const response = await api.patch(`/api/rewards/${rewardId}/status`, data);
     return response.data;
   },
 
-  // Get all rewards (admin only)
-  getAllRewards: async (params) => {
-    const response = await api.get('/api/rewards', { params });
+  // Delete reward (admin only)
+  deleteReward: async (rewardId) => {
+    const response = await api.delete(`/api/rewards/${rewardId}`);
     return response.data;
   },
 };

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 import { Outlet, useNavigate } from 'react-router-dom';
 
-import { ambassadorAPI, approvalAPI } from '../utils/apicopy';
+import { ambassadorAPI, approvalAPI, rewardsAPI } from '../utils/apicopy';
 
 // import api from '../pages/utils/apicopy';
 
@@ -22,6 +22,7 @@ import ApprovedAmbassadorsTable from './ApprovedAmbassadorsTable';
 
 import AmbassadorDetailModal from './AmbassadorDetailModal';
 import AddRewardModal from './AddRewardModal';
+import EditRewardModal from './EditRewardModal';
 import RewardsTab from './RewardTab';
 import UserManagement from './UserMannagement';
 import Overview from './Overview';
@@ -68,6 +69,8 @@ const AdminDashboard = () => {
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
     const [isAddRewardModalOpen, setIsAddRewardModalOpen] = useState(false);
+    const [isEditRewardModalOpen, setIsEditRewardModalOpen] = useState(false);
+    const [selectedReward, setSelectedReward] = useState(null);
 
     const [isSettingsDropdownOpen, setIsSettingsDropdownOpen] = useState(false);
 
@@ -287,14 +290,95 @@ const AdminDashboard = () => {
     const handleAddReward = (ambassadorId) => {
         const ambassador = ambassadors.find(amb => amb._id === ambassadorId);
         if (ambassador) {
-            // Don't change selectedAmbassador, just open the reward modal
+            // Set the selected ambassador and open the reward modal
+            setSelectedAmbassador(ambassador);
             setIsAddRewardModalOpen(true);
         }
     };
 
     const handleCloseAddRewardModal = () => {
         setIsAddRewardModalOpen(false);
-        // Don't reset selectedAmbassador to keep detail modal open
+        // Reset selectedAmbassador when closing the reward modal
+        setSelectedAmbassador(null);
+    };
+
+    // Edit and Delete Reward handlers
+    const handleEditReward = (reward) => {
+        setSelectedReward(reward);
+        setIsEditRewardModalOpen(true);
+    };
+
+    const handleCloseEditRewardModal = () => {
+        setIsEditRewardModalOpen(false);
+        setSelectedReward(null);
+    };
+
+    const handleUpdateReward = async (updatedRewardData) => {
+        try {
+            setLoading(true);
+            console.log('Updating reward:', updatedRewardData);
+
+            // Call the API to update reward
+            const response = await rewardsAPI.updateRewardStatus(updatedRewardData.id, {
+                amount: updatedRewardData.amount,
+                currency: updatedRewardData.currency,
+                status: updatedRewardData.status,
+                remarks: updatedRewardData.remarks
+            });
+            console.log('Reward updated successfully:', response);
+
+            // Update the rewards state
+            setRewards(prev => prev.map(reward => 
+                reward.id === updatedRewardData.id 
+                    ? { ...reward, ...updatedRewardData }
+                    : reward
+            ));
+
+            // Show success message
+            alert(`✅ Reward updated successfully for ${updatedRewardData.ambassadorName}!`);
+
+        } catch (error) {
+            console.error('Error updating reward:', error);
+            const errorMessage = error.response?.data?.message || error.message || 'Failed to update reward';
+            alert(`❌ Error: ${errorMessage}`);
+            throw error;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDeleteReward = async (reward) => {
+        if (!window.confirm(`Are you sure you want to delete the reward of ${reward.currency} ${reward.amount} for ${reward.ambassadorName}?`)) {
+            return;
+        }
+
+        try {
+            setLoading(true);
+            console.log('Deleting reward:', reward);
+
+            // Call the API to delete reward
+            await rewardsAPI.deleteReward(reward.id);
+            console.log('Reward deleted successfully');
+
+            // Remove from rewards state
+            setRewards(prev => prev.filter(r => r.id !== reward.id));
+
+            // Update stats
+            setStats(prev => ({
+                ...prev,
+                totalRewards: prev.totalRewards - 1
+            }));
+
+            // Show success message
+            alert(`✅ Reward deleted successfully!`);
+
+        } catch (error) {
+            console.error('Error deleting reward:', error);
+            const errorMessage = error.response?.data?.message || error.message || 'Failed to delete reward';
+            alert(`❌ Error: ${errorMessage}`);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleSubmitReward = async (rewardData) => {
@@ -302,32 +386,48 @@ const AdminDashboard = () => {
             setLoading(true);
             console.log('Submitting reward:', rewardData);
 
-            // Create new reward object
-            const newReward = {
-                id: Date.now(),
-                ...rewardData,
-                status: 'completed',
-                createdAt: new Date().toISOString()
+            // Prepare data for API call
+            const apiData = {
+                ambassador: rewardData.ambassadorId,
+                amount: rewardData.amount,
+                currency: rewardData.currency,
+                status: 'pending', // Default status
+                remarks: rewardData.remarks || ''
             };
 
-            // Add to rewards state
+            // Call the API to create reward
+            const response = await rewardsAPI.createReward(apiData);
+            console.log('Reward created successfully:', response);
+
+            // Add to rewards state with the response data
+            const newReward = {
+                id: response.data._id,
+                ambassadorId: rewardData.ambassadorId,
+                ambassadorName: rewardData.ambassadorName,
+                amount: rewardData.amount,
+                currency: rewardData.currency,
+                status: response.data.status,
+                remarks: rewardData.remarks,
+                createdAt: response.data.createdAt,
+                country: rewardData.country,
+                state: rewardData.state
+            };
+
             setRewards(prev => [newReward, ...prev]);
 
-            // TODO: Implement API call to save reward
-            // const response = await fetch('/api/rewards', {
-            //     method: 'POST',
-            //     headers: {
-            //         'Content-Type': 'application/json',
-            //         'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-            //     },
-            //     body: JSON.stringify(rewardData)
-            // });
+            // Update stats
+            setStats(prev => ({
+                ...prev,
+                totalRewards: prev.totalRewards + 1
+            }));
 
             // Show success message
-            alert(`Reward of ${rewardData.currency} ${rewardData.amount} added successfully for ${rewardData.ambassadorName}!`);
+            alert(`✅ Reward of ${rewardData.currency} ${rewardData.amount} added successfully for ${rewardData.ambassadorName}!`);
 
         } catch (error) {
             console.error('Error submitting reward:', error);
+            const errorMessage = error.response?.data?.message || error.message || 'Failed to add reward';
+            alert(`❌ Error: ${errorMessage}`);
             throw error;
         } finally {
             setLoading(false);
@@ -527,6 +627,36 @@ const AdminDashboard = () => {
 
 
 
+            // Fetch rewards data
+            let rewardsCount = 0;
+            try {
+                const rewardsResponse = await rewardsAPI.getAllRewards();
+                console.log('Rewards response:', rewardsResponse);
+                
+                if (rewardsResponse.success && Array.isArray(rewardsResponse.data)) {
+                    // Transform rewards data to match frontend format
+                    const transformedRewards = rewardsResponse.data.map(reward => ({
+                        id: reward._id,
+                        ambassadorId: reward.ambassador._id,
+                        ambassadorName: reward.ambassador.name,
+                        amount: reward.amount,
+                        currency: reward.currency,
+                        status: reward.status,
+                        remarks: reward.remarks,
+                        createdAt: reward.createdAt,
+                        country: reward.ambassador.country || 'Not specified',
+                        state: reward.ambassador.state || ''
+                    }));
+                    
+                    setRewards(transformedRewards);
+                    rewardsCount = transformedRewards.length;
+                    console.log('Rewards loaded:', transformedRewards);
+                }
+            } catch (rewardsError) {
+                console.error('Failed to fetch rewards:', rewardsError);
+                // Don't show error to user, just log it
+            }
+
             // Update stats
 
             setStats({
@@ -539,7 +669,7 @@ const AdminDashboard = () => {
 
                 totalConversations: Math.floor(Math.random() * 150) + 50,
 
-                totalRewards: Math.floor(Math.random() * 50) + 20,
+                totalRewards: rewardsCount, // Use actual rewards count
 
                 monthlyGrowth: Math.floor(Math.random() * 25) + 5
 
@@ -561,18 +691,6 @@ const AdminDashboard = () => {
 
     };
 
-    <AdminSidebar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        adminDashboardColor={adminDashboardColor}
-        adminTextColor={adminTextColor}
-        isSettingsDropdownOpen={isSettingsDropdownOpen}
-        handleSettingsClick={handleSettingsClick}
-        handleCustomizeClick={handleCustomizeClick}
-        sidebarItems={sidebarItems}
-    />
-
-
     return (
 
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex">
@@ -586,16 +704,16 @@ const AdminDashboard = () => {
             )}
 
             {/* Fixed Desktop Sidebar */}
-            <AdminSidebar
-                activeTab={activeTab}
-                setActiveTab={setActiveTab}
-                adminDashboardColor={adminDashboardColor}
-                adminTextColor={adminTextColor}
-                isSettingsDropdownOpen={isSettingsDropdownOpen}
-                handleSettingsClick={handleSettingsClick}
-                handleCustomizeClick={handleCustomizeClick}
-                sidebarItems={sidebarItems}
-            />
+    <AdminSidebar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        adminDashboardColor={adminDashboardColor}
+        adminTextColor={adminTextColor}
+        isSettingsDropdownOpen={isSettingsDropdownOpen}
+        handleSettingsClick={handleSettingsClick}
+        handleCustomizeClick={handleCustomizeClick}
+        sidebarItems={sidebarItems}
+    />
 
             {/* Mobile Sidebar */}
             {isMobileMenuOpen && (
@@ -618,8 +736,8 @@ const AdminDashboard = () => {
                                 </svg>
                             </button>
                         </div>
-                        <AdminSidebar
-                            activeTab={activeTab}
+            <AdminSidebar
+                activeTab={activeTab}
                             setActiveTab={(tab) => {
                                 if (tab === 'close') {
                                     handleCloseMobileMenu();
@@ -628,13 +746,13 @@ const AdminDashboard = () => {
                                     handleCloseMobileMenu();
                                 }
                             }}
-                            adminDashboardColor={adminDashboardColor}
-                            adminTextColor={adminTextColor}
-                            isSettingsDropdownOpen={isSettingsDropdownOpen}
-                            handleSettingsClick={handleSettingsClick}
-                            handleCustomizeClick={handleCustomizeClick}
-                            sidebarItems={sidebarItems}
-                        />
+                adminDashboardColor={adminDashboardColor}
+                adminTextColor={adminTextColor}
+                isSettingsDropdownOpen={isSettingsDropdownOpen}
+                handleSettingsClick={handleSettingsClick}
+                handleCustomizeClick={handleCustomizeClick}
+                sidebarItems={sidebarItems}
+            />
                     </div>
                 </div>
             )}
@@ -681,24 +799,24 @@ const AdminDashboard = () => {
                                     </svg>
                                 </button>
 
-                                <div>
+                            <div>
 
                                     <h1 className="text-xl lg:text-2xl font-bold text-slate-800 capitalize">{activeTab}</h1>
 
-                                    <p className="text-sm text-slate-500 mt-1">
+                                <p className="text-sm text-slate-500 mt-1">
 
-                                        {activeTab === 'overview' && 'Overview of your platform'}
+                                    {activeTab === 'overview' && 'Overview of your platform'}
 
-                                        {activeTab === 'ambassadors' && 'Manage your ambassadors'}
+                                    {activeTab === 'ambassadors' && 'Manage your ambassadors'}
 
-                                        {activeTab === 'rewards' && 'Manage reward system'}
+                                    {activeTab === 'rewards' && 'Manage reward system'}
 
-                                        {activeTab === 'users' && 'User management and roles'}
+                                    {activeTab === 'users' && 'User management and roles'}
 
 
-                                        {activeTab === 'settings' && 'Configure platform settings'}
+                                    {activeTab === 'settings' && 'Configure platform settings'}
 
-                                    </p>
+                                </p>
 
                                 </div>
 
@@ -811,6 +929,8 @@ const AdminDashboard = () => {
                         <RewardsTab
                             rewards={rewards}
                             adminDashboardColor={adminDashboardColor}
+                            onEditReward={handleEditReward}
+                            onDeleteReward={handleDeleteReward}
                         />
                     )}
                     {activeTab === 'users' && <UserManagement />}
@@ -855,6 +975,13 @@ const AdminDashboard = () => {
                 ambassador={selectedAmbassador}
                 onClose={handleCloseAddRewardModal}
                 onSubmit={handleSubmitReward}
+            />
+
+            <EditRewardModal
+                isOpen={isEditRewardModalOpen}
+                reward={selectedReward}
+                onClose={handleCloseEditRewardModal}
+                onSubmit={handleUpdateReward}
             />
 
 

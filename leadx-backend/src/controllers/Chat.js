@@ -102,21 +102,35 @@ export const sendMessage = async (req, res) => {
     } else {
       const receiverUser = await User.findById(receiver)
 
-      // fallback to email
+      // fallback to email (optional - don't fail if email service is not configured)
       if (receiverUser?.email) {
-        await sendEmail(
-          receiverUser.email,
-          "📩 New Message on LeadX",
-          `You received a new message: ${content}`
-        )
+        try {
+          const emailResult = await sendEmail(
+            receiverUser.email,
+            "📩 New Message on LeadX",
+            `You received a new message: ${content}`
+          )
+          if (emailResult.success) {
+            console.log("✅ Email notification sent successfully")
+          } else {
+            console.log("⚠️ Email notification failed, but continuing...")
+          }
+        } catch (emailError) {
+          console.log("⚠️ Email service not configured or failed:", emailError.message)
+        }
       }
 
-      // fallback to WhatsApp
+      // fallback to WhatsApp (optional - don't fail if WhatsApp service is not configured)
       if (receiverUser?.phone) {
-        await sendWhatsApp(
-          receiverUser.phone,
-          `New message from ${populatedMessage.sender.name}: ${content}`
-        )
+        try {
+          await sendWhatsApp(
+            receiverUser.phone,
+            `New message from ${populatedMessage.sender.name}: ${content}`
+          )
+          console.log("✅ WhatsApp notification sent successfully")
+        } catch (whatsappError) {
+          console.log("⚠️ WhatsApp service not configured or failed:", whatsappError.message)
+        }
       }
     }
 

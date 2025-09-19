@@ -15,6 +15,7 @@ const Chat = () => {
   const [newMessage, setNewMessage] = useState("")
   const [socket, setSocket] = useState(null)
   const [editingMessage, setEditingMessage] = useState(null)
+  const [isSending, setIsSending] = useState(false)
   const messageEndRef = useRef(null)
   const { ambassadorDashboardColor } = useColorContext()
 
@@ -38,29 +39,60 @@ const Chat = () => {
   // Initialize socket
   useEffect(() => {
     if (!token) return
-    const s = io(SOCKET_URL, { auth: { token } })
+    
+    console.log('🔌 Initializing socket connection...')
+    const s = io(SOCKET_URL, { 
+      auth: { token },
+      transports: ['websocket', 'polling']
+    })
     setSocket(s)
 
-    s.on("connect", () => console.log("✅ Socket connected"))
+    s.on("connect", () => {
+      console.log("✅ Socket connected successfully")
+      console.log("🔗 Socket ID:", s.id)
+    })
+
+    s.on("connect_error", (error) => {
+      console.error("❌ Socket connection error:", error)
+    })
+
+    s.on("disconnect", (reason) => {
+      console.log("🔌 Socket disconnected:", reason)
+    })
 
     s.on("newMessage", (msg) => {
+      console.log("📨 New message received via socket:", msg)
       if (msg.chatId === selectedChat?._id) {
-        setMessages((prev) => [...prev, msg])
+        // Check if message already exists to avoid duplicates
+        setMessages((prev) => {
+          const exists = prev.some(m => m._id === msg._id)
+          if (exists) {
+            console.log("📨 Message already exists, skipping...")
+            return prev
+          }
+          console.log("📨 Adding new message to chat")
+          return [...prev, msg]
+        })
       }
       fetchChats()
     })
 
     s.on("messageUpdated", (updated) => {
+      console.log("✏️ Message updated via socket:", updated)
       setMessages((prev) =>
         prev.map((m) => (m._id === updated._id ? updated : m))
       )
     })
 
     s.on("messageDeleted", (deletedId) => {
+      console.log("🗑️ Message deleted via socket:", deletedId)
       setMessages((prev) => prev.filter((m) => m._id !== deletedId))
     })
 
-    return () => s.disconnect()
+    return () => {
+      console.log("🔌 Disconnecting socket...")
+      s.disconnect()
+    }
   }, [token, selectedChat?._id])
 
   // Fetch chats
@@ -97,11 +129,15 @@ const Chat = () => {
   }
 
   const handleSend = async () => {
-    if (!newMessage.trim() || !selectedChat) return
+    if (!newMessage.trim() || !selectedChat || isSending) return
 
     const receiver = selectedChat.participants.find((p) => p._id !== userId)
     if (!receiver?._id) return
 
+    // Store the message content before sending
+    const messageContent = newMessage.trim()
+    setIsSending(true)
+    
     try {
       if (editingMessage) {
         const res = await api.put(
@@ -119,20 +155,50 @@ const Chat = () => {
           setNewMessage("")
         }
       } else {
+        // Clear the input immediately for better UX
+        setNewMessage("")
+        
+        // Create a temporary message object for immediate display
+        const tempMessage = {
+          _id: `temp_${Date.now()}`,
+          content: messageContent,
+          sender: { _id: userId, name: user?.name || 'You' },
+          receiver: receiver._id,
+          chatId: selectedChat._id,
+          createdAt: new Date().toISOString(),
+          isTemporary: true
+        }
+        
+        // Add temporary message immediately
+        setMessages((prev) => [...prev, tempMessage])
+        
         const res = await api.post(`/chat/send`, {
           chatId: selectedChat._id,
-          content: newMessage,
+          content: messageContent,
           receiver: receiver._id,
         })
 
         if (res.data.success) {
-          setMessages((prev) => [...prev, res.data.message])
-          setNewMessage("")
+          // Replace temporary message with real message
+          setMessages((prev) => 
+            prev.map((m) => 
+              m._id === tempMessage._id ? res.data.message : m
+            )
+          )
           fetchChats()
+        } else {
+          // Remove temporary message if send failed
+          setMessages((prev) => prev.filter((m) => m._id !== tempMessage._id))
+          setNewMessage(messageContent) // Restore the message content
         }
       }
     } catch (err) {
-      console.error(err)
+      console.error('Error sending message:', err)
+      // Remove temporary message if send failed
+      setMessages((prev) => prev.filter((m) => m._id !== tempMessage._id))
+      setNewMessage(messageContent) // Restore the message content
+    } finally {
+      setIsSending(false)
     }
   }
 
@@ -244,12 +310,15 @@ const Chat = () => {
                         isMine(msg)
                           ? "text-white"
                           : "bg-gray-200 text-gray-800"
-                      }`}
+                      } ${msg.isTemporary ? 'opacity-70' : ''}`}
                       style={{
                         backgroundColor: isMine(msg) ? ambassadorDashboardColor : undefined
                       }}
                     >
                       {msg.content}
+                      {msg.isTemporary && (
+                        <span className="ml-2 text-xs opacity-60">Sending...</span>
+                      )}
                     </div>
                     {isMine(msg) && (
                       <div className="flex gap-2 text-gray-500 ml-2">
@@ -296,10 +365,20 @@ const Chat = () => {
               />
               <button
                 onClick={handleSend}
-                className="px-4 py-2 text-white rounded-lg"
+                disabled={isSending || !newMessage.trim()}
+                className={`px-4 py-2 text-white rounded-lg transition-opacity ${
+                  isSending || !newMessage.trim() ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'
+                }`}
                 style={{ backgroundColor: ambassadorDashboardColor }}
               >
-                {editingMessage ? "Update" : "Send"}
+                {isSending ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Sending...
+                  </div>
+                ) : (
+                  editingMessage ? "Update" : "Send"
+                )}
               </button>
             </div>
           </>

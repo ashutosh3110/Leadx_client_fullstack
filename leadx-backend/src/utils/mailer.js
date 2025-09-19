@@ -12,6 +12,12 @@ const transporter = nodemailer.createTransport({
 
 export const sendEmail = async (to, subject, text) => {
   try {
+    // Check if email credentials are configured
+    if (!process.env.MAIL_USER || !process.env.MAIL_PASS) {
+      console.log("⚠️ Email credentials not configured, skipping email notification")
+      return { success: false, error: "Email credentials not configured" }
+    }
+
     const info = await transporter.sendMail({
       from: `"LeadX App" <${process.env.MAIL_USER}>`,
       to,

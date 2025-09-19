@@ -10,8 +10,7 @@ const AddRewardModal = ({
         amount: '',
         currency: 'INR',
         state: '',
-        description: '',
-        category: 'performance'
+        remarks: ''
     });
 
     const [loading, setLoading] = useState(false);
@@ -28,18 +27,139 @@ const AddRewardModal = ({
         'Lakshadweep', 'Andaman and Nicobar Islands'
     ];
 
-    const rewardCategories = [
-        { value: 'performance', label: 'Performance Bonus' },
-        { value: 'referral', label: 'Referral Reward' },
-        { value: 'event', label: 'Event Participation' },
-        { value: 'achievement', label: 'Special Achievement' },
-        { value: 'other', label: 'Other' }
+    // Function to get currency symbol
+    const getCurrencySymbol = (currency) => {
+        const currencySymbols = {
+            'INR': '₹',
+            'USD': '$',
+            'GBP': '£',
+            'CAD': 'C$',
+            'AUD': 'A$',
+            'EUR': '€',
+            'JPY': '¥',
+            'CNY': '¥',
+            'KRW': '₩',
+            'BRL': 'R$',
+            'MXN': '$',
+            'RUB': '₽',
+            'ZAR': 'R',
+            'SGD': 'S$',
+            'HKD': 'HK$',
+            'AED': 'د.إ',
+            'SAR': '﷼',
+            'TRY': '₺',
+            'THB': '฿',
+            'MYR': 'RM',
+            'IDR': 'Rp',
+            'PHP': '₱',
+            'VND': '₫',
+            'BDT': '৳',
+            'PKR': '₨',
+            'LKR': '₨',
+            'NPR': '₨',
+            'BTN': 'Nu.',
+            'MMK': 'K',
+            'KHR': '៛',
+            'LAK': '₭'
+        };
+        return currencySymbols[currency] || currency;
+    };
+
+    const currencyOptions = [
+        { value: 'INR', label: 'INR (₹)' },
+        { value: 'USD', label: 'USD ($)' },
+        { value: 'GBP', label: 'GBP (£)' },
+        { value: 'CAD', label: 'CAD (C$)' },
+        { value: 'AUD', label: 'AUD (A$)' },
+        { value: 'EUR', label: 'EUR (€)' },
+        { value: 'JPY', label: 'JPY (¥)' },
+        { value: 'CNY', label: 'CNY (¥)' },
+        { value: 'KRW', label: 'KRW (₩)' },
+        { value: 'BRL', label: 'BRL (R$)' },
+        { value: 'MXN', label: 'MXN ($)' },
+        { value: 'RUB', label: 'RUB (₽)' },
+        { value: 'ZAR', label: 'ZAR (R)' },
+        { value: 'SGD', label: 'SGD (S$)' },
+        { value: 'HKD', label: 'HKD (HK$)' },
+        { value: 'AED', label: 'AED (د.إ)' },
+        { value: 'SAR', label: 'SAR (﷼)' },
+        { value: 'TRY', label: 'TRY (₺)' },
+        { value: 'THB', label: 'THB (฿)' },
+        { value: 'MYR', label: 'MYR (RM)' },
+        { value: 'IDR', label: 'IDR (Rp)' },
+        { value: 'PHP', label: 'PHP (₱)' },
+        { value: 'VND', label: 'VND (₫)' },
+        { value: 'BDT', label: 'BDT (৳)' },
+        { value: 'PKR', label: 'PKR (₨)' },
+        { value: 'LKR', label: 'LKR (₨)' },
+        { value: 'NPR', label: 'NPR (₨)' },
+        { value: 'BTN', label: 'BTN (Nu.)' },
+        { value: 'MMK', label: 'MMK (K)' },
+        { value: 'KHR', label: 'KHR (៛)' },
+        { value: 'LAK', label: 'LAK (₭)' }
     ];
+
+    // Function to get currency based on country
+    const getCurrencyByCountry = (country) => {
+        const countryCurrencyMap = {
+            'India': 'INR',
+            'United States': 'USD',
+            'USA': 'USD',
+            'US': 'USD',
+            'United Kingdom': 'GBP',
+            'UK': 'GBP',
+            'Canada': 'CAD',
+            'Australia': 'AUD',
+            'Germany': 'EUR',
+            'France': 'EUR',
+            'Italy': 'EUR',
+            'Spain': 'EUR',
+            'Netherlands': 'EUR',
+            'Japan': 'JPY',
+            'China': 'CNY',
+            'South Korea': 'KRW',
+            'Brazil': 'BRL',
+            'Mexico': 'MXN',
+            'Russia': 'RUB',
+            'South Africa': 'ZAR',
+            'Singapore': 'SGD',
+            'Hong Kong': 'HKD',
+            'UAE': 'AED',
+            'Saudi Arabia': 'SAR',
+            'Turkey': 'TRY',
+            'Thailand': 'THB',
+            'Malaysia': 'MYR',
+            'Indonesia': 'IDR',
+            'Philippines': 'PHP',
+            'Vietnam': 'VND',
+            'Bangladesh': 'BDT',
+            'Pakistan': 'PKR',
+            'Sri Lanka': 'LKR',
+            'Nepal': 'NPR',
+            'Bhutan': 'BTN',
+            'Myanmar': 'MMK',
+            'Cambodia': 'KHR',
+            'Laos': 'LAK'
+        };
+        
+        // Case-insensitive matching
+        const normalizedCountry = country?.trim();
+        return countryCurrencyMap[normalizedCountry] || 
+               countryCurrencyMap[normalizedCountry?.toLowerCase()] || 
+               countryCurrencyMap[normalizedCountry?.toUpperCase()] || 
+               'USD'; // Default to USD if country not found
+    };
 
     useEffect(() => {
         if (isOpen && ambassador) {
+            console.log('AddRewardModal - Ambassador data:', ambassador);
+            console.log('AddRewardModal - Ambassador country:', ambassador.country);
+            console.log('AddRewardModal - Ambassador state:', ambassador.state);
+            
             // Set currency based on country
-            const currency = ambassador.country === 'India' ? 'INR' : 'USD';
+            const currency = getCurrencyByCountry(ambassador.country);
+            console.log('AddRewardModal - Selected currency:', currency);
+            
             setFormData(prev => ({
                 ...prev,
                 currency,
@@ -55,8 +175,7 @@ const AddRewardModal = ({
                 amount: '',
                 currency: 'INR',
                 state: '',
-                description: '',
-                category: 'performance'
+                remarks: ''
             });
         }
     }, [isOpen]);
@@ -81,10 +200,12 @@ const AddRewardModal = ({
                 currency: formData.currency,
                 state: ambassador.country === 'India' ? formData.state : null,
                 country: ambassador.country,
-                description: formData.description,
-                category: formData.category,
+                remarks: formData.remarks,
                 date: new Date().toISOString()
             };
+
+            console.log('AddRewardModal - Submitting reward data:', rewardData);
+            console.log('AddRewardModal - Ambassador country from data:', rewardData.country);
 
             await onSubmit(rewardData);
             onClose();
@@ -159,10 +280,6 @@ const AddRewardModal = ({
                                 <span className="text-sm font-medium text-slate-600">Country:</span>
                                 <span className="text-sm font-semibold text-slate-800">{ambassador.country || 'Not specified'}</span>
                             </div>
-                            <div className="flex items-center justify-between mt-1">
-                                <span className="text-sm font-medium text-slate-600">Currency:</span>
-                                <span className="text-sm font-semibold text-slate-800">{formData.currency}</span>
-                            </div>
                         </div>
 
                         {/* Amount */}
@@ -183,9 +300,29 @@ const AddRewardModal = ({
                                     placeholder="Enter amount"
                                 />
                                 <span className="absolute left-3 top-2 text-sm font-medium text-slate-500">
-                                    {formData.currency === 'INR' ? '₹' : '$'}
+                                    {getCurrencySymbol(formData.currency)}
                                 </span>
                             </div>
+                        </div>
+
+                        {/* Currency */}
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                                Currency *
+                            </label>
+                            <select
+                                name="currency"
+                                value={formData.currency}
+                                onChange={handleInputChange}
+                                required
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                            >
+                                {currencyOptions.map(currency => (
+                                    <option key={currency.value} value={currency.value}>
+                                        {currency.label}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
 
                         {/* State (only for India) */}
@@ -209,38 +346,18 @@ const AddRewardModal = ({
                             </div>
                         )}
 
-                        {/* Category */}
+                        {/* Remarks */}
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1">
-                                Category *
-                            </label>
-                            <select
-                                name="category"
-                                value={formData.category}
-                                onChange={handleInputChange}
-                                required
-                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-                            >
-                                {rewardCategories.map(category => (
-                                    <option key={category.value} value={category.value}>
-                                        {category.label}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        {/* Description */}
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
-                                Description
+                                Remarks
                             </label>
                             <textarea
-                                name="description"
-                                value={formData.description}
+                                name="remarks"
+                                value={formData.remarks}
                                 onChange={handleInputChange}
                                 rows={3}
                                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent resize-none"
-                                placeholder="Enter reward description (optional)"
+                                placeholder="Enter reward remarks (optional)"
                             />
                         </div>
                     </form>

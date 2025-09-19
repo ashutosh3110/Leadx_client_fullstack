@@ -55,7 +55,7 @@ const userValidationSchema = Joi.object({
   phone: Joi.string()
     .pattern(/^[0-9]{10,15}$/)
     .required(),
-  password: Joi.string().min(6).optional(), // ✅ optional
+  password: Joi.string().min(6).required(), // ✅ required for registration
 
   program: Joi.string().allow(""),
   course: Joi.string().allow(""),

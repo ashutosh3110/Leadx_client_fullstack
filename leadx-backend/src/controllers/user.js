@@ -8,19 +8,32 @@ import { sendEmail } from "../utils/mailer.js" // helper for email
 // 🔑 Register Ambassador
 export const registerUser = async (req, res, next) => {
   try {
+    console.log("🔍 Register request body:", req.body)
+    
     const { error, value } = userValidationSchema.validate(req.body, {
       stripUnknown: true,
     })
-    if (error) return next(errGen(400, error.details[0].message))
+    
+    if (error) {
+      console.log("❌ Validation error:", error.details[0].message)
+      return next(errGen(400, error.details[0].message))
+    }
+    
+    console.log("✅ Validated data:", value)
 
     const existingUser = await User.findOne({ email: value.email })
-    if (existingUser) return next(errGen(400, "User already exists"))
+    if (existingUser) {
+      console.log("❌ User already exists:", value.email)
+      return next(errGen(400, "User already exists"))
+    }
 
     // Hash password
     value.password = await bcrypt.hash(value.password, 10)
+    console.log("✅ Password hashed successfully")
 
     // Force default role = ambassador
     const newUser = await User.create({ ...value, role: "ambassador" })
+    console.log("✅ User created successfully:", newUser._id)
 
     const safeUser = {
       id: newUser._id,
@@ -31,6 +44,7 @@ export const registerUser = async (req, res, next) => {
 
     res.status(201).json(respo(true, "Registered successfully", safeUser))
   } catch (err) {
+    console.error("❌ Register error:", err)
     next(err)
   }
 }

@@ -9,6 +9,12 @@ const WHATSAPP_FROM = process.env.TWILIO_FROM_NUMBER // e.g. whatsapp:+141552388
 
 export default async function sendWhatsApp(to, message) {
   try {
+    // Check if WhatsApp credentials are configured
+    if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN || !process.env.TWILIO_FROM_NUMBER) {
+      console.log("⚠️ WhatsApp credentials not configured, skipping WhatsApp notification")
+      throw new Error("WhatsApp credentials not configured")
+    }
+
     const res = await client.messages.create({
       from: `whatsapp:${WHATSAPP_FROM}`,
       to: `whatsapp:${to}`, // must include country code, e.g. whatsapp:+919876543210

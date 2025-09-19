@@ -1,7 +1,45 @@
 // src/components/RewardsTab.jsx
 import React from "react";
 
-const RewardsTab = ({ rewards, adminDashboardColor }) => {
+const RewardsTab = ({ rewards, adminDashboardColor, onEditReward, onDeleteReward }) => {
+  // Function to get currency symbol
+  const getCurrencySymbol = (currency) => {
+    const currencySymbols = {
+      'INR': '₹',
+      'USD': '$',
+      'GBP': '£',
+      'CAD': 'C$',
+      'AUD': 'A$',
+      'EUR': '€',
+      'JPY': '¥',
+      'CNY': '¥',
+      'KRW': '₩',
+      'BRL': 'R$',
+      'MXN': '$',
+      'RUB': '₽',
+      'ZAR': 'R',
+      'SGD': 'S$',
+      'HKD': 'HK$',
+      'AED': 'د.إ',
+      'SAR': '﷼',
+      'TRY': '₺',
+      'THB': '฿',
+      'MYR': 'RM',
+      'IDR': 'Rp',
+      'PHP': '₱',
+      'VND': '₫',
+      'BDT': '৳',
+      'PKR': '₨',
+      'LKR': '₨',
+      'NPR': '₨',
+      'BTN': 'Nu.',
+      'MMK': 'K',
+      'KHR': '៛',
+      'LAK': '₭'
+    };
+    return currencySymbols[currency] || currency;
+  };
+
   return (
     <div className="space-y-6">
       {/* Rewards Header */}
@@ -52,7 +90,7 @@ const RewardsTab = ({ rewards, adminDashboardColor }) => {
                   Amount
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Category
+                  Remarks
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Country/State
@@ -62,6 +100,9 @@ const RewardsTab = ({ rewards, adminDashboardColor }) => {
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  Actions
                 </th>
               </tr>
             </thead>
@@ -89,39 +130,35 @@ const RewardsTab = ({ rewards, adminDashboardColor }) => {
                             background: `linear-gradient(135deg, ${adminDashboardColor}, ${adminDashboardColor}dd)`,
                           }}
                         >
-                          {reward.ambassadorName.charAt(0).toUpperCase()}
+                          {reward.ambassadorName?.charAt(0)?.toUpperCase() || 'A'}
                         </div>
                       </div>
                       <div>
                         <div className="text-sm font-semibold text-slate-900">
-                          {reward.ambassadorName}
+                          {reward.ambassadorName || 'Unknown Ambassador'}
                         </div>
                         <div className="text-xs text-slate-500">
-                          ID: {reward.ambassadorId}
+                          ID: {reward.ambassadorId || 'N/A'}
                         </div>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-semibold text-slate-900">
-                      {reward.currency === "INR" ? "₹" : "$"}
-                      {reward.amount}
+                      {getCurrencySymbol(reward.currency || 'USD')}
+                      {reward.amount || 0}
                     </div>
                     <div className="text-xs text-slate-500">
-                      {reward.currency}
+                      {reward.currency || 'USD'}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-white"
-                      style={{ backgroundColor: adminDashboardColor }}
-                    >
-                      {reward.category.charAt(0).toUpperCase() +
-                        reward.category.slice(1)}
-                    </span>
+                    <div className="text-sm text-slate-900 max-w-32 truncate">
+                      {reward.remarks || 'No remarks'}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
-                    <div>{reward.country}</div>
+                    <div>{reward.country || 'Not specified'}</div>
                     {reward.state && (
                       <div className="text-xs text-slate-500">
                         {reward.state}
@@ -129,13 +166,62 @@ const RewardsTab = ({ rewards, adminDashboardColor }) => {
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                    {new Date(reward.createdAt).toLocaleDateString()}
+                    {reward.createdAt ? new Date(reward.createdAt).toLocaleDateString() : 'N/A'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      {reward.status.charAt(0).toUpperCase() +
-                        reward.status.slice(1)}
+                      {reward.status?.charAt(0)?.toUpperCase() + reward.status?.slice(1) || 'Pending'}
                     </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex items-center space-x-2">
+                      {/* Edit Button */}
+                      <button
+                        onClick={() => onEditReward && onEditReward(reward)}
+                        className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white transition-colors duration-200 hover:opacity-90"
+                        style={{
+                          backgroundColor: adminDashboardColor,
+                        }}
+                        title="Edit Reward"
+                      >
+                        <svg
+                          className="w-3 h-3 mr-1"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                          />
+                        </svg>
+                        Edit
+                      </button>
+                      
+                      {/* Delete Button */}
+                      <button
+                        onClick={() => onDeleteReward && onDeleteReward(reward)}
+                        className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-red-500 hover:bg-red-600 transition-colors duration-200"
+                        title="Delete Reward"
+                      >
+                        <svg
+                          className="w-3 h-3 mr-1"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                          />
+                        </svg>
+                        Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

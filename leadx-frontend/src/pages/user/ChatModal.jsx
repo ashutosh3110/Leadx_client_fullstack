@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useColorContext } from '../../context/ColorContext';
 
 const ChatModal = ({ isOpen, onClose, ambassador }) => {
@@ -13,26 +14,174 @@ const ChatModal = ({ isOpen, onClose, ambassador }) => {
     location: 'within',
     state: '',
     city: '',
+    selectedCourses: [],
     recaptcha: false,
     terms: false
   });
+  const [errors, setErrors] = useState({});
+  const [showCourseDropdown, setShowCourseDropdown] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, right: 0 });
+  const [courseSearch, setCourseSearch] = useState('');
+  const dropdownRef = useRef(null);
+  const buttonRef = useRef(null);
+
+  // Available courses
+  const availableCourses = [
+    'Undecided',
+    'BCA',
+    'PhD in Biochemistry',
+    'PhD in Chemistry',
+    'PhD in Civil Engineering',
+    'Computer Science Engineering',
+    'Electronics Engineering',
+    'Mechanical Engineering',
+    'Civil Engineering',
+    'Electrical Engineering',
+    'Information Technology',
+    'Data Science',
+    'Artificial Intelligence',
+    'Business Administration',
+    'Marketing',
+    'Finance',
+    'Human Resources',
+    'MBA',
+    'BBA',
+    'B.Tech',
+    'M.Tech',
+    'B.Sc',
+    'M.Sc',
+    'B.Com',
+    'M.Com'
+  ];
+
+  // Filter courses based on search
+  const filteredCourses = availableCourses.filter(course =>
+    course.toLowerCase().includes(courseSearch.toLowerCase())
+  );
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
+    
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({
+        ...prev,
+        [field]: ''
+      }));
+    }
+  };
+
+  // Validation functions
+  const validateStep1 = () => {
+    const newErrors = {};
+    
+    if (!formData.message.trim()) {
+      newErrors.message = 'Message is required';
+    } else if (formData.message.trim().length < 10) {
+      newErrors.message = 'Message must be at least 10 characters';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const validateStep2 = () => {
+    const newErrors = {};
+    
+    if (!formData.name.trim()) {
+      newErrors.name = 'Name is required';
+    } else if (formData.name.trim().length < 2) {
+      newErrors.name = 'Name must be at least 2 characters';
+    }
+    
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email';
+    }
+    
+    if (!formData.mobile.trim()) {
+      newErrors.mobile = 'Mobile number is required';
+    } else if (!/^[0-9]{10}$/.test(formData.mobile)) {
+      newErrors.mobile = 'Please enter a valid 10-digit mobile number';
+    }
+    
+    if (formData.location === 'within' && !formData.state.trim()) {
+      newErrors.state = 'State is required';
+    }
+    
+    if (!formData.city.trim()) {
+      newErrors.city = 'City is required';
+    }
+    
+    if (!formData.recaptcha) {
+      newErrors.recaptcha = 'Please verify you are not a robot';
+    }
+    
+    if (!formData.terms) {
+      newErrors.terms = 'Please accept the terms and conditions';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleContinue = () => {
-    if (currentStep < 3) {
+    let isValid = true;
+    
+    if (currentStep === 1) {
+      isValid = validateStep1();
+    } else if (currentStep === 2) {
+      isValid = validateStep2();
+    }
+    
+    if (isValid && currentStep < 3) {
       setCurrentStep(currentStep + 1);
-    } else {
+    } else if (isValid && currentStep === 3) {
       // Submit form
       console.log('Form submitted:', formData);
       setCurrentStep(4); // Show success message
     }
   };
+
+  const handleCourseSelect = (course, event) => {
+    event.stopPropagation(); // Prevent event bubbling
+    console.log('Selecting course:', course);
+    console.log('Current selectedCourses:', formData.selectedCourses);
+    
+    setFormData(prev => {
+      const newSelectedCourses = prev.selectedCourses.includes(course)
+        ? prev.selectedCourses.filter(c => c !== course)
+        : [...prev.selectedCourses, course];
+      
+      console.log('New selectedCourses:', newSelectedCourses);
+      
+      return {
+        ...prev,
+        selectedCourses: newSelectedCourses
+      };
+    });
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowCourseDropdown(false);
+      }
+    };
+
+    if (showCourseDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showCourseDropdown]);
 
   const handleGoBack = () => {
     if (currentStep > 1) {
@@ -54,9 +203,13 @@ const getProfileImage=()=>{
       location: 'within',
       state: '',
       city: '',
+      selectedCourses: [],
       recaptcha: false,
       terms: false
     });
+    setErrors({});
+    setShowCourseDropdown(false);
+    setCourseSearch('');
     onClose();
   };
 
@@ -158,11 +311,16 @@ const getProfileImage=()=>{
                   value={formData.message}
                   onChange={(e) => handleInputChange('message', e.target.value)}
                   placeholder="Ask me about university courses, campus life and more!"
-                  className="w-full h-24 p-3 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 text-sm"
+                  className={`w-full h-24 p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 text-sm ${
+                    errors.message ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'
+                  }`}
                   style={{ 
-                    focusRingColor: ambassadorDashboardColor
+                    focusRingColor: errors.message ? '#ef4444' : ambassadorDashboardColor
                   }}
                 />
+                {errors.message && (
+                  <p className="text-xs text-red-600 mt-1">{errors.message}</p>
+                )}
               </div>
 
               <div>
@@ -189,11 +347,52 @@ const getProfileImage=()=>{
               </div>
 
               <div>
-                <div className="flex items-center justify-between">
+                <div className="space-y-2">
                   <span className="text-xs text-gray-600">Course Interest?</span>
-                  <button className="px-3 py-1 border border-gray-300 rounded-lg text-xs hover:bg-gray-50">
-                    Select Courses
-                  </button>
+                  <div className="relative" ref={dropdownRef}>
+                    <button 
+                      ref={buttonRef}
+                      type="button"
+                      onClick={() => {
+                        if (buttonRef.current) {
+                          const rect = buttonRef.current.getBoundingClientRect();
+                          setDropdownPosition({
+                            top: rect.top + window.scrollY - 4, // Position above the button
+                            right: window.innerWidth - rect.right - window.scrollX,
+                            bottom: window.innerHeight - rect.top - window.scrollY + 4 // For upward opening
+                          });
+                        }
+                        setShowCourseDropdown(!showCourseDropdown);
+                      }}
+                      className="px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50 flex items-center justify-between w-full min-h-[40px]"
+                    >
+                      <div className="flex-1 text-left">
+                        {(() => {
+                          console.log('Button rendering with selectedCourses:', formData.selectedCourses);
+                          return formData.selectedCourses.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {formData.selectedCourses.slice(0, 2).map((course) => (
+                                <span key={course} className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                                  {course}
+                                </span>
+                              ))}
+                              {formData.selectedCourses.length > 2 && (
+                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-600">
+                                  +{formData.selectedCourses.length - 2} more
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-gray-500">Select Courses</span>
+                          );
+                        })()}
+                      </div>
+                      <svg className={`w-4 h-4 transition-transform flex-shrink-0 ${showCourseDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    
+                  </div>
                 </div>
               </div>
             </div>
@@ -210,8 +409,13 @@ const getProfileImage=()=>{
                   value={formData.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
                   placeholder="Enter Your Name"
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+                  className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 text-sm ${
+                    errors.name ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-red-500'
+                  }`}
                 />
+                {errors.name && (
+                  <p className="text-xs text-red-600 mt-1">{errors.name}</p>
+                )}
               </div>
 
               <div>
@@ -223,8 +427,13 @@ const getProfileImage=()=>{
                   value={formData.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
                   placeholder="Enter Your Email Address"
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+                  className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 text-sm ${
+                    errors.email ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-red-500'
+                  }`}
                 />
+                {errors.email && (
+                  <p className="text-xs text-red-600 mt-1">{errors.email}</p>
+                )}
               </div>
 
               <div>
@@ -240,9 +449,14 @@ const getProfileImage=()=>{
                     value={formData.mobile}
                     onChange={(e) => handleInputChange('mobile', e.target.value)}
                     placeholder="Enter mobile number"
-                    className="flex-1 p-2 border border-gray-300 rounded-r-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+                    className={`flex-1 p-2 border rounded-r-lg focus:outline-none focus:ring-2 text-sm ${
+                      errors.mobile ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-red-500'
+                    }`}
                   />
                 </div>
+                {errors.mobile && (
+                  <p className="text-xs text-red-600 mt-1">{errors.mobile}</p>
+                )}
                 <label className="flex items-center mt-1">
                   <input
                     type="checkbox"
@@ -284,18 +498,25 @@ const getProfileImage=()=>{
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-                  * Which state are you applying from
-                </label>
-                <input
-                  type="text"
-                  value={formData.state}
-                  onChange={(e) => handleInputChange('state', e.target.value)}
-                  placeholder="Enter your state"
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
-                />
-              </div>
+              {formData.location === 'within' && (
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    * Which state are you applying from
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.state}
+                    onChange={(e) => handleInputChange('state', e.target.value)}
+                    placeholder="Enter your state"
+                    className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 text-sm ${
+                      errors.state ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-red-500'
+                    }`}
+                  />
+                  {errors.state && (
+                    <p className="text-xs text-red-600 mt-1">{errors.state}</p>
+                  )}
+                </div>
+              )}
 
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
@@ -306,31 +527,46 @@ const getProfileImage=()=>{
                   value={formData.city}
                   onChange={(e) => handleInputChange('city', e.target.value)}
                   placeholder="Enter your city"
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+                  className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 text-sm ${
+                    errors.city ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-red-500'
+                  }`}
                 />
+                {errors.city && (
+                  <p className="text-xs text-red-600 mt-1">{errors.city}</p>
+                )}
               </div>
 
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={formData.recaptcha}
-                  onChange={(e) => handleInputChange('recaptcha', e.target.checked)}
-                  className="mr-1"
-                />
-                <span className="text-xs text-gray-600">I'm not a robot</span>
-                <div className="text-xs text-gray-500">reCAPTCHA</div>
+              <div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={formData.recaptcha}
+                    onChange={(e) => handleInputChange('recaptcha', e.target.checked)}
+                    className={`mr-1 ${errors.recaptcha ? 'border-red-500' : ''}`}
+                  />
+                  <span className="text-xs text-gray-600">I'm not a robot</span>
+                  <div className="text-xs text-gray-500">reCAPTCHA</div>
+                </div>
+                {errors.recaptcha && (
+                  <p className="text-xs text-red-600 mt-1">{errors.recaptcha}</p>
+                )}
               </div>
 
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={formData.terms}
-                  onChange={(e) => handleInputChange('terms', e.target.checked)}
-                  className="mr-1"
-                />
-                <span className="text-xs text-gray-600">
-                  I agree to the <span className="text-red-500 underline">Terms of Use</span>, <span className="text-red-500 underline">Privacy Policy</span> and <span className="text-red-500 underline">Chat Rules</span>
-                </span>
+              <div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={formData.terms}
+                    onChange={(e) => handleInputChange('terms', e.target.checked)}
+                    className={`mr-1 ${errors.terms ? 'border-red-500' : ''}`}
+                  />
+                  <span className="text-xs text-gray-600">
+                    I agree to the <span className="text-red-500 underline">Terms of Use</span>, <span className="text-red-500 underline">Privacy Policy</span> and <span className="text-red-500 underline">Chat Rules</span>
+                  </span>
+                </div>
+                {errors.terms && (
+                  <p className="text-xs text-red-600 mt-1">{errors.terms}</p>
+                )}
               </div>
             </div>
           )}
@@ -384,6 +620,66 @@ const getProfileImage=()=>{
           </div>
         )}
       </div>
+
+      {/* Portal for Course Dropdown */}
+      {showCourseDropdown && createPortal(
+        <>
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 z-40"
+            onClick={() => {
+              setShowCourseDropdown(false);
+              setCourseSearch('');
+            }}
+          />
+          {/* Dropdown */}
+          <div 
+            className="fixed w-64 bg-white border border-gray-300 rounded-lg shadow-xl max-h-40 overflow-hidden z-50"
+            style={{
+              bottom: dropdownPosition.bottom,
+              right: dropdownPosition.right
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Search Input */}
+            <div className="p-2 border-b border-gray-200">
+              <input
+                type="text"
+                placeholder="Search options"
+                value={courseSearch}
+                onChange={(e) => setCourseSearch(e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+                className="w-full p-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+            
+            {/* Course List */}
+            <div className="max-h-32 overflow-y-auto">
+              {filteredCourses.map((course) => (
+                <label 
+                  key={course} 
+                  className="flex items-center space-x-2 p-2 hover:bg-gray-50 cursor-pointer"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <input
+                    type="checkbox"
+                    checked={formData.selectedCourses.includes(course)}
+                    onChange={(e) => handleCourseSelect(course, e)}
+                    className="w-3 h-3"
+                  />
+                  <span className="text-xs text-gray-700">{course}</span>
+                </label>
+              ))}
+              {filteredCourses.length === 0 && (
+                <div className="p-2 text-xs text-gray-500 text-center">
+                  No courses found
+                </div>
+              )}
+            </div>
+          </div>
+        </>,
+        document.body
+      )}
     </div>
   );
 };
