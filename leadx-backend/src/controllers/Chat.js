@@ -163,6 +163,19 @@ export const editMessage = async (req, res) => {
       return res.status(403).json({ success: false, message: "Not allowed" })
     }
 
+    // Check if message is within 5-minute edit window
+    const messageTime = new Date(msg.createdAt);
+    const currentTime = new Date();
+    const timeDifference = currentTime - messageTime;
+    const fiveMinutesInMs = 5 * 60 * 1000; // 5 minutes in milliseconds
+
+    if (timeDifference > fiveMinutesInMs) {
+      return res.status(403).json({ 
+        success: false, 
+        message: "Message can only be edited within 5 minutes of sending" 
+      })
+    }
+
     msg.content = content
     await msg.save()
 
@@ -336,6 +349,73 @@ export const adminSendAsAmbassador = async (req, res, next) => {
     }
 
     res.status(200).json(respo(true, "Message sent", populatedMessage))
+  } catch (err) {
+    next(err)
+  }
+}
+
+// 🔹 Admin: Get chat statistics with time filter
+export const adminGetChatStats = async (req, res, next) => {
+  try {
+    if (req.user.role !== "admin") return next(errGen(403, "Forbidden"))
+
+    const { hours = 24, type = 'all' } = req.query
+    const hoursAgo = new Date(Date.now() - hours * 60 * 60 * 1000)
+
+    // Build query based on time filter
+    const timeQuery = { createdAt: { $gte: hoursAgo } }
+
+    // Get all messages in the time period
+    const allMessages = await Message.find(timeQuery)
+      .populate("sender", "name email role")
+
+    // Separate messages by type (ambassador vs student)
+    let filteredMessages = allMessages
+
+    if (type === 'ambassador') {
+      // Messages where sender is ambassador or receiver is ambassador
+      filteredMessages = allMessages.filter(msg => 
+        msg.sender?.role === 'ambassador' || 
+        (typeof msg.receiver === 'object' && msg.receiver?.role === 'ambassador')
+      )
+    } else if (type === 'student') {
+      // Messages where sender is not ambassador (student/user)
+      filteredMessages = allMessages.filter(msg => 
+        msg.sender?.role !== 'ambassador' && 
+        (typeof msg.receiver === 'object' ? msg.receiver?.role !== 'ambassador' : true)
+      )
+    }
+
+    // Group messages by chatId to get conversations
+    const conversations = {}
+    filteredMessages.forEach(message => {
+      const chatId = message.chatId.toString()
+      if (!conversations[chatId]) {
+        conversations[chatId] = {
+          messages: [],
+          hasReply: false,
+          isFormSubmission: message.isFormSubmission || false
+        }
+      }
+      conversations[chatId].messages.push(message)
+      
+      // Check if conversation has a reply (message from ambassador or admin)
+      if (message.sender?.role === 'ambassador' || message.sender?.role === 'admin' || message.isAdminReply) {
+        conversations[chatId].hasReply = true
+      }
+    })
+
+    const totalChats = Object.keys(conversations).length
+    const unrepliedChats = Object.values(conversations).filter(conv => !conv.hasReply).length
+    const repliedChats = totalChats - unrepliedChats
+
+    res.status(200).json(respo(true, "Chat statistics fetched", {
+      totalChats,
+      unrepliedChats,
+      repliedChats,
+      timeFilter: `${hours} hours`,
+      type: type
+    }))
   } catch (err) {
     next(err)
   }

@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react"
 import { io } from "socket.io-client"
 import { FaEdit, FaTrash } from "react-icons/fa"
+import { toast } from "react-toastify"
 import api from "../utils/Api"
 import { getToken, getUser } from "../utils/auth"
 import { useColorContext } from "../../context/ColorContext"
@@ -127,6 +128,10 @@ const Chat = () => {
     setSelectedChat(chat)
     fetchMessages(chat._id)
   }
+  const imageUrl= ()=>{
+    const url=`http://localhost:5000/${ambassador.profileImage}`;
+    return url
+  }
 
   const handleSend = async () => {
     if (!newMessage.trim() || !selectedChat || isSending) return
@@ -137,6 +142,7 @@ const Chat = () => {
     // Store the message content before sending
     const messageContent = newMessage.trim()
     setIsSending(true)
+    let tempMessage = null
     
     try {
       if (editingMessage) {
@@ -159,7 +165,7 @@ const Chat = () => {
         setNewMessage("")
         
         // Create a temporary message object for immediate display
-        const tempMessage = {
+        tempMessage = {
           _id: `temp_${Date.now()}`,
           content: messageContent,
           sender: { _id: userId, name: user?.name || 'You' },
@@ -194,9 +200,24 @@ const Chat = () => {
       }
     } catch (err) {
       console.error('Error sending message:', err)
-      // Remove temporary message if send failed
-      setMessages((prev) => prev.filter((m) => m._id !== tempMessage._id))
-      setNewMessage(messageContent) // Restore the message content
+      
+      if (editingMessage) {
+        // Handle edit message errors
+        if (err.response?.status === 403 && err.response?.data?.message?.includes('5 minutes')) {
+          toast.error('Message can only be edited within 5 minutes of sending')
+        } else {
+          toast.error('Failed to update message')
+        }
+        setEditingMessage(null)
+        setNewMessage("")
+      } else {
+        // Handle new message errors
+        if (tempMessage) {
+          // Remove temporary message if send failed
+          setMessages((prev) => prev.filter((m) => m._id !== tempMessage._id))
+        }
+        setNewMessage(messageContent) // Restore the message content
+      }
     } finally {
       setIsSending(false)
     }
@@ -232,6 +253,18 @@ const Chat = () => {
   const isMine = (msg) =>
     String(msg.sender?._id || msg.sender) === String(userId)
 
+  // Check if message can be edited (within 5 minutes)
+  const canEditMessage = (msg) => {
+    if (!isMine(msg)) return false;
+    
+    const messageTime = new Date(msg.createdAt || msg.timestamp);
+    const currentTime = new Date();
+    const timeDifference = currentTime - messageTime;
+    const fiveMinutesInMs = 5 * 60 * 1000; // 5 minutes in milliseconds
+    
+    return timeDifference <= fiveMinutesInMs;
+  }
+
   return (
     <div className="flex h-screen">
       {/* Sidebar */}
@@ -263,13 +296,13 @@ const Chat = () => {
                     </p>
                   </div>
                 </div>
-                <button
+                {/* <button
                   onClick={() => handleDeleteChat(chat._id)}
                   className="hover:opacity-70 ml-2"
                   style={{ color: ambassadorDashboardColor }}
                 >
                   <FaTrash size={16} />
-                </button>
+                </button> */}
               </div>
             )
           })}
@@ -322,25 +355,27 @@ const Chat = () => {
                     </div>
                     {isMine(msg) && (
                       <div className="flex gap-2 text-gray-500 ml-2">
-                        <button
-                          onClick={() => {
-                            setEditingMessage(msg)
-                            setNewMessage(msg.content)
-                          }}
-                          className="hover:opacity-70"
-                          style={{ color: ambassadorDashboardColor }}
-                          title="Edit"
-                        >
-                          <FaEdit size={16} />
-                        </button>
-                        <button
+                        {canEditMessage(msg) && (
+                          <button
+                            onClick={() => {
+                              setEditingMessage(msg)
+                              setNewMessage(msg.content)
+                            }}
+                            className="hover:opacity-70"
+                            style={{ color: ambassadorDashboardColor }}
+                            title="Edit (within 5 minutes)"
+                          >
+                            <FaEdit size={16} />
+                          </button>
+                        )}
+                        {/* <button
                           onClick={() => handleDeleteMessage(msg._id)}
                           className="hover:opacity-70"
                           style={{ color: ambassadorDashboardColor }}
                           title="Delete"
                         >
                           <FaTrash size={16} />
-                        </button>
+                        </button> */}
                       </div>
                     )}
                   </div>

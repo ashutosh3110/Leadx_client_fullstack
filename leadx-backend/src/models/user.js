@@ -36,6 +36,7 @@ const userSchema = new Schema(
     },
 
     isVerified: { type: Boolean, default: false },
+    hasReward: { type: Boolean, default: false },
 
     // For reset password (only if user/ambassador registered with password)
     resetCode: { type: String },
@@ -73,6 +74,7 @@ const userValidationSchema = Joi.object({
 
   role: Joi.string().valid("user", "ambassador", "admin").default("user"),
   isVerified: Joi.boolean().default(false),
+  hasReward: Joi.boolean().default(false),
 })
 
 export { User, userValidationSchema }

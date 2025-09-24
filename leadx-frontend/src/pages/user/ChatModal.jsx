@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useColorContext } from '../../context/ColorContext';
+import { useCustomization } from '../../context/CustomizationContext';
 
 const ChatModal = ({ isOpen, onClose, ambassador }) => {
   const { ambassadorDashboardColor } = useColorContext();
+  const { customization } = useCustomization();
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     message: '',
@@ -14,6 +16,8 @@ const ChatModal = ({ isOpen, onClose, ambassador }) => {
     location: 'within',
     state: '',
     city: '',
+    country: 'India', // Default to India for within
+    countryCode: '+91',
     selectedCourses: [],
     recaptcha: false,
     terms: false
@@ -22,8 +26,74 @@ const ChatModal = ({ isOpen, onClose, ambassador }) => {
   const [showCourseDropdown, setShowCourseDropdown] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, right: 0 });
   const [courseSearch, setCourseSearch] = useState('');
+  const [countries, setCountries] = useState([]);
+  const [loadingCountries, setLoadingCountries] = useState(false);
+  const [showCountryDropdown, setShowCountryDropdown] = useState(false);
+  const [countrySearch, setCountrySearch] = useState('');
   const dropdownRef = useRef(null);
   const buttonRef = useRef(null);
+
+  // Fetch countries from API
+  const fetchCountries = async () => {
+    try {
+      setLoadingCountries(true);
+      const response = await fetch('https://restcountries.com/v3.1/all');
+      const data = await response.json();
+      console.log('Countries API response:', data.slice(0, 3)); // Debug first 3 countries
+      
+      const countryList = data.map(country => ({
+        name: country.name?.common || country.name,
+        code: country.cca2 || country.cca3,
+        callingCode: country.callingCodes?.[0] || country.idd?.root + (country.idd?.suffixes?.[0] || '') || '+1'
+      })).sort((a, b) => a.name.localeCompare(b.name));
+      
+      console.log('Processed countries:', countryList.slice(0, 5)); // Debug first 5 processed countries
+      setCountries(countryList);
+    } catch (error) {
+      console.error('Error fetching countries:', error);
+      // Fallback countries if API fails
+      const fallbackCountries = [
+        { name: 'United States', code: 'US', callingCode: '+1' },
+        { name: 'United Kingdom', code: 'GB', callingCode: '+44' },
+        { name: 'Canada', code: 'CA', callingCode: '+1' },
+        { name: 'Australia', code: 'AU', callingCode: '+61' },
+        { name: 'Germany', code: 'DE', callingCode: '+49' },
+        { name: 'France', code: 'FR', callingCode: '+33' },
+        { name: 'Japan', code: 'JP', callingCode: '+81' },
+        { name: 'China', code: 'CN', callingCode: '+86' },
+        { name: 'Brazil', code: 'BR', callingCode: '+55' },
+        { name: 'South Korea', code: 'KR', callingCode: '+82' },
+        { name: 'Italy', code: 'IT', callingCode: '+39' },
+        { name: 'Spain', code: 'ES', callingCode: '+34' },
+        { name: 'Netherlands', code: 'NL', callingCode: '+31' },
+        { name: 'Sweden', code: 'SE', callingCode: '+46' },
+        { name: 'Norway', code: 'NO', callingCode: '+47' },
+        { name: 'Denmark', code: 'DK', callingCode: '+45' },
+        { name: 'Finland', code: 'FI', callingCode: '+358' },
+        { name: 'Switzerland', code: 'CH', callingCode: '+41' },
+        { name: 'Austria', code: 'AT', callingCode: '+43' },
+        { name: 'Belgium', code: 'BE', callingCode: '+32' }
+      ];
+      setCountries(fallbackCountries);
+    } finally {
+      setLoadingCountries(false);
+    }
+  };
+
+  // Get country calling code
+  const getCountryCallingCode = async (countryName) => {
+    try {
+      const response = await fetch(`https://restcountries.com/v3.1/name/${countryName}`);
+      const data = await response.json();
+      if (data.length > 0) {
+        const country = data[0];
+        return country.callingCodes?.[0] || country.idd?.root + (country.idd?.suffixes?.[0] || '') || '+1';
+      }
+    } catch (error) {
+      console.error('Error fetching country code:', error);
+    }
+    return '+1';
+  };
 
   // Available courses
   const availableCourses = [
@@ -59,11 +129,46 @@ const ChatModal = ({ isOpen, onClose, ambassador }) => {
     course.toLowerCase().includes(courseSearch.toLowerCase())
   );
 
-  const handleInputChange = (field, value) => {
+  // Filter countries based on search
+  const filteredCountries = countries.filter(country =>
+    country.name.toLowerCase().includes(countrySearch.toLowerCase())
+  );
+
+  const handleInputChange = async (field, value) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
+    
+    // Auto-select India when "Within India" is selected
+    if (field === 'location' && value === 'within') {
+      setFormData(prev => ({
+        ...prev,
+        country: 'India',
+        countryCode: '+91'
+      }));
+    }
+    
+    // Clear country when "Outside India" is selected and fetch countries
+    if (field === 'location' && value === 'outside') {
+      setFormData(prev => ({
+        ...prev,
+        country: '',
+        countryCode: '+1'
+      }));
+      setCountrySearch(''); // Clear the country search field
+      // Fetch countries when switching to outside India
+      fetchCountries();
+    }
+    
+    // Update country code when country changes
+    if (field === 'country') {
+      const countryCode = await getCountryCallingCode(value);
+      setFormData(prev => ({
+        ...prev,
+        countryCode: countryCode
+      }));
+    }
     
     // Clear error when user starts typing
     if (errors[field]) {
@@ -73,6 +178,28 @@ const ChatModal = ({ isOpen, onClose, ambassador }) => {
       }));
     }
   };
+
+  // Fetch countries on component mount
+  useEffect(() => {
+    if (isOpen) {
+      fetchCountries();
+    }
+  }, [isOpen]);
+
+  // Fetch countries when switching to outside India
+  useEffect(() => {
+    if (isOpen && formData.location === 'outside' && countries.length === 0) {
+      console.log('Fetching countries for outside India...');
+      fetchCountries();
+    }
+  }, [isOpen, formData.location, countries.length]);
+
+  // Sync country search with selected country
+  useEffect(() => {
+    if (formData.location === 'outside' && formData.country) {
+      setCountrySearch(formData.country);
+    }
+  }, [formData.location, formData.country]);
 
   // Validation functions
   const validateStep1 = () => {
@@ -109,12 +236,19 @@ const ChatModal = ({ isOpen, onClose, ambassador }) => {
       newErrors.mobile = 'Please enter a valid 10-digit mobile number';
     }
     
-    if (formData.location === 'within' && !formData.state.trim()) {
-      newErrors.state = 'State is required';
+    // Only require country and city for outside India
+    if (formData.location === 'outside') {
+      if (!formData.country.trim()) {
+        newErrors.country = 'Country is required';
+      }
+      if (!formData.city.trim()) {
+        newErrors.city = 'City is required';
+      }
     }
     
-    if (!formData.city.trim()) {
-      newErrors.city = 'City is required';
+    // State is required for within India
+    if (formData.location === 'within' && !formData.state.trim()) {
+      newErrors.state = 'State is required';
     }
     
     if (!formData.recaptcha) {
@@ -143,6 +277,40 @@ const ChatModal = ({ isOpen, onClose, ambassador }) => {
     } else if (isValid && currentStep === 3) {
       // Submit form
       console.log('Form submitted:', formData);
+      
+      // Store chat conversation in localStorage
+      const chatConversation = {
+        _id: `chat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        ambassadorId: ambassador._id,
+        ambassadorName: ambassador.name,
+        ambassadorEmail: ambassador.email,
+        userData: {
+          name: formData.name,
+          email: formData.email,
+          mobile: formData.mobile,
+          location: formData.location,
+          state: formData.location === 'within' ? formData.state : '',
+          city: formData.location === 'outside' ? formData.city : '',
+          country: formData.location === 'outside' ? formData.country : 'India',
+          countryCode: formData.location === 'within' ? '+91' : formData.countryCode,
+          interestedCourses: formData.selectedCourses
+        },
+        message: formData.message,
+        timestamp: new Date().toISOString(),
+        status: 'pending',
+        unreadCount: 0,
+        lastMessage: {
+          content: formData.message,
+          sender: 'user',
+          timestamp: new Date().toISOString()
+        }
+      };
+      
+      // Store in localStorage
+      const existingConversations = JSON.parse(localStorage.getItem('chatConversations') || '[]');
+      existingConversations.push(chatConversation);
+      localStorage.setItem('chatConversations', JSON.stringify(existingConversations));
+      
       setCurrentStep(4); // Show success message
     }
   };
@@ -166,22 +334,33 @@ const ChatModal = ({ isOpen, onClose, ambassador }) => {
     });
   };
 
+  const handleCountrySelect = (country) => {
+    setFormData(prev => ({
+      ...prev,
+      country: country.name,
+      countryCode: country.callingCode
+    }));
+    setCountrySearch(country.name);
+    setShowCountryDropdown(false);
+  };
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setShowCourseDropdown(false);
+        setShowCountryDropdown(false);
       }
     };
 
-    if (showCourseDropdown) {
+    if (showCourseDropdown || showCountryDropdown) {
       document.addEventListener('mousedown', handleClickOutside);
     }
-    
+
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showCourseDropdown]);
+  }, [showCourseDropdown, showCountryDropdown]);
 
   const handleGoBack = () => {
     if (currentStep > 1) {
@@ -203,6 +382,8 @@ const getProfileImage=()=>{
       location: 'within',
       state: '',
       city: '',
+      country: 'India', // Default to India for within
+      countryCode: '+91',
       selectedCourses: [],
       recaptcha: false,
       terms: false
@@ -210,6 +391,8 @@ const getProfileImage=()=>{
     setErrors({});
     setShowCourseDropdown(false);
     setCourseSearch('');
+    setShowCountryDropdown(false);
+    setCountrySearch('');
     onClose();
   };
 
@@ -239,7 +422,7 @@ const getProfileImage=()=>{
                 className="w-full h-full object-cover"
               />
             </div>
-            <h2 className="text-lg font-bold text-gray-900">
+            <h2 className="text-lg font-bold" style={{ color: customization.textColor || '#111827' }}>
               Get your query resolved in 3 easy steps
             </h2>
           </div>
@@ -326,6 +509,27 @@ const getProfileImage=()=>{
               <div>
                 <p className="text-xs text-gray-600 mb-2">You can ask me about</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {/* Dynamic Questions from Admin */}
+                  {customization.questions && customization.questions.map((question, index) => (
+                    question.trim() && (
+                      <button
+                        key={`custom-${index}`}
+                        onClick={() => handleInputChange('message', question)}
+                        className="flex items-center space-x-2 p-2 border rounded-lg text-left hover:opacity-80 transition-colors"
+                        style={{
+                          borderColor: customization.borderColor || '#ef4444',
+                          color: customization.textColor || '#374151'
+                        }}
+                      >
+                        <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" style={{ color: customization.borderColor || '#ef4444' }}>
+                          <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd" />
+                        </svg>
+                        <span className="text-xs" style={{ color: customization.textColor || '#374151' }}>{question}</span>
+                      </button>
+                    )
+                  ))}
+                  
+                  {/* Default Questions */}
                   {[
                     "Can you tell me how the course is?",
                     "How is the extra curriculars?",
@@ -333,14 +537,18 @@ const getProfileImage=()=>{
                     "How is the campus life?"
                   ].map((question, index) => (
                     <button
-                      key={index}
+                      key={`default-${index}`}
                       onClick={() => handleInputChange('message', question)}
-                      className="flex items-center space-x-2 p-2 border border-red-500 rounded-lg text-left hover:bg-red-50 transition-colors"
+                      className="flex items-center space-x-2 p-2 border rounded-lg text-left hover:opacity-80 transition-colors"
+                      style={{
+                        borderColor: customization.borderColor || '#ef4444',
+                        color: customization.textColor || '#374151'
+                      }}
                     >
-                      <svg className="w-3 h-3 text-red-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" style={{ color: customization.borderColor || '#ef4444' }}>
                         <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd" />
                       </svg>
-                      <span className="text-xs text-gray-700">{question}</span>
+                      <span className="text-xs" style={{ color: customization.textColor || '#374151' }}>{question}</span>
                     </button>
                   ))}
                 </div>
@@ -390,7 +598,7 @@ const getProfileImage=()=>{
                       <svg className={`w-4 h-4 transition-transform flex-shrink-0 ${showCourseDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                       </svg>
-                    </button>
+                  </button>
                     
                   </div>
                 </div>
@@ -436,13 +644,143 @@ const getProfileImage=()=>{
                 )}
               </div>
 
+              <div className="mb-6">
+                <label className="block text-xs font-medium text-gray-700 mb-3">
+                  * Location
+                </label>
+                <div className="flex space-x-4">
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="location"
+                      value="within"
+                      checked={formData.location === 'within'}
+                      onChange={(e) => handleInputChange('location', e.target.value)}
+                      className="mr-2"
+                    />
+                    <span className="text-sm">Within india</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="location"
+                      value="outside"
+                      checked={formData.location === 'outside'}
+                      onChange={(e) => handleInputChange('location', e.target.value)}
+                      className="mr-2"
+                    />
+                    <span className="text-sm">Outside india</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Location-based fields - Only State for Within India */}
+              {formData.location === 'within' && (
+                <div className="space-y-4 mt-6">
+                  {/* Visual Separator */}
+                  <div className="border-t border-gray-200 mb-4"></div>
               <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  * Which state are you applying from
+                </label>
+                <input
+                  type="text"
+                  value={formData.state}
+                  onChange={(e) => handleInputChange('state', e.target.value)}
+                  placeholder="Enter your state"
+                      className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 text-sm ${
+                        errors.state ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-red-500'
+                      }`}
+                    />
+                    {errors.state && (
+                      <p className="text-xs text-red-600 mt-1">{errors.state}</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {formData.location === 'outside' && (
+                <div className="mt-6">
+                  {/* Visual Separator */}
+                  <div className="border-t border-gray-200 mb-4"></div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      * Country
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={countrySearch}
+                        onChange={(e) => {
+                          setCountrySearch(e.target.value);
+                          setShowCountryDropdown(true);
+                        }}
+                        onFocus={() => setShowCountryDropdown(true)}
+                        placeholder="Enter your country"
+                        className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 text-sm ${
+                          errors.country ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-red-500'
+                        }`}
+                        disabled={loadingCountries}
+                      />
+                      {showCountryDropdown && (
+                        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                          {loadingCountries ? (
+                            <div className="p-2 text-xs text-gray-500 text-center">
+                              Loading countries...
+                            </div>
+                          ) : filteredCountries.length > 0 ? (
+                            filteredCountries.map((country) => (
+                              <button
+                                key={country.code}
+                                type="button"
+                                onClick={() => handleCountrySelect(country)}
+                                className="w-full p-2 text-left hover:bg-gray-100 text-sm"
+                              >
+                                {country.name}
+                              </button>
+                            ))
+                          ) : (
+                            <div className="p-2 text-xs text-gray-500 text-center">
+                              No countries found
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    {errors.country && (
+                      <p className="text-xs text-red-600 mt-1">{errors.country}</p>
+                    )}
+                  </div>
+                  <div className="mt-4">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      * Which city are you applying from
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.city}
+                      onChange={(e) => handleInputChange('city', e.target.value)}
+                      placeholder="Enter your city"
+                      className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 text-sm ${
+                        errors.city ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-red-500'
+                      }`}
+                    />
+                    {errors.city && (
+                      <p className="text-xs text-red-600 mt-1">{errors.city}</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Mobile Number Section */}
+              <div className="mt-6">
+                {/* Visual Separator */}
+                <div className="border-t border-gray-200 mb-4"></div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
                   * Your Mobile Number
                 </label>
                 <div className="flex">
                   <div className="flex items-center px-2 border border-gray-300 border-r-0 rounded-l-lg bg-gray-50">
-                    <span className="text-xs">🇮🇳 +91</span>
+                    <span className="text-xs">{formData.countryCode}</span>
                   </div>
                   <input
                     type="tel"
@@ -469,83 +807,15 @@ const getProfileImage=()=>{
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-                  * Location
-                </label>
-                <div className="flex space-x-3">
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="location"
-                      value="within"
-                      checked={formData.location === 'within'}
-                      onChange={(e) => handleInputChange('location', e.target.value)}
-                      className="mr-1"
-                    />
-                    <span className="text-xs">Within india</span>
-                  </label>
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="location"
-                      value="outside"
-                      checked={formData.location === 'outside'}
-                      onChange={(e) => handleInputChange('location', e.target.value)}
-                      className="mr-1"
-                    />
-                    <span className="text-xs">Outside india</span>
-                  </label>
-                </div>
-              </div>
-
-              {formData.location === 'within' && (
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
-                    * Which state are you applying from
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.state}
-                    onChange={(e) => handleInputChange('state', e.target.value)}
-                    placeholder="Enter your state"
-                    className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 text-sm ${
-                      errors.state ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-red-500'
-                    }`}
-                  />
-                  {errors.state && (
-                    <p className="text-xs text-red-600 mt-1">{errors.state}</p>
-                  )}
-                </div>
-              )}
-
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-                  * Which city are you applying from
-                </label>
+              <div className="flex items-center space-x-2">
                 <input
-                  type="text"
-                  value={formData.city}
-                  onChange={(e) => handleInputChange('city', e.target.value)}
-                  placeholder="Enter your city"
-                  className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 text-sm ${
-                    errors.city ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-red-500'
-                  }`}
-                />
-                {errors.city && (
-                  <p className="text-xs text-red-600 mt-1">{errors.city}</p>
-                )}
-              </div>
-
-              <div>
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    checked={formData.recaptcha}
-                    onChange={(e) => handleInputChange('recaptcha', e.target.checked)}
+                  type="checkbox"
+                  checked={formData.recaptcha}
+                  onChange={(e) => handleInputChange('recaptcha', e.target.checked)}
                     className={`mr-1 ${errors.recaptcha ? 'border-red-500' : ''}`}
-                  />
-                  <span className="text-xs text-gray-600">I'm not a robot</span>
-                  <div className="text-xs text-gray-500">reCAPTCHA</div>
+                />
+                <span className="text-xs text-gray-600">I'm not a robot</span>
+                <div className="text-xs text-gray-500">reCAPTCHA</div>
                 </div>
                 {errors.recaptcha && (
                   <p className="text-xs text-red-600 mt-1">{errors.recaptcha}</p>
@@ -553,16 +823,61 @@ const getProfileImage=()=>{
               </div>
 
               <div>
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    checked={formData.terms}
-                    onChange={(e) => handleInputChange('terms', e.target.checked)}
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={formData.terms}
+                  onChange={(e) => handleInputChange('terms', e.target.checked)}
                     className={`mr-1 ${errors.terms ? 'border-red-500' : ''}`}
-                  />
-                  <span className="text-xs text-gray-600">
-                    I agree to the <span className="text-red-500 underline">Terms of Use</span>, <span className="text-red-500 underline">Privacy Policy</span> and <span className="text-red-500 underline">Chat Rules</span>
-                  </span>
+                />
+                <span className="text-xs text-gray-600">
+                  I agree to the 
+                  <a 
+                    href={customization.termsUrl || '#'} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-red-500 underline hover:text-red-700"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (customization.termsUrl) {
+                        window.open(customization.termsUrl, '_blank', 'noopener,noreferrer');
+                      }
+                    }}
+                  >
+                    Terms of Use
+                  </a>, 
+                  <a 
+                    href={customization.policyUrl || '#'} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-red-500 underline hover:text-red-700"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (customization.policyUrl) {
+                        window.open(customization.policyUrl, '_blank', 'noopener,noreferrer');
+                      }
+                    }}
+                  >
+                    Privacy Policy
+                  </a> and 
+                  <a 
+                    href={customization.termsUrl || '#'} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-red-500 underline hover:text-red-700"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (customization.termsUrl) {
+                        window.open(customization.termsUrl, '_blank', 'noopener,noreferrer');
+                      }
+                    }}
+                  >
+                    Chat Rules
+                  </a>
+                </span>
                 </div>
                 {errors.terms && (
                   <p className="text-xs text-red-600 mt-1">{errors.terms}</p>
@@ -601,7 +916,11 @@ const getProfileImage=()=>{
             </button>
             <button
               onClick={handleContinue}
-              className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center space-x-1 text-sm"
+              className="px-4 py-2 rounded-lg transition-colors flex items-center space-x-1 text-sm"
+              style={{
+                background: customization.tilesAndButtonColor || '#ef4444',
+                color: customization.textColor || '#ffffff'
+              }}
             >
               <span>{currentStep === 3 ? 'Send Message' : 'Continue'}</span>
               {currentStep < 3 && <span>&gt;</span>}

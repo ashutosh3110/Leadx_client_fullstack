@@ -50,6 +50,10 @@ export const createReward = async (req, res, next) => {
     
     console.log('createReward - Populated reward:', populatedReward)
 
+    // Update ambassador's hasReward field to true
+    await User.findByIdAndUpdate(value.ambassador, { hasReward: true })
+    console.log('createReward - Updated ambassador hasReward to true')
+
     res.status(201).json(respo(true, "Reward created successfully", populatedReward))
   } catch (err) {
     next(err)
@@ -233,6 +237,13 @@ export const deleteReward = async (req, res, next) => {
 
     const reward = await Reward.findByIdAndDelete(req.params.id)
     if (!reward) return next(errGen(404, "Reward not found"))
+
+    // Check if ambassador has any other rewards
+    const remainingRewards = await Reward.countDocuments({ ambassador: reward.ambassador })
+    
+    // Update ambassador's hasReward field based on remaining rewards
+    await User.findByIdAndUpdate(reward.ambassador, { hasReward: remainingRewards > 0 })
+    console.log(`deleteReward - Updated ambassador hasReward to ${remainingRewards > 0} (${remainingRewards} remaining rewards)`)
 
     res.status(200).json(respo(true, "Reward deleted successfully"))
   } catch (err) {

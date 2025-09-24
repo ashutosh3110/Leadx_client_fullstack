@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import { useCustomization } from '../../context/CustomizationContext';
 
 const CustomizationForm = () => {
@@ -61,6 +62,27 @@ const CustomizationForm = () => {
         }));
     };
 
+    const handleAddQuestion = () => {
+        setFormData(prev => ({
+            ...prev,
+            questions: [...(prev.questions || []), '']
+        }));
+    };
+
+    const handleQuestionChange = (index, value) => {
+        setFormData(prev => ({
+            ...prev,
+            questions: prev.questions.map((q, i) => i === index ? value : q)
+        }));
+    };
+
+    const handleRemoveQuestion = (index) => {
+        setFormData(prev => ({
+            ...prev,
+            questions: prev.questions.filter((_, i) => i !== index)
+        }));
+    };
+
     const handleColorFormatChange = (field, format) => {
         setColorFormat(prev => ({
             ...prev,
@@ -89,7 +111,7 @@ const CustomizationForm = () => {
         updateCustomization(formData);
         
         // Show success message
-        alert('Configuration saved successfully! The changes will be applied to the Chat buttons.');
+        toast.success('Configuration saved successfully! The changes will be applied to the Chat buttons.');
     };
 
     const ColorInput = ({ field, label, value }) => {
@@ -277,206 +299,340 @@ const CustomizationForm = () => {
                     <div className="p-4">
                         <div className="text-center mb-4">
                             <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-1">
-                                Customization Form
+                                Ambassador Page Setting
                             </h1>
                             <p className="text-slate-600 text-sm">Configure your interface settings</p>
                         </div>
 
                         <form onSubmit={handleSubmit} className="space-y-3">
-                            {/* Design Settings Section */}
-                            <div className="bg-blue-50/50 rounded-lg p-3 border border-blue-200/30">
-                                <h2 className="text-base font-semibold text-blue-700 mb-2 flex items-center">
-                                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5a2 2 0 00-2-2h-4a2 2 0 00-2 2v12a4 4 0 004 4h4a2 2 0 002-2V5z" />
-                                    </svg>
-                                    Design Settings
-                                </h2>
-                                
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    <ColorInput
-                                        field="backgroundColor"
-                                        label="Background Color"
-                                        value={formData.backgroundColor}
-                                    />
-
-                                    <ColorInput
-                                        field="textColor"
-                                        label="Text Color"
-                                        value={formData.textColor}
-                                    />
-
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-slate-700">
-                                            Rounded Border (pixels)
-                                        </label>
-                                        <div className="relative">
-                                            <input
-                                                type="number"
-                                                value={formData.roundedBorder}
-                                                onChange={(e) => handleInputChange('roundedBorder', e.target.value)}
-                                                placeholder="8"
-                                                min="0"
-                                                className="w-full p-3 pl-10 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white/90 backdrop-blur-sm transition-all duration-200"
-                                            />
-                                            <span className="absolute left-3 top-3.5 text-slate-400 text-sm">px</span>
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-slate-700">
-                                            Padding (pixels)
-                                        </label>
-                                        <div className="relative">
-                                            <input
-                                                type="number"
-                                                value={formData.padding}
-                                                onChange={(e) => handleInputChange('padding', e.target.value)}
-                                                placeholder="16"
-                                                min="0"
-                                                className="w-full p-3 pl-10 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white/90 backdrop-blur-sm transition-all duration-200"
-                                            />
-                                            <span className="absolute left-3 top-3.5 text-slate-400 text-sm">px</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* User Information Section */}
+                            {/* Web URL Section */}
                             <div className="bg-green-50/50 rounded-lg p-3 border border-green-200/30">
                                 <h2 className="text-base font-semibold text-green-700 mb-2 flex items-center">
                                     <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9" />
                                     </svg>
-                                    User Information
+                                    Web URL
                                 </h2>
                                 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div className="space-y-4">
                                     <div className="space-y-2">
                                         <label className="block text-sm font-medium text-slate-700">
-                                            Admission Year <span className="text-red-500">*</span>
+                                            Web URL <span className="text-red-500">*</span>
                                         </label>
-                                        <div className="relative">
-                                            <input
-                                                type="number"
-                                                value={formData.admissionYear}
-                                                onChange={(e) => handleInputChange('admissionYear', e.target.value)}
-                                                placeholder="2024"
-                                                min="1900"
-                                                max="2050"
-                                                className="w-full p-3 pl-10 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white/90 backdrop-blur-sm transition-all duration-200"
-                                            />
-                                            <svg className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                            </svg>
-                                        </div>
+                                        <input
+                                            type="url"
+                                            value={formData.webUrl || ''}
+                                            onChange={(e) => handleInputChange('webUrl', e.target.value)}
+                                            placeholder="https://example.com"
+                                            className="w-full p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm bg-white/90 backdrop-blur-sm transition-all duration-200"
+                                        />
+                                        <p className="text-xs text-slate-500">Main website URL</p>
                                     </div>
 
                                     <div className="space-y-2">
                                         <label className="block text-sm font-medium text-slate-700">
-                                            CAPTCHA Verification
+                                            Web Name <span className="text-red-500">*</span>
+                                        </label>
+                                            <input
+                                            type="text"
+                                            value={formData.webName || ''}
+                                            onChange={(e) => handleInputChange('webName', e.target.value)}
+                                            placeholder="Enter website name"
+                                            className="w-full p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm bg-white/90 backdrop-blur-sm transition-all duration-200"
+                                        />
+                                        <p className="text-xs text-slate-500">Website display name</p>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="block text-sm font-medium text-slate-700">
+                                            Status <span className="text-red-500">*</span>
                                         </label>
                                         <select
-                                            value={formData.captcha}
-                                            onChange={(e) => handleInputChange('captcha', e.target.value)}
-                                            className="w-full p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white/90 backdrop-blur-sm transition-all duration-200"
+                                            value={formData.status || 'active'}
+                                            onChange={(e) => handleInputChange('status', e.target.value)}
+                                            className="w-full p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm bg-white/90 backdrop-blur-sm transition-all duration-200"
                                         >
-                                            <option value="">Select verification status</option>
-                                            <option value="yes">Yes</option>
-                                            <option value="no">No</option>
+                                            <option value="active">Active</option>
+                                            <option value="inactive">Inactive</option>
                                         </select>
+                                        <p className="text-xs text-slate-500">Website status</p>
                                     </div>
-                                </div>
-
-                                <div className="mt-3 md:col-span-2">
-                                    <label className="flex items-center p-2 bg-white/60 rounded border border-slate-200 cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            checked={formData.agreeTerms}
-                                            onChange={(e) => handleInputChange('agreeTerms', e.target.checked)}
-                                            className="mr-2 w-4 h-4 text-blue-600"
-                                        />
-                                        <span className="text-xs text-slate-700">
-                                            I agree to the <span className="text-blue-600 underline">Terms and Conditions</span> and <span className="text-blue-600 underline">Privacy Policy</span>
-                                        </span>
-                                    </label>
                                 </div>
                             </div>
 
-                            {/* Chat Settings Section */}
+                            {/* Terms and Policy URL Section */}
+                            <div className="bg-blue-50/50 rounded-lg p-3 border border-blue-200/30">
+                                <h2 className="text-base font-semibold text-blue-700 mb-2 flex items-center">
+                                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    Terms and Policy URL
+                                </h2>
+                                
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <label className="block text-sm font-medium text-slate-700">
+                                            Policy URL <span className="text-red-500">*</span>
+                                        </label>
+                                            <input
+                                            type="url"
+                                            value={formData.policyUrl || ''}
+                                            onChange={(e) => handleInputChange('policyUrl', e.target.value)}
+                                            placeholder="https://example.com/privacy-policy"
+                                            className="w-full p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white/90 backdrop-blur-sm transition-all duration-200"
+                                        />
+                                        <p className="text-xs text-slate-500">URL for Privacy Policy page</p>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="block text-sm font-medium text-slate-700">
+                                            Terms & Conditions URL <span className="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            type="url"
+                                            value={formData.termsUrl || ''}
+                                            onChange={(e) => handleInputChange('termsUrl', e.target.value)}
+                                            placeholder="https://example.com/terms-and-conditions"
+                                            className="w-full p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white/90 backdrop-blur-sm transition-all duration-200"
+                                        />
+                                        <p className="text-xs text-slate-500">URL for Terms & Conditions page</p>
+                                    </div>
+                                </div>
+
+                            </div>
+
+
+                            {/* Ambassador Card Settings Section */}
                             <div className="bg-purple-50/50 rounded-lg p-3 border border-purple-200/30">
                                 <h2 className="text-base font-semibold text-purple-700 mb-2 flex items-center">
                                     <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                                     </svg>
-                                    Chat Settings
+                                    Ambassador Card Settings
                                 </h2>
                                 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                                    <ColorInput
-                                        field="chatBackgroundColor"
-                                        label="Chat Background Color"
-                                        value={formData.chatBackgroundColor}
-                                    />
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <label className="block text-sm font-medium text-slate-700">
+                                            Change Color of Tiles and Button <span className="text-red-500">*</span>
+                                        </label>
+                                        <div className="flex space-x-2">
+                                            <input
+                                                type="text"
+                                                value={formData.tilesAndButtonColor || ''}
+                                                onChange={(e) => handleInputChange('tilesAndButtonColor', e.target.value)}
+                                                placeholder="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+                                                className="flex-1 p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm bg-white/90 backdrop-blur-sm transition-all duration-200"
+                                            />
+                                            <input
+                                                type="color"
+                                                value={formData.tilesAndButtonColor?.includes('#') ? formData.tilesAndButtonColor : '#667eea'}
+                                                onChange={(e) => handleInputChange('tilesAndButtonColor', e.target.value)}
+                                                className="w-12 h-12 border border-slate-300 rounded-lg cursor-pointer"
+                                            />
+                                        </div>
+                                        <p className="text-xs text-slate-500">Gradient color for ambassador card background image and button colors</p>
+                                    </div>
 
-                                    <ColorInput
-                                        field="chatTextColor"
-                                        label="Chat Text Color"
-                                        value={formData.chatTextColor}
-                                    />
+                                    <div className="space-y-2">
+                                        <label className="block text-sm font-medium text-slate-700">
+                                            Text Color <span className="text-red-500">*</span>
+                                        </label>
+                                        <div className="flex space-x-2">
+                                            <input
+                                                type="text"
+                                                value={formData.textColor || ''}
+                                                onChange={(e) => handleInputChange('textColor', e.target.value)}
+                                                placeholder="#ffffff"
+                                                className="flex-1 p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm bg-white/90 backdrop-blur-sm transition-all duration-200"
+                                            />
+                                            <input
+                                                type="color"
+                                                value={formData.textColor || '#ffffff'}
+                                                onChange={(e) => handleInputChange('textColor', e.target.value)}
+                                                className="w-12 h-12 border border-slate-300 rounded-lg cursor-pointer"
+                                            />
+                                        </div>
+                                        <p className="text-xs text-slate-500">Text color for ambassador card button and chat modal text</p>
+                                    </div>
 
-                                    <ColorInput
-                                        field="gradientColor"
-                                        label="Gradient Color"
-                                        value={formData.gradientColor}
-                                    />
+                                    <div className="space-y-2">
+                                        <label className="block text-sm font-medium text-slate-700">
+                                            Border Color <span className="text-red-500">*</span>
+                                        </label>
+                                        <div className="flex space-x-2">
+                                            <input
+                                                type="text"
+                                                value={formData.borderColor || ''}
+                                                onChange={(e) => handleInputChange('borderColor', e.target.value)}
+                                                placeholder="#e5e7eb"
+                                                className="flex-1 p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm bg-white/90 backdrop-blur-sm transition-all duration-200"
+                                            />
+                                            <input
+                                                type="color"
+                                                value={formData.borderColor || '#e5e7eb'}
+                                                onChange={(e) => handleInputChange('borderColor', e.target.value)}
+                                                className="w-12 h-12 border border-slate-300 rounded-lg cursor-pointer"
+                                            />
+                                        </div>
+                                        <p className="text-xs text-slate-500">Border color for ambassador cards and chat questions</p>
                                 </div>
 
                                 <div className="space-y-2">
                                     <label className="block text-sm font-medium text-slate-700">
-                                        Add Question
-                                    </label>
-                                    <div className="relative">
-                                        <textarea
-                                            value={formData.question}
-                                            onChange={(e) => handleInputChange('question', e.target.value)}
-                                            placeholder="Type your question here..."
-                                            rows="4"
-                                            className="w-full p-3 pl-10 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white/90 backdrop-blur-sm transition-all duration-200 resize-none"
-                                        />
-                                        <svg className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
+                                            Border Size <span className="text-red-500">*</span>
+                                        </label>
+                                        <select
+                                            value={formData.borderSize || '3'}
+                                            onChange={(e) => handleInputChange('borderSize', e.target.value)}
+                                            className="w-full p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm bg-white/90 backdrop-blur-sm transition-all duration-200"
+                                        >
+                                            <option value="1">1 - Flat</option>
+                                            <option value="2">2 - Slightly Rounded</option>
+                                            <option value="3">3 - Medium Rounded</option>
+                                            <option value="4">4 - More Rounded</option>
+                                            <option value="5">5 - Very Rounded</option>
+                                        </select>
+                                        <p className="text-xs text-slate-500">Border radius for ambassador cards (1=flat, 5=very rounded)</p>
                                     </div>
                                 </div>
+
+                                {/* Dynamic Questions Section */}
+                                <div className="mt-4">
+                                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                                        Questions
+                                    </label>
+                                    {formData.questions && formData.questions.map((question, index) => (
+                                        <div key={index} className="mb-3 p-3 bg-white/60 rounded border border-slate-200">
+                                            <div className="flex items-start space-x-2">
+                                                <div className="flex-1">
+                                        <textarea
+                                                        value={question}
+                                                        onChange={(e) => handleQuestionChange(index, e.target.value)}
+                                            placeholder="Type your question here..."
+                                                        rows="2"
+                                                        className="w-full p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm bg-white/90 backdrop-blur-sm transition-all duration-200 resize-none"
+                                                    />
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRemoveQuestion(index)}
+                                                    className="text-red-500 hover:text-red-700 p-1"
+                                                >
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                                </button>
+                                    </div>
+                                </div>
+                                    ))}
+                                    
+                                    <button
+                                        type="button"
+                                        onClick={handleAddQuestion}
+                                        className="w-full p-2 border-2 border-dashed border-purple-300 rounded-lg text-purple-600 hover:border-purple-400 hover:bg-purple-50 transition-colors text-sm"
+                                    >
+                                        + Add New Question
+                                    </button>
+                                </div>
+
                             </div>
 
-                            {/* Preview Section */}
+                            {/* Script Preview Section */}
                             <div className="bg-amber-50/50 rounded-lg p-3 border border-amber-200/30">
                                 <h3 className="text-base font-semibold text-amber-700 mb-2 flex items-center">
                                     <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                                     </svg>
-                                    Live Preview
+                                    Script Preview
                                 </h3>
-                                <div 
-                                    className="p-3 rounded border text-xs"
-                                    style={{
-                                        backgroundColor: formData.backgroundColor,
-                                        color: formData.textColor,
-                                        borderRadius: `${formData.roundedBorder}px`,
-                                        padding: `${formData.padding}px`
-                                    }}
-                                >
-                                    <p>Preview of your design settings</p>
-                                    <div 
-                                        className="mt-1 p-2 rounded text-xs"
-                                        style={{
-                                            backgroundColor: formData.chatBackgroundColor,
-                                            color: formData.chatTextColor
-                                        }}
-                                    >
-                                        Chat preview
+                                <div className="flex space-x-3">
+                                    <div className="flex-1">
+                                        <pre className="bg-gray-900 text-green-400 p-3 rounded-lg text-xs overflow-x-auto max-h-60 overflow-y-auto font-mono">
+{`// Customization Configuration
+const customization = {
+  // Web URL Settings
+  webUrl: "${formData.webUrl || ''}",
+  webName: "${formData.webName || ''}",
+  status: "${formData.status || 'active'}",
+  
+  // Terms and Policy URLs
+  policyUrl: "${formData.policyUrl || ''}",
+  termsUrl: "${formData.termsUrl || ''}",
+  questions: ${JSON.stringify(formData.questions || [], null, 2)},
+  
+  // Ambassador Card Settings
+  tilesAndButtonColor: "${formData.tilesAndButtonColor || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'}",
+  textColor: "${formData.textColor || '#ffffff'}",
+  borderColor: "${formData.borderColor || '#e5e7eb'}",
+  borderSize: "${formData.borderSize || '3'}",
+  
+  // Legacy Settings
+  ambassadorCardBackgroundColor: "${formData.ambassadorCardBackgroundColor || '#3b82f6'}",
+  ambassadorCardBorderColor: "${formData.ambassadorCardBorderColor || '#e5e7eb'}",
+  chatBackgroundColor: "${formData.chatBackgroundColor || '#3b82f6'}",
+  chatTextColor: "${formData.chatTextColor || '#ffffff'}"
+};
+
+// Apply customization
+localStorage.setItem('customization', JSON.stringify(customization));`}
+                                        </pre>
+                                    </div>
+                                    <div className="flex flex-col space-y-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const script = `// Customization Configuration
+const customization = {
+  // Web URL Settings
+  webUrl: "${formData.webUrl || ''}",
+  webName: "${formData.webName || ''}",
+  status: "${formData.status || 'active'}",
+  
+  // Terms and Policy URLs
+  policyUrl: "${formData.policyUrl || ''}",
+  termsUrl: "${formData.termsUrl || ''}",
+  questions: ${JSON.stringify(formData.questions || [], null, 2)},
+  
+  // Ambassador Card Settings
+  tilesAndButtonColor: "${formData.tilesAndButtonColor || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'}",
+  textColor: "${formData.textColor || '#ffffff'}",
+  borderColor: "${formData.borderColor || '#e5e7eb'}",
+  borderSize: "${formData.borderSize || '3'}",
+  
+  // Legacy Settings
+  ambassadorCardBackgroundColor: "${formData.ambassadorCardBackgroundColor || '#3b82f6'}",
+  ambassadorCardBorderColor: "${formData.ambassadorCardBorderColor || '#e5e7eb'}",
+  chatBackgroundColor: "${formData.chatBackgroundColor || '#3b82f6'}",
+  chatTextColor: "${formData.chatTextColor || '#ffffff'}"
+};
+
+// Apply customization
+localStorage.setItem('customization', JSON.stringify(customization));`;
+                                                navigator.clipboard.writeText(script);
+                                                toast.success('Script copied to clipboard!');
+                                            }}
+                                            className="px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm flex items-center space-x-1"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                            </svg>
+                                            <span>Copy</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const json = JSON.stringify(formData, null, 2);
+                                                navigator.clipboard.writeText(json);
+                                                toast.success('JSON configuration copied to clipboard!');
+                                            }}
+                                            className="px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm flex items-center space-x-1"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                            </svg>
+                                            <span>Copy JSON</span>
+                                        </button>
                                     </div>
                                 </div>
                             </div>

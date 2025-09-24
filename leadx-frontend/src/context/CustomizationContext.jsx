@@ -34,7 +34,20 @@ export const CustomizationProvider = ({ children }) => {
             chatBackgroundColor: '#3b82f6', // Default blue
             chatTextColor: '#ffffff', // Default white
             gradientColor: '#3b82f6', // Default blue for gradient
-            question: ''
+            questions: [], // Array of questions
+            policyUrl: '', // New field for policy URL
+            termsUrl: '', // New field for terms URL
+            ambassadorCardBackgroundColor: '#3b82f6', // Background color for ambassador cards
+            ambassadorCardBorderColor: '#e5e7eb', // Border color for ambassador cards
+            // Web URL section fields
+            webUrl: '', // Web URL field
+            webName: '', // Web Name field
+            status: 'active', // Status dropdown field
+            // Ambassador Card Settings - New fields
+            tilesAndButtonColor: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', // Gradient color for tiles and buttons
+            textColor: '#ffffff', // Text color for buttons and chat modal
+            borderColor: '#e5e7eb', // Border color for cards and chat questions
+            borderSize: '3' // Border size for ambassador cards (1-5)
         };
     };
 

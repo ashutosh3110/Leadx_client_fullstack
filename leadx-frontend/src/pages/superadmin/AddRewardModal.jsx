@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 
 const AddRewardModal = ({ 
     isOpen, 
@@ -10,6 +11,7 @@ const AddRewardModal = ({
         amount: '',
         currency: 'INR',
         state: '',
+        city: '',
         remarks: ''
     });
 
@@ -163,7 +165,8 @@ const AddRewardModal = ({
             setFormData(prev => ({
                 ...prev,
                 currency,
-                state: ambassador.state || ''
+                state: ambassador.state || '',
+                city: ambassador.city || ''
             }));
         }
     }, [isOpen, ambassador]);
@@ -175,6 +178,7 @@ const AddRewardModal = ({
                 amount: '',
                 currency: 'INR',
                 state: '',
+                city: '',
                 remarks: ''
             });
         }
@@ -199,6 +203,7 @@ const AddRewardModal = ({
                 amount: parseFloat(formData.amount),
                 currency: formData.currency,
                 state: ambassador.country === 'India' ? formData.state : null,
+                city: ambassador.country !== 'India' ? formData.city : null,
                 country: ambassador.country,
                 remarks: formData.remarks,
                 date: new Date().toISOString()
@@ -211,7 +216,7 @@ const AddRewardModal = ({
             onClose();
         } catch (error) {
             console.error('Error adding reward:', error);
-            alert('Error adding reward. Please try again.');
+            toast.error('Error adding reward. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -343,6 +348,24 @@ const AddRewardModal = ({
                                         <option key={state} value={state}>{state}</option>
                                     ))}
                                 </select>
+                            </div>
+                        )}
+
+                        {/* City (only for outside India) */}
+                        {ambassador.country !== 'India' && (
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                    City *
+                                </label>
+                                <input
+                                    type="text"
+                                    name="city"
+                                    value={formData.city}
+                                    onChange={handleInputChange}
+                                    required
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                                    placeholder="Enter city name"
+                                />
                             </div>
                         )}
 

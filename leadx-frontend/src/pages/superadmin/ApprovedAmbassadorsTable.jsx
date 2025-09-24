@@ -54,6 +54,7 @@ const ApprovedAmbassadorsTable = ({
                             <th className="px-2 lg:px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Status</th>
                             <th className="px-2 lg:px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Course</th>
                             <th className="px-2 lg:px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Country</th>
+                            <th className="px-2 lg:px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Reward</th>
                             <th className="px-2 lg:px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Joined</th>
                             <th className="px-2 lg:px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Actions</th>
                         </tr>
@@ -109,6 +110,15 @@ const ApprovedAmbassadorsTable = ({
                                 <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-sm text-slate-900">
                                     <div className="truncate max-w-24">{ambassador.country || 'Not specified'}</div>
                                 </td>
+                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap">
+                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                        ambassador.hasReward 
+                                            ? 'bg-green-100 text-green-800 border border-green-200'
+                                            : 'bg-gray-100 text-gray-800 border border-gray-200'
+                                    }`}>
+                                        {ambassador.hasReward ? 'Added' : 'Not Added'}
+                                    </span>
+                                </td>
                                 <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-sm text-slate-500">
                                     {new Date(ambassador.createdAt).toLocaleDateString()}
                                 </td>
@@ -140,7 +150,7 @@ const ApprovedAmbassadorsTable = ({
                         ))}
                         {filteredAmbassadors.length === 0 && (
                             <tr>
-                                <td colSpan="6" className="px-6 py-8 text-center">
+                                <td colSpan="7" className="px-6 py-8 text-center">
                                     <div className="flex flex-col items-center">
                                         <svg className="w-12 h-12 text-slate-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />

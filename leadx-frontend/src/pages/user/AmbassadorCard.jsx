@@ -242,17 +242,55 @@ const AmbassadorCard = ({
 
     const overlayText = getOverlayText();
 
+    // Function to get border radius based on border size setting
+    const getBorderRadius = (borderSize) => {
+        const sizeMap = {
+            '1': '0px',      // Flat
+            '2': '4px',      // Slightly Rounded
+            '3': '12px',     // Medium Rounded
+            '4': '20px',     // More Rounded
+            '5': '32px'      // Very Rounded
+        };
+        return sizeMap[borderSize] || '12px';
+    };
+
+    // Function to format name with proper capitalization
+    const formatName = (name) => {
+        if (!name) return '';
+        return name.split(' ').map(word => 
+            word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+        ).join(' ');
+    };
+
+    // Function to get proper background style
+    const getBackgroundStyle = () => {
+        const gradientColor = customization.tilesAndButtonColor || customization.ambassadorCardBackgroundColor || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+        console.log('Gradient color:', gradientColor); // Debug log
+        return gradientColor;
+    };
+
     return (
-         <div className="group relative bg-white rounded-2xl transition-all duration-500 border-2 border-slate-200 hover:border-blue-300 overflow-hidden w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-6xl h-[320px] md:h-[450px] flex flex-col overflow-y-hidden">
+         <div 
+            className="group relative bg-white transition-all duration-500 border-2 overflow-hidden w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-6xl h-[320px] md:h-[450px] flex flex-col overflow-y-hidden"
+            style={{
+                borderColor: customization.borderColor || customization.ambassadorCardBorderColor || '#e5e7eb',
+                borderRadius: getBorderRadius(customization.borderSize || '3')
+            }}
+         >
             {/* Background Image Section - Starting from top */}
-            <div className="relative h-16 md:h-20 w-full">
+            <div 
+                className="relative h-16 md:h-20 w-full"
+                style={{
+                    background: getBackgroundStyle(),
+                    backgroundImage: getBackgroundStyle()
+                }}
+            >
                             <img
                                 src={getBackgroundImageUrl()}
                                 alt="Background"
                     className="w-full h-full object-cover"
                                 onError={(e) => {
                                     e.target.style.display = 'none';
-                                    e.target.parentElement.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
                                 }}
                             />
                 <div className="absolute inset-0 bg-black/20"></div>
@@ -264,22 +302,18 @@ const AmbassadorCard = ({
                         <div className="relative w-18 h-18 md:w-20 md:h-20 rounded-full border-4 border-white overflow-hidden">
                             <img
                                 src={getProfileImage()}
-                                alt={ambassador.name}
+                                alt={formatName(ambassador.name)}
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
                                     const target = e.target;
                                     target.style.display = 'none';
                                     target.parentElement.innerHTML = `
                                         <div class="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xl font-bold">
-                                            ${ambassador.name.charAt(0).toUpperCase()}
+                                            ${formatName(ambassador.name).charAt(0).toUpperCase()}
                                         </div>
                                     `;
                                 }}
                             />
-                        </div>
-                        {/* Online Status Dot */}
-                        <div className="absolute -bottom-1 -right-1 w-4 h-4 md:w-5 md:h-5 bg-green-400 border-3 border-white rounded-full flex items-center justify-center">
-                            <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-green-600 rounded-full animate-pulse"></div>
                         </div>
                         </div>
                     </div>
@@ -303,8 +337,8 @@ const AmbassadorCard = ({
                 <div className="flex-1 flex flex-col">
                     {/* Name with Flag - Mobile Only */}
                     <div className="md:hidden flex items-center justify-center gap-2 mt-4 mb-3">
-                        <h3 className="text-xs font-semibold text-slate-900" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
-                            {ambassador.name}
+                        <h3 className="text-sm font-semibold text-slate-900" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+                            {formatName(ambassador.name)}
                         </h3>
                         <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden">
                             <img 
@@ -319,8 +353,8 @@ const AmbassadorCard = ({
                     </div>
 
                     {/* Name - Desktop Only */}
-                    <h3 className="hidden md:block relative text-xs font-semibold text-slate-900 text-center mb-3 mt-4" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
-                        {ambassador.name}
+                    <h3 className="hidden md:block relative text-sm font-semibold text-slate-900 text-center mb-3 mt-4" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+                        {formatName(ambassador.name)}
                     </h3>
                     
                     {/* Mobile Simplified Content */}
@@ -358,7 +392,7 @@ const AmbassadorCard = ({
                                             e.target.style.display = 'none';
                                         }}
                                     />
-                                    <p className="text-xs font-light text-slate-800" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+                                <p className="text-xs font-light text-slate-800" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
                                         {(() => {
                                             const country = ambassador.country?.trim();
                                             if (country === 'India' || country === 'india' || country?.toLowerCase() === 'india') {
@@ -399,10 +433,11 @@ const AmbassadorCard = ({
                         {/* Chat Button */}
                         <button
                             onClick={() => onChat(ambassador)}
-                            className="w-3/4 mx-auto md:w-full font-bold py-2 md:py-2.5 px-3 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 transform hover:scale-105"
+                            className="w-3/4 mx-auto md:w-full font-bold py-2 md:py-2.5 px-3 rounded-lg transition-all duration-300 flex items-center justify-center gap-2"
                             style={{
-                                backgroundColor: customization.chatBackgroundColor || '#EF4444',
-                                color: customization.chatTextColor || '#FFFFFF',
+                                background: getBackgroundStyle(),
+                                backgroundImage: getBackgroundStyle(),
+                                color: customization.textColor || customization.chatTextColor || '#FFFFFF',
                             }}
                         >
                             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
