@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 
 const EditRewardModal = ({ 
     isOpen, 
@@ -82,7 +83,7 @@ const EditRewardModal = ({
             onClose();
         } catch (error) {
             console.error('Error updating reward:', error);
-            alert('Error updating reward. Please try again.');
+            toast.error('Error updating reward. Please try again.');
         } finally {
             setLoading(false);
         }

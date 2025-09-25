@@ -101,7 +101,7 @@ export const CustomizationProvider = ({ children }) => {
       chatBackgroundColor: "#3b82f6", // Default blue
       chatTextColor: "#ffffff", // Default white
       gradientColor: "#3b82f6", // Default blue for gradient
-      questions: [],
+      question: "",
     }
   }
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-
+import { toast } from 'react-toastify';
 import { Outlet, useNavigate } from 'react-router-dom';
 
 import { ambassadorAPI, approvalAPI, rewardsAPI } from '../utils/apicopy';
@@ -190,11 +190,11 @@ const AdminDashboard = () => {
 
 
 
-                alert('✅ Ambassador approved successfully!');
+                toast.success('✅ Ambassador approved successfully!');
 
             } else {
 
-                alert(`❌ Failed to approve: ${response.message}`);
+                toast.error(`❌ Failed to approve: ${response.message}`);
 
             }
 
@@ -202,7 +202,7 @@ const AdminDashboard = () => {
 
             console.error('Approval error:', error);
 
-            alert(`❌ Failed to approve: ${error.response?.data?.message || error.message}`);
+            toast.error(`❌ Failed to approve: ${error.response?.data?.message || error.message}`);
 
         } finally {
 
@@ -243,11 +243,11 @@ const AdminDashboard = () => {
 
                 }));
 
-                alert('✅ Ambassador rejected successfully!');
+                toast.success('✅ Ambassador rejected successfully!');
 
             } else {
 
-                alert(`❌ Failed to reject: ${response.message}`);
+                toast.error(`❌ Failed to reject: ${response.message}`);
 
             }
 
@@ -255,7 +255,7 @@ const AdminDashboard = () => {
 
             console.error('Rejection error:', error);
 
-            alert(`❌ Failed to reject: ${error.response?.data?.message || error.message}`);
+            toast.error(`❌ Failed to reject: ${error.response?.data?.message || error.message}`);
 
         } finally {
 
@@ -335,12 +335,12 @@ const AdminDashboard = () => {
             ));
 
             // Show success message
-            alert(`✅ Reward updated successfully for ${updatedRewardData.ambassadorName}!`);
+            toast.success(`✅ Reward updated successfully for ${updatedRewardData.ambassadorName}!`);
 
         } catch (error) {
             console.error('Error updating reward:', error);
             const errorMessage = error.response?.data?.message || error.message || 'Failed to update reward';
-            alert(`❌ Error: ${errorMessage}`);
+            toast.error(`❌ Error: ${errorMessage}`);
             throw error;
         } finally {
             setLoading(false);
@@ -363,6 +363,18 @@ const AdminDashboard = () => {
             // Remove from rewards state
             setRewards(prev => prev.filter(r => r.id !== reward.id));
 
+            // Check if ambassador has any other rewards
+            const ambassadorHasOtherRewards = rewards.some(r => 
+                r.ambassadorId === reward.ambassadorId && r.id !== reward.id
+            );
+
+            // Update ambassadors list to reflect reward status
+            setAmbassadors(prev => prev.map(ambassador => 
+                ambassador._id === reward.ambassadorId 
+                    ? { ...ambassador, hasReward: ambassadorHasOtherRewards }
+                    : ambassador
+            ));
+
             // Update stats
             setStats(prev => ({
                 ...prev,
@@ -370,12 +382,12 @@ const AdminDashboard = () => {
             }));
 
             // Show success message
-            alert(`✅ Reward deleted successfully!`);
+            toast.success(`✅ Reward deleted successfully!`);
 
         } catch (error) {
             console.error('Error deleting reward:', error);
             const errorMessage = error.response?.data?.message || error.message || 'Failed to delete reward';
-            alert(`❌ Error: ${errorMessage}`);
+            toast.error(`❌ Error: ${errorMessage}`);
         } finally {
             setLoading(false);
         }
@@ -415,6 +427,13 @@ const AdminDashboard = () => {
 
             setRewards(prev => [newReward, ...prev]);
 
+            // Update ambassadors list to show "Added" status for the ambassador
+            setAmbassadors(prev => prev.map(ambassador => 
+                ambassador._id === rewardData.ambassadorId 
+                    ? { ...ambassador, hasReward: true }
+                    : ambassador
+            ));
+
             // Update stats
             setStats(prev => ({
                 ...prev,
@@ -422,12 +441,12 @@ const AdminDashboard = () => {
             }));
 
             // Show success message
-            alert(`✅ Reward of ${rewardData.currency} ${rewardData.amount} added successfully for ${rewardData.ambassadorName}!`);
+            toast.success(`✅ Reward of ${rewardData.currency} ${rewardData.amount} added successfully for ${rewardData.ambassadorName}!`);
 
         } catch (error) {
             console.error('Error submitting reward:', error);
             const errorMessage = error.response?.data?.message || error.message || 'Failed to add reward';
-            alert(`❌ Error: ${errorMessage}`);
+            toast.error(`❌ Error: ${errorMessage}`);
             throw error;
         } finally {
             setLoading(false);
@@ -494,7 +513,7 @@ const AdminDashboard = () => {
 
         console.log('Edit ambassador:', ambassador);
 
-        alert('Edit functionality will be implemented soon!');
+        toast.success('Edit functionality will be implemented soon!');
 
     };
 
@@ -533,13 +552,13 @@ const AdminDashboard = () => {
 
 
 
-                alert('✅ Ambassador deleted successfully!');
+                toast.success('✅ Ambassador deleted successfully!');
 
             } catch (error) {
 
                 console.error('Delete error:', error);
 
-                alert(`❌ Failed to delete ambassador: ${error.message}`);
+                toast.error(`❌ Failed to delete ambassador: ${error.message}`);
 
             } finally {
 
@@ -681,7 +700,7 @@ const AdminDashboard = () => {
 
             console.error('Failed to fetch dashboard data:', error);
 
-            alert('❌ Failed to load dashboard data. Please refresh the page.');
+            toast.error('❌ Failed to load dashboard data. Please refresh the page.');
 
         } finally {
 

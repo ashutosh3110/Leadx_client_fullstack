@@ -131,9 +131,21 @@ export const getVerifiedAmbassadors = async (req, res, next) => {
     if (!search) delete query.$or
 
     const ambassadors = await User.find(query).select("-password")
+    
+    // Use hasReward field from database (no need to calculate)
+    const ambassadorsWithRewards = ambassadors.map(ambassador => ({
+      ...ambassador.toObject(),
+      hasReward: ambassador.hasReward || false
+    }))
+    
+    console.log('getVerifiedAmbassadors - Ambassadors with reward status:', ambassadorsWithRewards.map(a => ({
+      name: a.name,
+      hasReward: a.hasReward
+    })))
+    
     res
       .status(200)
-      .json(respo(true, "Verified Ambassadors fetched", ambassadors))
+      .json(respo(true, "Verified Ambassadors fetched", ambassadorsWithRewards))
   } catch (err) {
     next(err)
   }

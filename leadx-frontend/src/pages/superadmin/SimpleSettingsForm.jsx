@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toast } from 'react-toastify';
 import { useColorContext } from '../../context/ColorContext';
 
 const SimpleSettingsForm = () => {
@@ -127,7 +128,7 @@ const SimpleSettingsForm = () => {
 
     const handleSave = () => {
         // Show success message
-        alert('✅ Customization saved successfully! Your dashboard colors have been updated.');
+        toast.success('✅ Customization saved successfully! Your dashboard colors have been updated.');
         
         // Optional: You can add additional save logic here
         // For example, sending to backend, showing toast notification, etc.
