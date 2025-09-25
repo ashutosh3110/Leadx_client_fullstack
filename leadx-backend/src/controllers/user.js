@@ -457,3 +457,78 @@ export const rejectAmbassador = async (req, res, next) => {
     next(err)
   }
 }
+
+// 🌐 Get Public Ambassadors (for embeddable script)
+export const getPublicAmbassadors = async (req, res, next) => {
+  try {
+    console.log("🔍 Fetching public ambassadors...")
+    
+    // Get only verified ambassadors with basic info
+    const ambassadors = await User.find({
+      role: "ambassador",
+      isVerified: true
+    }).select("name email course profileImage createdAt")
+    
+    console.log(`✅ Found ${ambassadors.length} public ambassadors`)
+    
+    res.status(200).json(respo(true, "Public ambassadors fetched successfully", ambassadors))
+  } catch (err) {
+    console.error("❌ Error fetching public ambassadors:", err)
+    next(err)
+  }
+}
+
+// 🌐 Auto Register User (for embeddable script)
+export const autoRegisterUser = async (req, res, next) => {
+  try {
+    console.log("🔍 Auto-register request body:", req.body)
+    
+    const { name, email, mobile, password = "123456", role = "user" } = req.body
+    
+    // Validate required fields
+    if (!name || !email || !mobile) {
+      return next(errGen(400, "Name, email, and mobile are required"))
+    }
+    
+    // Check if user already exists
+    const existingUser = await User.findOne({ email })
+    if (existingUser) {
+      console.log("✅ User already exists, returning existing user")
+      const safeUser = {
+        id: existingUser._id,
+        name: existingUser.name,
+        email: existingUser.email,
+        role: existingUser.role,
+      }
+      return res.status(200).json(respo(true, "User already exists", safeUser))
+    }
+    
+    // Hash the default password
+    const hashedPassword = await bcrypt.hash(password, 10)
+    console.log("✅ Password hashed successfully")
+    
+    // Create new user
+    const newUser = await User.create({
+      name,
+      email,
+      mobile,
+      password: hashedPassword,
+      role,
+      isVerified: true // Auto-verify users from embeddable script
+    })
+    
+    console.log("✅ User auto-registered successfully:", newUser._id)
+    
+    const safeUser = {
+      id: newUser._id,
+      name: newUser.name,
+      email: newUser.email,
+      role: newUser.role,
+    }
+    
+    res.status(201).json(respo(true, "User auto-registered successfully", safeUser))
+  } catch (err) {
+    console.error("❌ Auto-register error:", err)
+    next(err)
+  }
+}

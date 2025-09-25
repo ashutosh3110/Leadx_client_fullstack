@@ -14,12 +14,7 @@ const rewardSchema = new Schema(
     },
     currency: {
       type: String,
-      enum: [
-        "INR", "USD", "GBP", "CAD", "AUD", "EUR", "JPY", "CNY", "KRW", 
-        "BRL", "MXN", "RUB", "ZAR", "SGD", "HKD", "AED", "SAR", "TRY", 
-        "THB", "MYR", "IDR", "PHP", "VND", "BDT", "PKR", "LKR", "NPR", 
-        "BTN", "MMK", "KHR", "LAK"
-      ],
+      enum: ["INR", "USD"],
       required: true,
     },
     status: {

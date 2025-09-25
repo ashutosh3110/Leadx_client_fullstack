@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeadX Testing Guide</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f8f9fa;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2d3748;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .step {
+            background: #f7fafc;
+            border-left: 4px solid #4299e1;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .step h3 {
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+        .code {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+        .success {
+            background: #f0fff4;
+            border-left-color: #48bb78;
+        }
+        .warning {
+            background: #fffaf0;
+            border-left-color: #ed8936;
+        }
+        .error {
+            background: #fff5f5;
+            border-left-color: #f56565;
+        }
+        .test-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        .test-link {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-decoration: none;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+        .test-link:hover {
+            transform: translateY(-2px);
+        }
+        .status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status.success {
+            background: #48bb78;
+            color: white;
+        }
+        .status.error {
+            background: #f56565;
+            color: white;
+        }
+        .status.warning {
+            background: #ed8936;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 LeadX Script Generation Testing Guide</h1>
+        
+        <div class="step">
+            <h3>📋 Prerequisites</h3>
+            <p>Make sure you have the following running:</p>
+            <ul>
+                <li>✅ Node.js installed</li>
+                <li>✅ MongoDB running</li>
+                <li>✅ Backend server (Port 5000)</li>
+                <li>✅ Frontend server (Port 5173)</li>
+            </ul>
+        </div>
+        
+        <div class="step">
+            <h3>🚀 Step 1: Start Backend Server</h3>
+            <p>Open PowerShell and run:</p>
+            <div class="code">cd C:\Users\Hp\Desktop\Leadxnew\LeadX_crm\leadx-backend
+npm start</div>
+            <p><span class="status success">SUCCESS</span> You should see: "Server running on port 5000"</p>
+        </div>
+        
+        <div class="step">
+            <h3>🚀 Step 2: Start Frontend Server</h3>
+            <p>Open new PowerShell and run:</p>
+            <div class="code">cd C:\Users\Hp\Desktop\Leadxnew\LeadX_crm\leadx-frontend
+npm run dev</div>
+            <p><span class="status success">SUCCESS</span> You should see: "Local: http://localhost:5173"</p>
+        </div>
+        
+        <div class="step">
+            <h3>🔧 Step 3: Test Script Generation</h3>
+            <p>1. Open <a href="http://localhost:5173" target="_blank">http://localhost:5173</a></p>
+            <p>2. Login as Admin</p>
+            <p>3. Go to Settings → Frontend Customize</p>
+            <p>4. Fill the form with test data:</p>
+            <div class="code">Client Name: Test University
+Web URL: https://testuniversity.com
+Web Name: Test University
+API Base URL: http://localhost:5000
+Status: active
+Policy URL: https://testuniversity.com/privacy
+Terms URL: https://testuniversity.com/terms</div>
+            <p>5. Click "Copy Script" to generate unique script</p>
+        </div>
+        
+        <div class="step">
+            <h3>🧪 Step 4: Test Generated Script</h3>
+            <p>Test your generated script on these pages:</p>
+        </div>
+        
+        <div class="test-links">
+            <a href="test-client.html" class="test-link" target="_blank">
+                <h3>🎓 Test University</h3>
+                <p>Full university website with LeadX widget</p>
+            </a>
+            
+            <a href="client-example.html" class="test-link" target="_blank">
+                <h3>📄 Client Example</h3>
+                <p>Simple client integration example</p>
+            </a>
+            
+            <a href="demo.html" class="test-link" target="_blank">
+                <h3>🎪 Demo Page</h3>
+                <p>Interactive demo with all features</p>
+            </a>
+        </div>
+        
+        <div class="step">
+            <h3>✅ Step 5: Verify Widget Functionality</h3>
+            <p>On the test pages, check:</p>
+            <ul>
+                <li>✅ Chat button appears in bottom-right corner</li>
+                <li>✅ Clicking button shows ambassador cards</li>
+                <li>✅ Clicking ambassador opens chat modal</li>
+                <li>✅ Form validation works</li>
+                <li>✅ Submit button sends message</li>
+                <li>✅ Custom colors and branding applied</li>
+            </ul>
+        </div>
+        
+        <div class="step warning">
+            <h3>⚠️ Common Issues & Solutions</h3>
+            <p><strong>Widget not appearing:</strong></p>
+            <ul>
+                <li>Check if backend server is running on port 5000</li>
+                <li>Verify script URL is correct</li>
+                <li>Check browser console for errors</li>
+            </ul>
+            
+            <p><strong>API errors:</strong></p>
+            <ul>
+                <li>Ensure MongoDB is running</li>
+                <li>Check if ambassadors are approved in admin panel</li>
+                <li>Verify API endpoints are accessible</li>
+            </ul>
+        </div>
+        
+        <div class="step success">
+            <h3>🎉 Step 6: Test Multiple Clients</h3>
+            <p>Create different client configurations:</p>
+            <ul>
+                <li><strong>Delhi University:</strong> Blue theme, course questions</li>
+                <li><strong>IIT Mumbai:</strong> Orange theme, engineering questions</li>
+                <li><strong>IIM Ahmedabad:</strong> Green theme, business questions</li>
+            </ul>
+            <p>Each should generate a unique script with custom branding!</p>
+        </div>
+        
+        <div class="step">
+            <h3>📊 Step 7: Monitor & Debug</h3>
+            <p>Use browser developer tools:</p>
+            <div class="code">F12 → Console → Check for errors
+F12 → Network → Monitor API calls
+F12 → Elements → Inspect widget</div>
+        </div>
+        
+        <div class="step success">
+            <h3>🚀 Ready for Production!</h3>
+            <p>Once testing is complete:</p>
+            <ul>
+                <li>Deploy backend to production server</li>
+                <li>Update API URLs in generated scripts</li>
+                <li>Start selling to clients!</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

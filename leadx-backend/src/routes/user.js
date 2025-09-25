@@ -22,6 +22,8 @@ import {
   getMyProfile,
   approveAmbassador,
   rejectAmbassador,
+  autoRegisterUser,
+  getPublicAmbassadors,
 } from "../controllers/user.js"
 
 const router = Router()
@@ -83,4 +85,14 @@ router.patch(
   approveAmbassador
 )
 router.patch("/:id/reject", authenticate, checkRole("admin"), rejectAmbassador)
+
+/* ==========================
+   🌐 PUBLIC API ROUTES (for embeddable script)
+========================== */
+// Public ambassadors endpoint (no auth required)
+router.get("/ambassadors/public", getPublicAmbassadors)
+
+// Auto-register user endpoint (no auth required)
+router.post("/auto-register", autoRegisterUser)
+
 export default router

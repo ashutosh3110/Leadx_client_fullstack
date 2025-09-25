@@ -8,12 +8,7 @@ import Joi from "joi"
 const rewardValidationSchema = Joi.object({
   ambassador: Joi.string().required(),
   amount: Joi.number().positive().required(),
-  currency: Joi.string().valid(
-    "INR", "USD", "GBP", "CAD", "AUD", "EUR", "JPY", "CNY", "KRW", 
-    "BRL", "MXN", "RUB", "ZAR", "SGD", "HKD", "AED", "SAR", "TRY", 
-    "THB", "MYR", "IDR", "PHP", "VND", "BDT", "PKR", "LKR", "NPR", 
-    "BTN", "MMK", "KHR", "LAK"
-  ).required(),
+  currency: Joi.string().valid("INR", "USD").required(),
   status: Joi.string().valid("pending", "approved", "paid").default("pending"),
   remarks: Joi.string().allow(""),
 })

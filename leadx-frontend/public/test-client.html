@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test University - LeadX Widget Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .header h1 {
+            color: #2d3748;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #718096;
+            font-size: 1.2rem;
+        }
+        
+        .content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card h3 {
+            color: #2d3748;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+        
+        .card p {
+            color: #718096;
+            margin-bottom: 15px;
+        }
+        
+        .card ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .card li {
+            padding: 8px 0;
+            border-bottom: 1px solid #e2e8f0;
+            color: #4a5568;
+        }
+        
+        .card li:before {
+            content: "✓";
+            color: #48bb78;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .cta-section {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .cta-section h2 {
+            color: #2d3748;
+            margin-bottom: 20px;
+            font-size: 2rem;
+        }
+        
+        .cta-section p {
+            color: #718096;
+            font-size: 1.1rem;
+            margin-bottom: 30px;
+        }
+        
+        .widget-info {
+            background: #f7fafc;
+            border: 2px dashed #cbd5e0;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .widget-info h4 {
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+        
+        .widget-info code {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 10px;
+            border-radius: 5px;
+            display: block;
+            font-family: monospace;
+            margin: 10px 0;
+        }
+        
+        .test-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+        
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 40px;
+            padding: 20px;
+        }
+        
+        .footer p {
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🎓 Test University</h1>
+            <p>Your Gateway to Excellence in Education</p>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="content">
+            <div class="card">
+                <h3>📚 Our Courses</h3>
+                <p>Explore our wide range of undergraduate and postgraduate programs:</p>
+                <ul>
+                    <li>Computer Science Engineering</li>
+                    <li>Business Administration</li>
+                    <li>Mechanical Engineering</li>
+                    <li>Data Science & Analytics</li>
+                    <li>Artificial Intelligence</li>
+                    <li>Digital Marketing</li>
+                </ul>
+            </div>
+            
+            <div class="card">
+                <h3>🏫 Campus Life</h3>
+                <p>Experience vibrant campus life with modern facilities:</p>
+                <ul>
+                    <li>State-of-the-art laboratories</li>
+                    <li>Modern library with digital resources</li>
+                    <li>Sports complex and gymnasium</li>
+                    <li>Student clubs and societies</li>
+                    <li>Hostel accommodation</li>
+                    <li>Career guidance and placement support</li>
+                </ul>
+            </div>
+            
+            <div class="card">
+                <h3>🎯 Why Choose Us?</h3>
+                <p>We provide the best education experience:</p>
+                <ul>
+                    <li>Experienced faculty members</li>
+                    <li>Industry-relevant curriculum</li>
+                    <li>100% placement assistance</li>
+                    <li>Scholarship opportunities</li>
+                    <li>International exchange programs</li>
+                    <li>Research and innovation focus</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- CTA Section -->
+        <div class="cta-section">
+            <h2>💬 Have Questions?</h2>
+            <p>Our student ambassadors are here to help! Click the chat button in the bottom-right corner to get instant answers to your questions.</p>
+            
+            <div class="widget-info">
+                <h4>🔧 LeadX Widget Integration</h4>
+                <p>This page demonstrates the LeadX Ambassador Chat Widget. The widget allows students to chat directly with university ambassadors.</p>
+                <code>&lt;script src="http://localhost:5174/leadx-widget.js"&gt;&lt;/script&gt;</code>
+                <p><strong>Features:</strong></p>
+                <ul style="text-align: left; display: inline-block;">
+                    <li>Real-time chat with ambassadors</li>
+                    <li>Custom branding and colors</li>
+                    <li>Mobile responsive design</li>
+                    <li>Auto user registration</li>
+                    <li>Email notifications</li>
+                </ul>
+            </div>
+            
+            <button class="test-button" onclick="testWidget()">
+                🧪 Test Widget Functionality
+            </button>
+            
+            <button class="test-button" onclick="showWidgetInfo()">
+                ℹ️ Show Widget Info
+            </button>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <div class="footer">
+        <p>&copy; 2024 Test University. All rights reserved.</p>
+        <p>Powered by LeadX Ambassador Chat System</p>
+    </div>
+    
+    <!-- LeadX Ambassador Chat Widget -->
+    <script src="http://localhost:5174/leadx-widget.js"></script>
+    
+    <script>
+        function testWidget() {
+            alert('🧪 Testing LeadX Widget...\n\n1. Look for the chat button in the bottom-right corner\n2. Click it to see ambassador cards\n3. Try the chat functionality\n4. Check the console for any errors');
+            
+            // Check if widget is loaded
+            const widget = document.getElementById('leadx-ambassador-widget');
+            if (widget) {
+                console.log('✅ LeadX Widget loaded successfully!');
+                console.log('Widget element:', widget);
+            } else {
+                console.log('❌ LeadX Widget not found!');
+            }
+        }
+        
+        function showWidgetInfo() {
+            const widget = document.getElementById('leadx-ambassador-widget');
+            if (widget) {
+                alert('✅ LeadX Widget is loaded and ready!\n\nWidget ID: ' + widget.id + '\nPosition: Fixed bottom-right\nStatus: Active');
+            } else {
+                alert('❌ LeadX Widget not found!\n\nPlease check:\n1. Script URL is correct\n2. Backend server is running\n3. No console errors');
+            }
+        }
+        
+        // Auto-test when page loads
+        window.addEventListener('load', function() {
+            console.log('🚀 Test University page loaded');
+            console.log('🔍 Checking for LeadX Widget...');
+            
+            setTimeout(() => {
+                const widget = document.getElementById('leadx-ambassador-widget');
+                if (widget) {
+                    console.log('✅ LeadX Widget loaded successfully!');
+                    console.log('🎉 Ready for testing!');
+                } else {
+                    console.log('❌ LeadX Widget not found!');
+                    console.log('💡 Make sure the script URL is correct and backend is running');
+                }
+            }, 2000);
+        });
+    </script>
+</body>
+</html>

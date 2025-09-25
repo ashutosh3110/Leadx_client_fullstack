@@ -420,3 +420,87 @@ export const adminGetChatStats = async (req, res, next) => {
     next(err)
   }
 }
+
+// 🌐 Send Public Message (for embeddable script)
+export const sendPublicMessage = async (req, res, next) => {
+  try {
+    console.log("🔍 Public message request body:", req.body)
+    
+    const { ambassadorId, message, userEmail } = req.body
+    
+    // Validate required fields
+    if (!ambassadorId || !message || !userEmail) {
+      return next(errGen(400, "Ambassador ID, message, and user email are required"))
+    }
+    
+    // Find the ambassador
+    const ambassador = await User.findById(ambassadorId)
+    if (!ambassador || ambassador.role !== "ambassador" || !ambassador.isVerified) {
+      return next(errGen(404, "Ambassador not found or not verified"))
+    }
+    
+    // Find the user by email
+    const user = await User.findOne({ email: userEmail, role: "user" })
+    if (!user) {
+      return next(errGen(404, "User not found. Please register first."))
+    }
+    
+    // Find or create chat between user and ambassador
+    let chat = await Chat.findOne({
+      participants: { $all: [user._id, ambassadorId] }
+    })
+    
+    if (!chat) {
+      // Create new chat
+      chat = await Chat.create({
+        participants: [user._id, ambassadorId],
+        lastMessage: {
+          content: message,
+          sender: user._id,
+          timestamp: new Date()
+        }
+      })
+      console.log("✅ New chat created:", chat._id)
+    }
+    
+    // Create message
+    const newMessage = await Message.create({
+      chatId: chat._id,
+      sender: user._id,
+      content: message,
+      timestamp: new Date()
+    })
+    
+    // Update chat's last message
+    chat.lastMessage = {
+      content: message,
+      sender: user._id,
+      timestamp: new Date()
+    }
+    await chat.save()
+    
+    console.log("✅ Public message sent successfully:", newMessage._id)
+    
+    // Send email notification to ambassador
+    try {
+      await sendEmail(
+        ambassador.email,
+        "New Message from Student",
+        `Hello ${ambassador.name},\n\nYou have received a new message from ${user.name} (${user.email}):\n\n"${message}"\n\nPlease log in to your dashboard to respond.\n\nBest regards,\nLeadX Team`
+      )
+      console.log("✅ Email notification sent to ambassador")
+    } catch (emailError) {
+      console.error("❌ Error sending email notification:", emailError)
+      // Don't fail the request if email fails
+    }
+    
+    res.status(200).json(respo(true, "Message sent successfully", {
+      messageId: newMessage._id,
+      chatId: chat._id,
+      ambassadorName: ambassador.name
+    }))
+  } catch (err) {
+    console.error("❌ Public message error:", err)
+    next(err)
+  }
+}
