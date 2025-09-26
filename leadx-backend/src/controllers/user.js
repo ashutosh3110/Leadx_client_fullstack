@@ -5,7 +5,10 @@ import errGen from "../utils/errGen.js"
 import respo from "../utils/respo.js"
 import { sendEmail } from "../utils/mailer.js" // helper for email
 import { LoginHistory } from "../models/LoginHistory.js"
-import geoip from "geoip-lite"
+
+import { createRequire } from "module"
+const require = createRequire(import.meta.url)
+const useragent = require("useragent")
 
 // 🔑 Register Ambassador
 export const registerUser = async (req, res, next) => {
@@ -90,13 +93,13 @@ export const loginUser = async (req, res, next) => {
     let os = ""
     let browser = ""
 
-    // Parse user agent
+    // ✅ Parse user-agent properly
     const agent = useragent.parse(req.headers["user-agent"])
     device = agent.device.toString()
     os = agent.os.toString()
     browser = agent.toAgent()
 
-    // If ambassador and real IP, fetch geo info
+    // 🌐 Fetch IP geo info if ambassador and not localhost
     if (user.role === "ambassador" && !isLocalIp && ip) {
       try {
         const apiKey =
@@ -124,7 +127,7 @@ export const loginUser = async (req, res, next) => {
       }
     }
 
-    // Save login history (even for local, now with agent info)
+    // 📦 Save login history
     await LoginHistory.create({
       userId: user._id,
       ipAddress: ip,
@@ -150,6 +153,7 @@ export const loginUser = async (req, res, next) => {
       .status(200)
       .json(respo(true, "Login successful", { token, user: safeUser }))
   } catch (err) {
+    console.error("❌ Login error:", err)
     next(err)
   }
 }
