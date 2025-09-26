@@ -70,34 +70,40 @@ export const loginUser = async (req, res, next) => {
       { expiresIn: "7d" }
     )
 
-    // Get raw IP
+    // Extract IP
     const rawIp =
       req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
       req.socket?.remoteAddress ||
       ""
 
-    // Remove IPv6-mapped prefix if any
     const ip = rawIp.startsWith("::ffff:")
       ? rawIp.replace("::ffff:", "")
       : rawIp
+    console.log("🛰️ Detected IP:", ip)
 
-    console.log("Detected IP:", ip)
-
-    // Skip localhost IPs
     const isLocalIp = ip === "::1" || ip === "127.0.0.1"
 
     let region = ""
     let city = ""
     let isp = ""
+    let device = ""
+    let os = ""
+    let browser = ""
 
-    // Fetch geo info from ipdata if not local
+    // Parse user agent
+    const agent = useragent.parse(req.headers["user-agent"])
+    device = agent.device.toString()
+    os = agent.os.toString()
+    browser = agent.toAgent()
+
+    // If ambassador and real IP, fetch geo info
     if (user.role === "ambassador" && !isLocalIp && ip) {
       try {
         const apiKey =
           process.env.IPDATA_API_KEY ||
           "a15111aa6cea99eb45b31303978093a58b64d26b1dfb90b7077e9d69"
 
-        console.log(`Fetching ipdata for IP: ${ip}`)
+        console.log(`🌐 Fetching ipdata for IP: ${ip}`)
 
         const response = await fetch(
           `https://api.ipdata.co/${ip}?api-key=${apiKey}`
@@ -105,33 +111,33 @@ export const loginUser = async (req, res, next) => {
 
         if (response.ok) {
           const data = await response.json()
-          console.log("ipdata response:", data)
+          console.log("📍 ipdata response:", data)
 
           region = data.region || ""
           city = data.city || ""
           isp = data.asn?.name || data.carrier?.name || ""
         } else {
-          console.error("ipdata response error:", await response.text())
+          console.error("❌ ipdata error:", await response.text())
         }
       } catch (err) {
-        console.error("ipdata API fetch error:", err)
+        console.error("⚠️ ipdata fetch failed:", err)
       }
-
-      await LoginHistory.create({
-        userId: user._id,
-        ipAddress: ip,
-        region,
-        city,
-        isp,
-        loginTime: new Date(),
-      })
-
-      console.log("✅ Login history saved")
-    } else {
-      console.log(
-        "⚠️ Login history not saved due to local IP or non-ambassador role"
-      )
     }
+
+    // Save login history (even for local, now with agent info)
+    await LoginHistory.create({
+      userId: user._id,
+      ipAddress: ip,
+      region,
+      city,
+      isp,
+      loginTime: new Date(),
+      browser,
+      os,
+      device,
+    })
+
+    console.log("✅ Login history saved")
 
     const safeUser = {
       id: user._id,
@@ -148,38 +154,6 @@ export const loginUser = async (req, res, next) => {
   }
 }
 
-// export const loginUser = async (req, res, next) => {
-//   try {
-//     const { email, password } = req.body
-//     if (!email || !password)
-//       return next(errGen(400, "Email and password are required"))
-
-//     const user = await User.findOne({ email })
-//     if (!user) return next(errGen(404, "User not found"))
-
-//     const isMatch = await bcrypt.compare(password, user.password)
-//     if (!isMatch) return next(errGen(400, "Invalid credentials"))
-
-//     const token = JWT.sign(
-//       { id: user._id, role: user.role },
-//       process.env.JWT_ACCESS_SECRET,
-//       { expiresIn: "7d" }
-//     )
-
-//     const safeUser = {
-//       id: user._id,
-//       name: user.name,
-//       email: user.email,
-//       role: user.role,
-//     }
-
-//     res
-//       .status(200)
-//       .json(respo(true, "Login successful", { token, user: safeUser }))
-//   } catch (err) {
-//     next(err)
-//   }
-// }
 // 👤 Get Own Profile
 export const getMyProfile = async (req, res, next) => {
   try {
@@ -672,6 +646,8 @@ The LeadX Team`
     next(err)
   }
 }
+
+// get ambassador login history
 export const getAmbassadorLogins = async (req, res, next) => {
   try {
     const logs = await LoginHistory.find()
