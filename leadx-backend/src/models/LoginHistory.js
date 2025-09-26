@@ -9,11 +9,13 @@ const loginHistorySchema = new mongoose.Schema(
       required: true,
     },
     ipAddress: String,
-    name: String,
     region: String,
     city: String,
     isp: String,
-    loginTime: { type: Date, default: Date.now },
+    loginTime: Date,
+    browser: String,
+    os: String,
+    device: String,
   },
   { timestamps: true }
 )
