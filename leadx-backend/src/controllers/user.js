@@ -70,24 +70,28 @@ export const loginUser = async (req, res, next) => {
       { expiresIn: "7d" }
     )
 
-    // Get IP properly
-    const ip =
+    // Get raw IP
+    const rawIp =
       req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
       req.socket?.remoteAddress ||
       ""
 
+    // Remove IPv6-mapped prefix if any
+    const ip = rawIp.startsWith("::ffff:")
+      ? rawIp.replace("::ffff:", "")
+      : rawIp
+
     console.log("Detected IP:", ip)
 
     // Skip localhost IPs
-    const isLocalIp =
-      ip === "::1" || ip === "127.0.0.1" || ip.startsWith("::ffff:127.")
+    const isLocalIp = ip === "::1" || ip === "127.0.0.1"
 
     let region = ""
     let city = ""
     let isp = ""
 
-    // If ambassador and IP is NOT local, fetch geo data from ipdata.co
-    if (user.role === "ambassador" && ip) {
+    // Fetch geo info from ipdata if not local
+    if (user.role === "ambassador" && !isLocalIp && ip) {
       try {
         const apiKey =
           process.env.IPDATA_API_KEY ||
@@ -102,7 +106,8 @@ export const loginUser = async (req, res, next) => {
         if (response.ok) {
           const data = await response.json()
           console.log("ipdata response:", data)
-          region = data.region_name || data.region || ""
+
+          region = data.region || ""
           city = data.city || ""
           isp = data.asn?.name || data.carrier?.name || ""
         } else {
@@ -120,9 +125,12 @@ export const loginUser = async (req, res, next) => {
         isp,
         loginTime: new Date(),
       })
-      console.log("Login history saved")
+
+      console.log("✅ Login history saved")
     } else {
-      console.log("Login history not saved due to local IP or role")
+      console.log(
+        "⚠️ Login history not saved due to local IP or non-ambassador role"
+      )
     }
 
     const safeUser = {
