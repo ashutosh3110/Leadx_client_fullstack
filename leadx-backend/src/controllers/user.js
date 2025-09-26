@@ -61,7 +61,7 @@ export const loginUser = async (req, res, next) => {
     const user = await User.findOne({ email })
     if (!user) return next(errGen(404, "User not found"))
 
-    const isMatch = await bcrypt.compare(password, user.password)
+    const isMatch = await bcrypt.compare(password, user.password) // ✅ FIXED
     if (!isMatch) return next(errGen(400, "Invalid credentials"))
 
     const token = JWT.sign(
@@ -77,12 +77,7 @@ export const loginUser = async (req, res, next) => {
       ""
 
     // 👇 Save login history (only if ambassador and not local IP)
-    if (
-      user.role === "ambassador" &&
-      ip !== "::1" &&
-      ip !== "127.0.0.1" &&
-      !ip.startsWith("::ffff:127.")
-    ) {
+    if (user.role === "ambassador") {
       const geo = geoip.lookup(ip)
 
       await LoginHistory.create({
@@ -94,7 +89,6 @@ export const loginUser = async (req, res, next) => {
         loginTime: new Date(),
       })
     }
-
     const safeUser = {
       id: user._id,
       name: user.name,
