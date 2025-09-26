@@ -3,22 +3,30 @@ import errGen from "../utils/errGen.js"
 
 // 🔑 Authenticate middleware
 export const authenticate = (req, res, next) => {
-  const token = req.headers.authorization?.split(" ")[1]
+  const authHeader = req.headers.authorization
+  const token = authHeader?.split(" ")[1]
+  
+  console.log('Auth middleware - Authorization header:', authHeader)
+  console.log('Auth middleware - Extracted token:', token ? 'Present' : 'Missing')
 
   if (!token) {
+    console.log('Auth middleware - No token found in request')
     return next(errGen(401, "No authorization token found!"))
   }
 
   try {
     const decoded = JWT.verify(token, process.env.JWT_ACCESS_SECRET)
+    console.log('Auth middleware - Decoded token:', decoded)
 
     if (!decoded.id) {
       return next(errGen(401, "Invalid session! Please login again"))
     }
 
     req.user = decoded
+    console.log('Auth middleware - User ID:', req.user.id, 'Role:', req.user.role)
     next()
   } catch (err) {
+    console.log('Auth middleware - JWT error:', err.message)
     return next(errGen(401, "Unauthorized Access!"))
   }
 }

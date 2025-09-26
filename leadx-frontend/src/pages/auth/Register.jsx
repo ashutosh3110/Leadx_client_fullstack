@@ -3,8 +3,9 @@ import { useFormik } from "formik"
 import * as Yup from "yup"
 import axios from "axios"
 import { useNavigate, Link } from "react-router-dom"
+import { toast } from "react-toastify"
+import api from "../utils/Api"
 
-// API endpoint (replace with your backend URL)
 const API_URL = import.meta.env.VITE_API_URL
 
 const Register = () => {
@@ -40,20 +41,13 @@ const Register = () => {
     onSubmit: async (values, { resetForm }) => {
       try {
         setLoading(true)
-        const res = await axios.post(`${API_URL}/auth/register`, values)
-
-        // Save token in localStorage
-        localStorage.setItem("token", res.data.token)
-
-        // Redirect to dashboard if token exists
-        if (res.data.token) {
-          navigate("/dashboard")
-        }
-
+        const res = await api.post("/auth/register", values)
+        toast.success("Registration successful! 🎉")
         resetForm()
+        navigate("/login")
       } catch (err) {
         console.error(err)
-        alert(err.response?.data?.message || "Registration failed")
+        toast.error(err.response?.data?.message || "Registration failed")
       } finally {
         setLoading(false)
       }
@@ -71,7 +65,6 @@ const Register = () => {
         </p>
 
         <form onSubmit={formik.handleSubmit} className="space-y-4">
-          {/* Name */}
           <div>
             <label
               htmlFor="name"
@@ -98,7 +91,6 @@ const Register = () => {
             )}
           </div>
 
-          {/* Email */}
           <div>
             <label
               htmlFor="email"
@@ -125,7 +117,6 @@ const Register = () => {
             )}
           </div>
 
-          {/* Phone */}
           <div>
             <label
               htmlFor="phone"
@@ -152,7 +143,6 @@ const Register = () => {
             )}
           </div>
 
-          {/* Program */}
           <div>
             <label
               htmlFor="program"
@@ -189,7 +179,6 @@ const Register = () => {
             )}
           </div>
 
-          {/* Password */}
           <div>
             <label
               htmlFor="password"
@@ -227,7 +216,6 @@ const Register = () => {
             )}
           </div>
 
-          {/* Submit */}
           <button
             type="submit"
             disabled={loading}
@@ -245,7 +233,6 @@ const Register = () => {
           </p>
         </form>
 
-        {/* Login link */}
         <p className="text-sm text-center text-gray-700 mt-6">
           Already have an account?{" "}
           <Link

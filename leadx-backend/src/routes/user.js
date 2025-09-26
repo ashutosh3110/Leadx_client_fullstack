@@ -5,10 +5,12 @@ import uploader from "../utils/uploader.js"
 import {
   registerUser,
   loginUser,
-  getAllUsers,
+  getVerifiedAmbassadors,
+  getAllAmbassadors,
   getUserById,
   updateUser,
   deleteUser,
+  getAmbassadors,
   updateProfile,
   logout,
   forgotPassword,
@@ -16,7 +18,12 @@ import {
   verifyResetCode,
   resetPassword,
   deleteAccount,
-  createAdmin, // NEW
+  createAdmin,
+  getMyProfile,
+  approveAmbassador,
+  rejectAmbassador,
+  autoRegisterUser,
+  getPublicAmbassadors,
 } from "../controllers/user.js"
 
 const router = Router()
@@ -27,7 +34,7 @@ const router = Router()
 router.post("/register", registerUser)
 router.post("/login", loginUser)
 router.post("/logout", authenticate, logout)
-
+router.get("/me", authenticate, getMyProfile)
 /* ==========================
    👤 USER PROFILE ROUTES
 ========================== */
@@ -55,12 +62,37 @@ router.post("/reset-password", resetPassword)
    👥 ADMIN ROUTES
 ========================== */
 // Create admin (only admin can create new admin dynamically)
-router.post("/admin/create", authenticate, checkRole("admin"), createAdmin)
+router.post("/create", authenticate, checkRole("admin"), createAdmin)
+
+// Ambassadors list (Admin)
+router.get("/ambassadors", getAllAmbassadors)
 
 // Manage users
-router.get("/admin", authenticate, checkRole("admin"), getAllUsers)
-router.get("/admin/:id", authenticate, checkRole("admin"), getUserById)
-router.put("/admin/:id", authenticate, checkRole("admin"), updateUser)
-router.delete("/admin/:id", authenticate, checkRole("admin"), deleteUser)
+router.get(
+  "/verify/ambassadors",
+  authenticate,
+  checkRole("admin"),
+  getVerifiedAmbassadors
+)
+router.get("/:id", getUserById)
+router.put("/:id", authenticate, checkRole("admin"), updateUser)
+router.delete("/:id", authenticate, checkRole("admin"), deleteUser)
+// 🔐 Protected routes (admin only)
+router.patch(
+  "/:id/approve",
+  authenticate,
+  checkRole("admin"),
+  approveAmbassador
+)
+router.patch("/:id/reject", authenticate, checkRole("admin"), rejectAmbassador)
+
+/* ==========================
+   🌐 PUBLIC API ROUTES (for embeddable script)
+========================== */
+// Public ambassadors endpoint (no auth required)
+router.get("/ambassadors/public", getPublicAmbassadors)
+
+// Auto-register user endpoint (no auth required)
+router.post("/auto-register", autoRegisterUser)
 
 export default router

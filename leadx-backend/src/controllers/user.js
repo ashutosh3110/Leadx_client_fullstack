@@ -8,19 +8,32 @@ import { sendEmail } from "../utils/mailer.js" // helper for email
 // 🔑 Register Ambassador
 export const registerUser = async (req, res, next) => {
   try {
+    console.log("🔍 Register request body:", req.body)
+
     const { error, value } = userValidationSchema.validate(req.body, {
       stripUnknown: true,
     })
-    if (error) return next(errGen(400, error.details[0].message))
+
+    if (error) {
+      console.log("❌ Validation error:", error.details[0].message)
+      return next(errGen(400, error.details[0].message))
+    }
+
+    console.log("✅ Validated data:", value)
 
     const existingUser = await User.findOne({ email: value.email })
-    if (existingUser) return next(errGen(400, "User already exists"))
+    if (existingUser) {
+      console.log("❌ User already exists:", value.email)
+      return next(errGen(400, "User already exists"))
+    }
 
     // Hash password
     value.password = await bcrypt.hash(value.password, 10)
+    console.log("✅ Password hashed successfully")
 
     // Force default role = ambassador
     const newUser = await User.create({ ...value, role: "ambassador" })
+    console.log("✅ User created successfully:", newUser._id)
 
     const safeUser = {
       id: newUser._id,
@@ -31,6 +44,7 @@ export const registerUser = async (req, res, next) => {
 
     res.status(201).json(respo(true, "Registered successfully", safeUser))
   } catch (err) {
+    console.error("❌ Register error:", err)
     next(err)
   }
 }
@@ -68,12 +82,73 @@ export const loginUser = async (req, res, next) => {
     next(err)
   }
 }
-
-// 📋 Get All Users (Admin only)
-export const getAllUsers = async (req, res, next) => {
+// 👤 Get Own Profile
+export const getMyProfile = async (req, res, next) => {
   try {
-    const users = await User.find().select("-password")
-    res.status(200).json(respo(true, "Users fetched successfully", users))
+    const user = await User.findById(req.user.id).select("-password")
+    if (!user) return next(errGen(404, "User not found"))
+
+    res.status(200).json(respo(true, "Profile fetched successfully", user))
+  } catch (err) {
+    next(err)
+  }
+}
+
+// 👥 Get All Ambassadors (Admin only)
+export const getAllAmbassadors = async (req, res, next) => {
+  try {
+    const { search = "" } = req.query
+    const query = {
+      role: "ambassador",
+      $or: [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+        { phone: { $regex: search, $options: "i" } },
+      ],
+    }
+    if (!search) delete query.$or
+
+    const ambassadors = await User.find(query).select("-password")
+    res.status(200).json(respo(true, "All Ambassadors fetched", ambassadors))
+  } catch (err) {
+    next(err)
+  }
+}
+
+// 👥 Get Verified Ambassadors (Admin only)
+export const getVerifiedAmbassadors = async (req, res, next) => {
+  try {
+    const { search = "" } = req.query
+    const query = {
+      role: "ambassador",
+      isVerified: true,
+      $or: [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+        { phone: { $regex: search, $options: "i" } },
+      ],
+    }
+    if (!search) delete query.$or
+
+    const ambassadors = await User.find(query).select("-password")
+
+    // Use hasReward field from database (no need to calculate)
+    const ambassadorsWithRewards = ambassadors.map((ambassador) => ({
+      ...ambassador.toObject(),
+      hasReward: ambassador.hasReward || false,
+    }))
+
+    console.log(
+      "getVerifiedAmbassadors - Ambassadors with reward status:",
+      ambassadorsWithRewards.map((a) => ({
+        name: a.name,
+        hasReward: a.hasReward,
+      }))
+    )
+
+    res
+      .status(200)
+      .json(respo(true, "Verified Ambassadors fetched", ambassadorsWithRewards))
   } catch (err) {
     next(err)
   }
@@ -141,9 +216,26 @@ export const updateProfile = async (req, res, next) => {
   try {
     const updates = req.body
 
-    // 🔐 Hash password if provided
-    if (updates.password) {
+    // 🔐 Hash password if provided (and not empty)
+    if (updates.password && updates.password.trim() !== "") {
       updates.password = await bcrypt.hash(updates.password, 10)
+    } else {
+      // Remove password field if empty or undefined
+      delete updates.password
+    }
+
+    // 🏠 Handle state field (ensure it's a string, not array)
+    if (updates.state) {
+      if (Array.isArray(updates.state)) {
+        // If it's an array, take the first non-empty value
+        updates.state =
+          updates.state.find((val) => val && val.trim() !== "") || ""
+      } else {
+        // Ensure it's a string
+        updates.state = String(updates.state)
+      }
+    } else {
+      updates.state = ""
     }
 
     // 🖼️ Handle uploaded files
@@ -183,6 +275,27 @@ export const forgotPassword = async (req, res, next) => {
 
     await sendEmail(email, "Password Reset Code", `Your code: ${code}`)
     res.status(200).json(respo(true, "Reset code sent to email"))
+  } catch (err) {
+    next(err)
+  }
+}
+// 👥 Get Ambassadors (Admin only)
+export const getAmbassadors = async (req, res, next) => {
+  try {
+    const { search = "" } = req.query
+    const query = {
+      role: "ambassador",
+      $or: [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+        { phone: { $regex: search, $options: "i" } },
+      ],
+    }
+    // If no search, remove $or to return all ambassadors
+    if (!search) delete query.$or
+
+    const users = await User.find(query).select("-password")
+    res.status(200).json(respo(true, "Ambassadors fetched", users))
   } catch (err) {
     next(err)
   }
@@ -290,6 +403,174 @@ export const createAdmin = async (req, res, next) => {
 
     res.status(201).json(respo(true, "Admin created successfully", safeUser))
   } catch (err) {
+    next(err)
+  }
+}
+
+// 👉 Approve Ambassador
+export const approveAmbassador = async (req, res, next) => {
+  try {
+    const { id } = req.params
+
+    // only admin can approve
+    if (req.user.role !== "admin") {
+      return next(errGen(403, "Only admins can approve ambassadors"))
+    }
+
+    const user = await User.findById(id)
+    if (!user) return next(errGen(404, "User not found"))
+
+    if (user.role !== "ambassador") {
+      return next(errGen(400, "User is not an ambassador"))
+    }
+
+    user.isVerified = true
+    await user.save()
+
+    return res
+      .status(200)
+      .json(respo(true, "Ambassador approved successfully", user))
+  } catch (err) {
+    next(err)
+  }
+}
+
+// 👉 Reject Ambassador
+export const rejectAmbassador = async (req, res, next) => {
+  try {
+    const { id } = req.params
+
+    if (req.user.role !== "admin") {
+      return next(errGen(403, "Only admins can reject ambassadors"))
+    }
+
+    const user = await User.findById(id)
+    if (!user) return next(errGen(404, "User not found"))
+
+    if (user.role !== "ambassador") {
+      return next(errGen(400, "User is not an ambassador"))
+    }
+
+    user.isVerified = false
+    await user.save()
+
+    return res
+      .status(200)
+      .json(respo(true, "Ambassador rejected successfully", user))
+  } catch (err) {
+    next(err)
+  }
+}
+
+//  Get Public Ambassadors (for embeddable script)
+export const getPublicAmbassadors = async (req, res, next) => {
+  try {
+    console.log("🔍 Fetching public ambassadors...")
+
+    // Get only verified ambassadors with basic info
+    const ambassadors = await User.find({
+      role: "ambassador",
+      isVerified: true,
+    }).select("name email course profileImage createdAt")
+
+    console.log(`✅ Found ${ambassadors.length} public ambassadors`)
+
+    res
+      .status(200)
+      .json(respo(true, "Public ambassadors fetched successfully", ambassadors))
+  } catch (err) {
+    console.error("❌ Error fetching public ambassadors:", err)
+    next(err)
+  }
+}
+
+//  Auto Register User (for embeddable script)
+export const autoRegisterUser = async (req, res, next) => {
+  try {
+    // console.log("🔍 Auto-register request body:", req.body)
+
+    const {
+      name,
+      email,
+      phone,
+      password = "123456",
+      role = "user",
+      country,
+      state,
+      alternatePhone,
+    } = req.body
+
+    if (!name || !email || !phone) {
+      return next(errGen(400, "Name, email, and phone are required"))
+    }
+
+    const existingUser = await User.findOne({ email })
+    if (existingUser) {
+      console.log("✅ User already exists, returning existing user")
+      const safeUser = {
+        id: existingUser._id,
+        name: existingUser.name,
+        email: existingUser.email,
+        role: existingUser.role,
+        country: existingUser.country,
+        state: existingUser.state,
+        phone: existingUser.phone,
+        alternatePhone: existingUser.alternatePhone,
+      }
+      return res.status(200).json(respo(true, "User already exists", safeUser))
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10)
+    console.log("✅ Password hashed successfully")
+
+    const newUser = await User.create({
+      name,
+      email,
+      phone,
+      password: hashedPassword,
+      role,
+      country,
+      state,
+      alternatePhone,
+      isVerified: true, // Optional: mark as verified
+    })
+
+    console.log("✅ User auto-registered successfully:", newUser._id)
+
+    const safeUser = {
+      id: newUser._id,
+      name: newUser.name,
+      email: newUser.email,
+      role: newUser.role,
+      country: newUser.country,
+      state: newUser.state,
+      phone: newUser.phone,
+      alternatePhone: newUser.alternatePhone,
+    }
+
+    // ✅ Send welcome email with credentials
+    const subject = "🎉 Welcome to LeadX!"
+    const text = `Hi ${name},
+
+Welcome to LeadX! 🎉 Your account has been successfully created.
+
+You can log in with the following credentials:
+
+Email: ${email}
+Password: ${password}
+
+We recommend updating your password after logging in for the first time.
+
+Thanks,  
+The LeadX Team`
+
+    await sendEmail(email, subject, text)
+
+    res
+      .status(201)
+      .json(respo(true, "User auto-registered successfully", safeUser))
+  } catch (err) {
+    console.error("❌ Auto-register error:", err)
     next(err)
   }
 }

@@ -36,7 +36,10 @@ const Sidebar = () => {
           open ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0 transition-transform duration-300 z-50`}
       >
-        <div className="p-6 font-bold text-2xl">Dashboard</div>
+        <div className="p-6 font-bold text-2xl">
+          <img src="/logo-new.png" alt="LeadX Logo" className="main-logo" />
+        </div>
+
         <nav className="flex flex-col space-y-2 px-4">
           {menus.map((menu, i) => (
             <Link

@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react"
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react"
 
 const AuthContext = createContext(null)
 
@@ -35,7 +41,14 @@ export function AuthProvider({ children }) {
   }
 
   const value = useMemo(
-    () => ({ isInitialized, user, role, isAuthenticated: Boolean(user) && Boolean(role), login, logout }),
+    () => ({
+      isInitialized,
+      user,
+      role,
+      isAuthenticated: Boolean(user) && Boolean(role),
+      login,
+      logout,
+    }),
     [isInitialized, user, role]
   )
 
@@ -47,5 +60,3 @@ export function useAuth() {
   if (!ctx) throw new Error("useAuth must be used within an AuthProvider")
   return ctx
 }
-
-

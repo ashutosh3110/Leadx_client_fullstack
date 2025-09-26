@@ -11,7 +11,10 @@ const chatSchema = new Schema(
         required: true,
       },
     ],
-    lastMessage: { type: String },
+    lastMessage: {
+      type: Schema.Types.ObjectId,
+      ref: "Message", // ✅ Reference to Message model
+    },
   },
   { timestamps: true }
 )
