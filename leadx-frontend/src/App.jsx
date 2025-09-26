@@ -19,6 +19,7 @@ import Chat from "./pages/ambassador/Chat"
 import ManageAmbassadors from "./pages/superadmin/ManageAmbassadors"
 import AmbassadorList from "./pages/user/AmbassadorList"
 import UserLayout from "./pages/user/Layout"
+import AmbassadorLoginTable from "./pages/auth/LoginHistory"
 
 function App() {
   return (
@@ -39,6 +40,7 @@ function App() {
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/test" element={<AmbassadorLoginTable />} />
 
         {/* Admin Protected Routes */}
         <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
