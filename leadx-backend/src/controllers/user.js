@@ -70,29 +70,59 @@ export const loginUser = async (req, res, next) => {
       { expiresIn: "7d" }
     )
 
-    // 👇 Define IP properly
+    // Get IP properly
     const ip =
-      req.headers["x-forwarded-for"]?.split(",")[0] ||
+      req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
       req.socket?.remoteAddress ||
       ""
 
-    // 👇 Save login history (only if ambassador and not local IP)
-    if (
-      user.role === "ambassador" &&
-      ip !== "::1" &&
-      ip !== "127.0.0.1" &&
-      !ip.startsWith("::ffff:127.")
-    ) {
-      const geo = geoip.lookup(ip)
+    console.log("Detected IP:", ip)
+
+    // Skip localhost IPs
+    const isLocalIp =
+      ip === "::1" || ip === "127.0.0.1" || ip.startsWith("::ffff:127.")
+
+    let region = ""
+    let city = ""
+    let isp = ""
+
+    // If ambassador and IP is NOT local, fetch geo data from ipdata.co
+    if (user.role === "ambassador" && ip) {
+      try {
+        const apiKey =
+          process.env.IPDATA_API_KEY ||
+          "a15111aa6cea99eb45b31303978093a58b64d26b1dfb90b7077e9d69"
+
+        console.log(`Fetching ipdata for IP: ${ip}`)
+
+        const response = await fetch(
+          `https://api.ipdata.co/${ip}?api-key=${apiKey}`
+        )
+
+        if (response.ok) {
+          const data = await response.json()
+          console.log("ipdata response:", data)
+          region = data.region_name || data.region || ""
+          city = data.city || ""
+          isp = data.asn?.name || data.carrier?.name || ""
+        } else {
+          console.error("ipdata response error:", await response.text())
+        }
+      } catch (err) {
+        console.error("ipdata API fetch error:", err)
+      }
 
       await LoginHistory.create({
         userId: user._id,
         ipAddress: ip,
-        region: geo?.region || "",
-        city: geo?.city || "",
-        isp: geo?.org || "",
+        region,
+        city,
+        isp,
         loginTime: new Date(),
       })
+      console.log("Login history saved")
+    } else {
+      console.log("Login history not saved due to local IP or role")
     }
 
     const safeUser = {
