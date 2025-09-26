@@ -34,122 +34,20 @@ const AddRewardModal = ({
         const currencySymbols = {
             'INR': '₹',
             'USD': '$',
-            'GBP': '£',
-            'CAD': 'C$',
-            'AUD': 'A$',
-            'EUR': '€',
-            'JPY': '¥',
-            'CNY': '¥',
-            'KRW': '₩',
-            'BRL': 'R$',
-            'MXN': '$',
-            'RUB': '₽',
-            'ZAR': 'R',
-            'SGD': 'S$',
-            'HKD': 'HK$',
-            'AED': 'د.إ',
-            'SAR': '﷼',
-            'TRY': '₺',
-            'THB': '฿',
-            'MYR': 'RM',
-            'IDR': 'Rp',
-            'PHP': '₱',
-            'VND': '₫',
-            'BDT': '৳',
-            'PKR': '₨',
-            'LKR': '₨',
-            'NPR': '₨',
-            'BTN': 'Nu.',
-            'MMK': 'K',
-            'KHR': '៛',
-            'LAK': '₭'
+            
         };
         return currencySymbols[currency] || currency;
     };
 
     const currencyOptions = [
         { value: 'INR', label: 'INR (₹)' },
-        { value: 'USD', label: 'USD ($)' },
-        { value: 'GBP', label: 'GBP (£)' },
-        { value: 'CAD', label: 'CAD (C$)' },
-        { value: 'AUD', label: 'AUD (A$)' },
-        { value: 'EUR', label: 'EUR (€)' },
-        { value: 'JPY', label: 'JPY (¥)' },
-        { value: 'CNY', label: 'CNY (¥)' },
-        { value: 'KRW', label: 'KRW (₩)' },
-        { value: 'BRL', label: 'BRL (R$)' },
-        { value: 'MXN', label: 'MXN ($)' },
-        { value: 'RUB', label: 'RUB (₽)' },
-        { value: 'ZAR', label: 'ZAR (R)' },
-        { value: 'SGD', label: 'SGD (S$)' },
-        { value: 'HKD', label: 'HKD (HK$)' },
-        { value: 'AED', label: 'AED (د.إ)' },
-        { value: 'SAR', label: 'SAR (﷼)' },
-        { value: 'TRY', label: 'TRY (₺)' },
-        { value: 'THB', label: 'THB (฿)' },
-        { value: 'MYR', label: 'MYR (RM)' },
-        { value: 'IDR', label: 'IDR (Rp)' },
-        { value: 'PHP', label: 'PHP (₱)' },
-        { value: 'VND', label: 'VND (₫)' },
-        { value: 'BDT', label: 'BDT (৳)' },
-        { value: 'PKR', label: 'PKR (₨)' },
-        { value: 'LKR', label: 'LKR (₨)' },
-        { value: 'NPR', label: 'NPR (₨)' },
-        { value: 'BTN', label: 'BTN (Nu.)' },
-        { value: 'MMK', label: 'MMK (K)' },
-        { value: 'KHR', label: 'KHR (៛)' },
-        { value: 'LAK', label: 'LAK (₭)' }
+        { value: 'USD', label: 'USD ($)' }
     ];
 
     // Function to get currency based on country
     const getCurrencyByCountry = (country) => {
-        const countryCurrencyMap = {
-            'India': 'INR',
-            'United States': 'USD',
-            'USA': 'USD',
-            'US': 'USD',
-            'United Kingdom': 'GBP',
-            'UK': 'GBP',
-            'Canada': 'CAD',
-            'Australia': 'AUD',
-            'Germany': 'EUR',
-            'France': 'EUR',
-            'Italy': 'EUR',
-            'Spain': 'EUR',
-            'Netherlands': 'EUR',
-            'Japan': 'JPY',
-            'China': 'CNY',
-            'South Korea': 'KRW',
-            'Brazil': 'BRL',
-            'Mexico': 'MXN',
-            'Russia': 'RUB',
-            'South Africa': 'ZAR',
-            'Singapore': 'SGD',
-            'Hong Kong': 'HKD',
-            'UAE': 'AED',
-            'Saudi Arabia': 'SAR',
-            'Turkey': 'TRY',
-            'Thailand': 'THB',
-            'Malaysia': 'MYR',
-            'Indonesia': 'IDR',
-            'Philippines': 'PHP',
-            'Vietnam': 'VND',
-            'Bangladesh': 'BDT',
-            'Pakistan': 'PKR',
-            'Sri Lanka': 'LKR',
-            'Nepal': 'NPR',
-            'Bhutan': 'BTN',
-            'Myanmar': 'MMK',
-            'Cambodia': 'KHR',
-            'Laos': 'LAK'
-        };
-        
-        // Case-insensitive matching
-        const normalizedCountry = country?.trim();
-        return countryCurrencyMap[normalizedCountry] || 
-               countryCurrencyMap[normalizedCountry?.toLowerCase()] || 
-               countryCurrencyMap[normalizedCountry?.toUpperCase()] || 
-               'USD'; // Default to USD if country not found
+        // India gets INR, all other countries get USD
+        return country === 'India' ? 'INR' : 'USD';
     };
 
     useEffect(() => {

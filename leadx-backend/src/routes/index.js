@@ -3,6 +3,7 @@ import { Router } from "express"
 import userRoutes from "./user.js"
 import chatRoutes from "./chat.js"
 import rewardRoutes from "./reward.js"
+import embedRoutes from "./embed.js"
 
 const router = Router()
 
@@ -10,5 +11,6 @@ const router = Router()
 router.use("/auth", userRoutes)
 router.use("/chat", chatRoutes)
 router.use("/rewards", rewardRoutes)
+router.use("/embed", embedRoutes)
 
 export default router

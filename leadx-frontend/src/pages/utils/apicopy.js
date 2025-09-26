@@ -150,6 +150,34 @@ export const rewardsAPI = {
   },
 };
 
+// Embed configuration management (admin)
+export const embedAPI = {
+  createConfig: async (data) => {
+    const response = await api.post('/api/embed/admin/config', data);
+    return response.data;
+  },
+  updateConfig: async (id, data) => {
+    const response = await api.put(`/api/embed/admin/config/${id}`, data);
+    return response.data;
+  },
+  listConfigs: async () => {
+    const response = await api.get('/api/embed/admin/config');
+    return response.data;
+  },
+  toggleStatus: async (id) => {
+    const response = await api.patch(`/api/embed/admin/config/${id}/toggle`);
+    return response.data;
+  },
+  recordSale: async (id, data) => {
+    const response = await api.post(`/api/embed/admin/config/${id}/sale`, data);
+    return response.data;
+  },
+  salesHistory: async () => {
+    const response = await api.get('/api/embed/admin/sales-history');
+    return response.data;
+  },
+}
+
 export const approvalAPI = {
   // Approve ambassador application
   approveAmbassador: async (userId) => {

@@ -23,10 +23,10 @@ import UserLayout from "./pages/user/Layout"
 function App() {
   return (
     <Router>
-      <ToastContainer 
-        position="top-right" 
-        autoClose={3000} 
-        newestOnTop 
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        newestOnTop
         closeOnClick
         rtl={false}
         pauseOnFocusLoss
@@ -43,9 +43,7 @@ function App() {
         {/* Admin Protected Routes */}
         <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
           <Route path="/admin" element={<AdminDashboard />}>
-            {/* <Route index element={<AdminDashboard />} /> */}
             <Route path="users" element={<ManageAmbassadors />} />
-            {/* <Route path="reports" element={<Reports />} /> */}
           </Route>
         </Route>
 
@@ -58,10 +56,8 @@ function App() {
             <Route path="chat" element={<Chat />} />
           </Route>
         </Route>
-        <Route path="/ambassadors" element={<AmbassadorList/>} />
-        <Route path="/user" element={<UserLayout/>} />
-
-        
+        <Route path="/ambassadors" element={<AmbassadorList />} />
+        <Route path="/user" element={<UserLayout />} />
 
         <Route path="/unauthorized" element={<Unauthorized />} />
       </Routes>

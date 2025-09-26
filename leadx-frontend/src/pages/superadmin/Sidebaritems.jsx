@@ -67,6 +67,26 @@ const sidebarItems = [
     },
   
     {
+      id: "embeds",
+      name: "Embeds",
+      icon: (
+        <svg
+          className="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M16 18l6-6-6-6M8 6l-6 6 6 6"
+          />
+        </svg>
+      ),
+    },
+  
+    {
       id: "users",
       name: "User Management",
       icon: (
@@ -114,4 +134,3 @@ const sidebarItems = [
   ];
   
   export default sidebarItems;
-  

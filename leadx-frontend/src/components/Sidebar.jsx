@@ -19,7 +19,6 @@ const Sidebar = () => {
   const sidebarRef = useRef(null)
   const { ambassadorDashboardColor } = useColorContext()
 
-  // ✅ Correct way to read role
   const authUser = JSON.parse(localStorage.getItem("authUser"))
   const role = authUser?.user?.role || ""
 
@@ -66,8 +65,15 @@ const Sidebar = () => {
 
   return (
     <>
+      {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white shadow-lg flex justify-between items-center p-4">
-        <h2 className="text-2xl font-bold text-red-700">Dashboard</h2>
+        <div className="p-2">
+          <img
+            src="/logo-new.png"
+            alt="LeadX Logo"
+            className="h-8 sm:h-10 object-contain"
+          />
+        </div>
         <button
           onClick={() => setOpen(true)}
           className="text-2xl text-gray-700 hover:text-red-700 transition-colors"
@@ -77,29 +83,34 @@ const Sidebar = () => {
         </button>
       </div>
 
+      {/* Mobile overlay */}
       {open && (
         <div
-          className="fixed inset-0 border-e-indigo-50 bg-opacity-60 z-40 lg:hidden transition-opacity duration-300"
+          className="fixed inset-0 bg-black bg-opacity-30 z-40 lg:hidden"
           onClick={() => setOpen(false)}
         />
       )}
 
+      {/* Sidebar */}
       <div
         ref={sidebarRef}
         className={`fixed lg:static top-0 left-0 h-screen w-64 text-white shadow-2xl transform ${
           open ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0 transition-transform duration-300 ease-in-out z-50 flex flex-col`}
-        style={{ 
-          background: `linear-gradient(135deg, ${ambassadorDashboardColor}, ${ambassadorDashboardColor}dd)`
+        style={{
+          background: `linear-gradient(135deg, ${ambassadorDashboardColor}, ${ambassadorDashboardColor}dd)`,
         }}
       >
-        <div 
+        {/* Sidebar header with logo */}
+        <div
           className="flex justify-between items-center p-4 border-b flex-shrink-0"
           style={{ borderColor: `${ambassadorDashboardColor}80` }}
         >
-          <h2 className="text-xl font-extrabold tracking-tight">
-            Dashboard
-          </h2>
+          <img
+            src="/logo-new.png"
+            alt="LeadX Logo"
+            className="h-10 object-contain"
+          />
           <button
             onClick={() => setOpen(false)}
             className="text-2xl lg:hidden hover:opacity-70 transition-colors"
@@ -109,6 +120,7 @@ const Sidebar = () => {
           </button>
         </div>
 
+        {/* Menu items */}
         <nav className="flex flex-col gap-2 p-4 flex-1 overflow-y-auto">
           {menus.map((menu, i) => (
             <Link
@@ -121,7 +133,10 @@ const Sidebar = () => {
                   : "hover:opacity-80 hover:shadow-md"
               }`}
               style={{
-                color: location.pathname === menu.path ? ambassadorDashboardColor : "white"
+                color:
+                  location.pathname === menu.path
+                    ? ambassadorDashboardColor
+                    : "white",
               }}
             >
               <span className="text-lg">{menu.icon}</span>
