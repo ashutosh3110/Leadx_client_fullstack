@@ -1,8 +1,10 @@
 import { FaSignOutAlt } from "react-icons/fa"
 import { useNavigate } from "react-router-dom"
+import { getUser } from "../utils/auth"
 
 const Navbar = () => {
   const navigate = useNavigate()
+  const user = getUser()
 
   const handleLogout = () => {
     localStorage.removeItem("token")
@@ -13,7 +15,7 @@ const Navbar = () => {
   return (
     <div className="bg-white shadow-md px-6 py-3 flex items-center justify-between">
       <h1 className="text-lg font-semibold text-gray-700">
-        Welcome, Ambassador
+        Welcome, {user?.name || 'Ambassador'}
       </h1>
       <button
         onClick={handleLogout}

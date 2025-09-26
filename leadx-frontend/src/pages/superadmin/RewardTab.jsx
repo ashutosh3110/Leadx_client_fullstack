@@ -107,7 +107,6 @@ const RewardsTab = ({ rewards, adminDashboardColor, onEditReward, onDeleteReward
                       <div className="text-sm font-semibold text-slate-900 truncate">
                         {reward.ambassadorName || 'Unknown Ambassador'}
                       </div>
-                      <div className="text-xs text-slate-500 truncate">ID: {reward.ambassadorId || 'N/A'}</div>
                     </div>
                   </div>
                 </td>

@@ -25,7 +25,7 @@ export const CustomizationProvider = ({ children }) => {
         // Return default values if no saved data or error
         return {
             backgroundColor: '#ffffff',
-            textColor: '#000000',
+            textColor: '#ffffff', // Text color for buttons and chat modal
             roundedBorder: '8',
             padding: '16',
             admissionYear: '',
@@ -45,7 +45,6 @@ export const CustomizationProvider = ({ children }) => {
             status: 'active', // Status dropdown field
             // Ambassador Card Settings - New fields
             tilesAndButtonColor: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', // Gradient color for tiles and buttons
-            textColor: '#ffffff', // Text color for buttons and chat modal
             borderColor: '#e5e7eb', // Border color for cards and chat questions
             borderSize: '3' // Border size for ambassador cards (1-5)
         };

@@ -9,6 +9,7 @@ const userSchema = new Schema(
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     phone: { type: String, required: true },
+    alternativeMobile: { type: String },
     password: { type: String }, // ❌ not required for normal users
 
     // Program / Education Info (only for ambassadors)
@@ -56,6 +57,9 @@ const userValidationSchema = Joi.object({
   phone: Joi.string()
     .pattern(/^[0-9]{10,15}$/)
     .required(),
+  alternativeMobile: Joi.string()
+    .pattern(/^[0-9]{10,15}$/)
+    .allow(""),
   password: Joi.string().min(6).required(), // ✅ required for registration
 
   program: Joi.string().allow(""),

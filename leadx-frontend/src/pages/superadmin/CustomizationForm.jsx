@@ -63,6 +63,11 @@ const CustomizationForm = () => {
     };
 
     const handleAddQuestion = () => {
+        // Limit to maximum 6 questions
+        if ((formData.questions || []).length >= 6) {
+            toast.warning('Maximum 6 questions allowed');
+            return;
+        }
         setFormData(prev => ({
             ...prev,
             questions: [...(prev.questions || []), '']
@@ -112,341 +117,6 @@ const CustomizationForm = () => {
         
         // Show success message
         toast.success('Configuration saved successfully! The changes will be applied to the Chat buttons.');
-    };
-
-    // Generate embeddable script
-    const generateEmbeddableScript = (data) => {
-        // Generate unique client ID
-        const clientId = `client_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        
-        return `<!-- LeadX Ambassador Chat Widget -->
-<!-- Client ID: ${clientId} -->
-<!-- Generated: ${new Date().toISOString()} -->
-<script>
-(function() {
-  // Configuration for ${data.webName || 'Client Website'}
-  const config = {
-    clientId: "${clientId}",
-    apiBaseUrl: "${data.apiBaseUrl || 'http://localhost:5000'}",
-    webUrl: "${data.webUrl || ''}",
-    webName: "${data.webName || ''}",
-    status: "${data.status || 'active'}",
-    policyUrl: "${data.policyUrl || ''}",
-    termsUrl: "${data.termsUrl || ''}",
-    questions: ${JSON.stringify(data.questions || [], null, 2)},
-    tilesAndButtonColor: "${data.tilesAndButtonColor || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'}",
-    textColor: "${data.textColor || '#ffffff'}",
-    borderColor: "${data.borderColor || '#e5e7eb'}",
-    borderSize: "${data.borderSize || '3'}"
-  };
-
-  // Create widget container
-  const widgetContainer = document.createElement('div');
-  widgetContainer.id = 'leadx-ambassador-widget';
-  widgetContainer.innerHTML = \`
-    <div style="
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      z-index: 9999;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    ">
-      <div id="ambassador-cards" style="
-        display: none;
-        position: absolute;
-        bottom: 70px;
-        right: 0;
-        width: 300px;
-        max-height: 400px;
-        overflow-y: auto;
-        background: white;
-        border-radius: \${config.borderSize}px;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-        border: 1px solid \${config.borderColor};
-      ">
-        <!-- Ambassador cards will be loaded here -->
-      </div>
-      
-      <button id="chat-toggle" style="
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        border: none;
-        background: \${config.tilesAndButtonColor};
-        color: \${config.textColor};
-        cursor: pointer;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        transition: all 0.3s ease;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 24px;
-      " onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
-        💬
-      </button>
-    </div>
-  \`;
-
-  // Load ambassadors
-  async function loadAmbassadors() {
-    try {
-      const response = await fetch(\`\${config.apiBaseUrl}/api/ambassadors/public\`);
-      const data = await response.json();
-      
-      if (data.success && data.data.length > 0) {
-        const cardsContainer = document.getElementById('ambassador-cards');
-        cardsContainer.innerHTML = data.data.map(ambassador => \`
-          <div style="
-            padding: 15px;
-            border-bottom: 1px solid #eee;
-            cursor: pointer;
-            transition: background 0.2s;
-          " onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'"
-          onclick="openChat('\${ambassador._id}', '\${ambassador.name}', '\${ambassador.email}')">
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <div style="
-                width: 40px;
-                height: 40px;
-                border-radius: 50%;
-                background: \${config.tilesAndButtonColor};
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                color: \${config.textColor};
-                font-weight: bold;
-              ">
-                \${ambassador.name.charAt(0).toUpperCase()}
-              </div>
-              <div>
-                <div style="font-weight: 600; color: #333;">\${ambassador.name}</div>
-                <div style="font-size: 12px; color: #666;">\${ambassador.course || 'Student Ambassador'}</div>
-              </div>
-            </div>
-          </div>
-        \`).join('');
-      }
-    } catch (error) {
-      console.error('Error loading ambassadors:', error);
-    }
-  }
-
-  // Open chat modal
-  function openChat(ambassadorId, ambassadorName, ambassadorEmail) {
-    // Create modal
-    const modal = document.createElement('div');
-    modal.style.cssText = \`
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.5);
-      z-index: 10000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    \`;
-    
-    modal.innerHTML = \`
-      <div style="
-        background: white;
-        border-radius: 12px;
-        width: 90%;
-        max-width: 500px;
-        max-height: 80vh;
-        overflow-y: auto;
-        box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-      ">
-        <div style="padding: 20px; border-bottom: 1px solid #eee;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h3 style="margin: 0; color: #333;">Chat with \${ambassadorName}</h3>
-            <button onclick="this.closest('.modal').remove()" style="
-              background: none;
-              border: none;
-              font-size: 24px;
-              cursor: pointer;
-              color: #666;
-            ">×</button>
-          </div>
-        </div>
-        
-        <div style="padding: 20px;">
-          <form id="chat-form">
-            <div style="margin-bottom: 15px;">
-              <label style="display: block; margin-bottom: 5px; font-weight: 500;">Your Message *</label>
-              <textarea name="message" required style="
-                width: 100%;
-                padding: 10px;
-                border: 1px solid #ddd;
-                border-radius: 6px;
-                resize: vertical;
-                min-height: 80px;
-              " placeholder="Ask your question..."></textarea>
-            </div>
-            
-            <div style="margin-bottom: 15px;">
-              <label style="display: block; margin-bottom: 5px; font-weight: 500;">Your Name *</label>
-              <input type="text" name="name" required style="
-                width: 100%;
-                padding: 10px;
-                border: 1px solid #ddd;
-                border-radius: 6px;
-              " placeholder="Enter your name">
-            </div>
-            
-            <div style="margin-bottom: 15px;">
-              <label style="display: block; margin-bottom: 5px; font-weight: 500;">Your Email *</label>
-              <input type="email" name="email" required style="
-                width: 100%;
-                padding: 10px;
-                border: 1px solid #ddd;
-                border-radius: 6px;
-              " placeholder="Enter your email">
-            </div>
-            
-            <div style="margin-bottom: 15px;">
-              <label style="display: block; margin-bottom: 5px; font-weight: 500;">Your Mobile *</label>
-              <input type="tel" name="mobile" required style="
-                width: 100%;
-                padding: 10px;
-                border: 1px solid #ddd;
-                border-radius: 6px;
-              " placeholder="Enter your mobile number">
-            </div>
-            
-            <div style="margin-bottom: 15px;">
-              <label style="display: flex; align-items: center; gap: 8px;">
-                <input type="checkbox" name="terms" required>
-                <span style="font-size: 14px;">
-                  I agree to the 
-                  <a href="\${config.termsUrl}" target="_blank" style="color: #007bff;">Terms of Use</a> and 
-                  <a href="\${config.policyUrl}" target="_blank" style="color: #007bff;">Privacy Policy</a>
-                </span>
-              </label>
-            </div>
-            
-            <button type="submit" style="
-              width: 100%;
-              padding: 12px;
-              background: \${config.tilesAndButtonColor};
-              color: \${config.textColor};
-              border: none;
-              border-radius: 6px;
-              cursor: pointer;
-              font-weight: 500;
-              transition: opacity 0.2s;
-            " onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
-              Send Message
-            </button>
-          </form>
-        </div>
-      </div>
-    \`;
-    
-    modal.className = 'modal';
-    document.body.appendChild(modal);
-    
-    // Handle form submission
-    document.getElementById('chat-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      const formData = new FormData(e.target);
-      const userData = {
-        name: formData.get('name'),
-        email: formData.get('email'),
-        mobile: formData.get('mobile'),
-        message: formData.get('message'),
-        ambassadorId: ambassadorId,
-        ambassadorName: ambassadorName,
-        ambassadorEmail: ambassadorEmail
-      };
-      
-      try {
-        // Auto-register user with hashed password
-        const response = await fetch(\`\${config.apiBaseUrl}/api/user/auto-register\`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            name: userData.name,
-            email: userData.email,
-            mobile: userData.mobile,
-            password: '123456', // Default password
-            role: 'user'
-          })
-        });
-        
-        if (response.ok) {
-          // Send chat message
-          const chatResponse = await fetch(\`\${config.apiBaseUrl}/api/chat/send\`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              ambassadorId: ambassadorId,
-              message: userData.message,
-              userEmail: userData.email
-            })
-          });
-          
-          if (chatResponse.ok) {
-            alert('Message sent successfully! You will receive an email when the ambassador replies.');
-            modal.remove();
-          } else {
-            alert('Error sending message. Please try again.');
-          }
-        } else {
-          alert('Error registering user. Please try again.');
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        alert('An error occurred. Please try again.');
-      }
-    });
-  }
-
-  // Toggle ambassador cards
-  document.getElementById('chat-toggle').addEventListener('click', function() {
-    const cards = document.getElementById('ambassador-cards');
-    cards.style.display = cards.style.display === 'none' ? 'block' : 'none';
-  });
-
-  // Close cards when clicking outside
-  document.addEventListener('click', function(e) {
-    const widget = document.getElementById('leadx-ambassador-widget');
-    const cards = document.getElementById('ambassador-cards');
-    if (!widget.contains(e.target)) {
-      cards.style.display = 'none';
-    }
-  });
-
-  // Initialize
-  document.body.appendChild(widgetContainer);
-  loadAmbassadors();
-})();
-</script>`;
-    };
-
-    // Generate HTML example
-    const generateHTMLExample = (data) => {
-        return `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your Website</title>
-</head>
-<body>
-    <h1>Welcome to Your Website</h1>
-    <p>Your website content goes here...</p>
-    
-    <!-- LeadX Ambassador Chat Widget -->
-    ${generateEmbeddableScript(data)}
-</body>
-</html>`;
     };
 
     const ColorInput = ({ field, label, value }) => {
@@ -707,7 +377,7 @@ const CustomizationForm = () => {
                                 <div className="space-y-4">
                                     <div className="space-y-2">
                                         <label className="block text-sm font-medium text-slate-700">
-                                            Policy URL <span className="text-red-500">*</span>
+                                            Policy URL
                                         </label>
                                             <input
                                             type="url"
@@ -716,12 +386,12 @@ const CustomizationForm = () => {
                                             placeholder="https://example.com/privacy-policy"
                                             className="w-full p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white/90 backdrop-blur-sm transition-all duration-200"
                                         />
-                                        <p className="text-xs text-slate-500">URL for Privacy Policy page</p>
+                                        <p className="text-xs text-slate-500">URL for Privacy Policy page (optional)</p>
                                     </div>
 
                                     <div className="space-y-2">
                                         <label className="block text-sm font-medium text-slate-700">
-                                            Terms & Conditions URL <span className="text-red-500">*</span>
+                                            Terms & Conditions URL
                                         </label>
                                         <input
                                             type="url"
@@ -730,7 +400,7 @@ const CustomizationForm = () => {
                                             placeholder="https://example.com/terms-and-conditions"
                                             className="w-full p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white/90 backdrop-blur-sm transition-all duration-200"
                                         />
-                                        <p className="text-xs text-slate-500">URL for Terms & Conditions page</p>
+                                        <p className="text-xs text-slate-500">URL for Terms & Conditions page (optional)</p>
                                     </div>
                                 </div>
 
@@ -747,104 +417,115 @@ const CustomizationForm = () => {
                                 </h2>
                                 
                                 <div className="space-y-4">
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-slate-700">
-                                            Button Background Color <span className="text-red-500">*</span>
-                                        </label>
-                                        <div className="flex space-x-2">
-                                            <input
-                                                type="text"
-                                                value={formData.tilesAndButtonColor || ''}
-                                                onChange={(e) => handleInputChange('tilesAndButtonColor', e.target.value)}
-                                                placeholder="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
-                                                className="flex-1 p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm bg-white/90 backdrop-blur-sm transition-all duration-200"
-                                            />
-                                            <input
-                                                type="color"
-                                                value={formData.tilesAndButtonColor?.includes('#') ? formData.tilesAndButtonColor : '#667eea'}
-                                                onChange={(e) => handleInputChange('tilesAndButtonColor', e.target.value)}
-                                                className="w-12 h-12 border border-slate-300 rounded-lg cursor-pointer"
-                                            />
+                                    {/* First Row - 2 fields */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <label className="block text-sm font-medium text-slate-700">
+                                                Button Background Color <span className="text-red-500">*</span>
+                                            </label>
+                                            <div className="flex space-x-2">
+                                                <input
+                                                    type="text"
+                                                    value={formData.tilesAndButtonColor || ''}
+                                                    onChange={(e) => handleInputChange('tilesAndButtonColor', e.target.value)}
+                                                    placeholder="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+                                                    className="flex-1 p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm bg-white/90 backdrop-blur-sm transition-all duration-200"
+                                                />
+                                                <input
+                                                    type="color"
+                                                    value={formData.tilesAndButtonColor?.includes('#') ? formData.tilesAndButtonColor : '#667eea'}
+                                                    onChange={(e) => handleInputChange('tilesAndButtonColor', e.target.value)}
+                                                    className="w-12 h-12 border border-slate-300 rounded-lg cursor-pointer"
+                                                />
+                                            </div>
+                                            <p className="text-xs text-slate-500">Gradient color for ambassador card background image and button colors</p>
                                         </div>
-                                        <p className="text-xs text-slate-500">Gradient color for ambassador card background image and button colors</p>
+
+                                        <div className="space-y-2">
+                                            <label className="block text-sm font-medium text-slate-700">
+                                               Button Text Color <span className="text-red-500">*</span>
+                                            </label>
+                                            <div className="flex space-x-2">
+                                                <input
+                                                    type="text"
+                                                    value={formData.textColor || ''}
+                                                    onChange={(e) => handleInputChange('textColor', e.target.value)}
+                                                    placeholder="#ffffff"
+                                                    className="flex-1 p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm bg-white/90 backdrop-blur-sm transition-all duration-200"
+                                                />
+                                                <input
+                                                    type="color"
+                                                    value={formData.textColor || '#ffffff'}
+                                                    onChange={(e) => handleInputChange('textColor', e.target.value)}
+                                                    className="w-12 h-12 border border-slate-300 rounded-lg cursor-pointer"
+                                                />
+                                            </div>
+                                            <p className="text-xs text-slate-500">Text color for ambassador card button and chat modal text</p>
+                                        </div>
                                     </div>
 
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-slate-700">
-                                           Button Text Color <span className="text-red-500">*</span>
-                                        </label>
-                                        <div className="flex space-x-2">
-                                            <input
-                                                type="text"
-                                                value={formData.textColor || ''}
-                                                onChange={(e) => handleInputChange('textColor', e.target.value)}
-                                                placeholder="#ffffff"
-                                                className="flex-1 p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm bg-white/90 backdrop-blur-sm transition-all duration-200"
-                                            />
-                                            <input
-                                                type="color"
-                                                value={formData.textColor || '#ffffff'}
-                                                onChange={(e) => handleInputChange('textColor', e.target.value)}
-                                                className="w-12 h-12 border border-slate-300 rounded-lg cursor-pointer"
-                                            />
+                                    {/* Second Row - 2 fields */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <label className="block text-sm font-medium text-slate-700">
+                                                Border Color <span className="text-red-500">*</span>
+                                            </label>
+                                            <div className="flex space-x-2">
+                                                <input
+                                                    type="text"
+                                                    value={formData.borderColor || ''}
+                                                    onChange={(e) => handleInputChange('borderColor', e.target.value)}
+                                                    placeholder="#e5e7eb"
+                                                    className="flex-1 p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm bg-white/90 backdrop-blur-sm transition-all duration-200"
+                                                />
+                                                <input
+                                                    type="color"
+                                                    value={formData.borderColor || '#e5e7eb'}
+                                                    onChange={(e) => handleInputChange('borderColor', e.target.value)}
+                                                    className="w-12 h-12 border border-slate-300 rounded-lg cursor-pointer"
+                                                />
+                                            </div>
+                                            <p className="text-xs text-slate-500">Border color for ambassador cards and chat questions</p>
                                         </div>
-                                        <p className="text-xs text-slate-500">Text color for ambassador card button and chat modal text</p>
-                                    </div>
 
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-slate-700">
-                                            Border Color <span className="text-red-500">*</span>
-                                        </label>
-                                        <div className="flex space-x-2">
-                                            <input
-                                                type="text"
-                                                value={formData.borderColor || ''}
-                                                onChange={(e) => handleInputChange('borderColor', e.target.value)}
-                                                placeholder="#e5e7eb"
-                                                className="flex-1 p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm bg-white/90 backdrop-blur-sm transition-all duration-200"
-                                            />
-                                            <input
-                                                type="color"
-                                                value={formData.borderColor || '#e5e7eb'}
-                                                onChange={(e) => handleInputChange('borderColor', e.target.value)}
-                                                className="w-12 h-12 border border-slate-300 rounded-lg cursor-pointer"
-                                            />
+                                        <div className="space-y-2">
+                                            <label className="block text-sm font-medium text-slate-700">
+                                                Border Radius <span className="text-red-500">*</span>
+                                            </label>
+                                            <select
+                                                value={formData.borderSize || '3'}
+                                                onChange={(e) => handleInputChange('borderSize', e.target.value)}
+                                                className="w-full p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm bg-white/90 backdrop-blur-sm transition-all duration-200"
+                                            >
+                                                <option value="1">1 - Flat</option>
+                                                <option value="2">2 - Slightly Rounded</option>
+                                                <option value="3">3 - Medium Rounded</option>
+                                                <option value="4">4 - More Rounded</option>
+                                                <option value="5">5 - Very Rounded</option>
+                                            </select>
+                                            <p className="text-xs text-slate-500">Border radius for ambassador cards (1=flat, 5=very rounded)</p>
                                         </div>
-                                        <p className="text-xs text-slate-500">Border color for ambassador cards and chat questions</p>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <label className="block text-sm font-medium text-slate-700">
-                                            Border Redius <span className="text-red-500">*</span>
-                                        </label>
-                                        <select
-                                            value={formData.borderSize || '3'}
-                                            onChange={(e) => handleInputChange('borderSize', e.target.value)}
-                                            className="w-full p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm bg-white/90 backdrop-blur-sm transition-all duration-200"
-                                        >
-                                            <option value="1">1 - Flat</option>
-                                            <option value="2">2 - Slightly Rounded</option>
-                                            <option value="3">3 - Medium Rounded</option>
-                                            <option value="4">4 - More Rounded</option>
-                                            <option value="5">5 - Very Rounded</option>
-                                        </select>
-                                        <p className="text-xs text-slate-500">Border radius for ambassador cards (1=flat, 5=very rounded)</p>
                                     </div>
                                 </div>
 
                                 {/* Dynamic Questions Section */}
                                 <div className="mt-4">
-                                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                                        Questions
-                                    </label>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <label className="block text-sm font-medium text-slate-700">
+                                            Questions
+                                        </label>
+                                        <span className="text-xs text-slate-500">
+                                            {(formData.questions || []).length}/6 questions
+                                        </span>
+                                    </div>
                                     {formData.questions && formData.questions.map((question, index) => (
                                         <div key={index} className="mb-3 p-3 bg-white/60 rounded border border-slate-200">
                                             <div className="flex items-start space-x-2">
                                                 <div className="flex-1">
-                                        <textarea
+                                                    <textarea
                                                         value={question}
                                                         onChange={(e) => handleQuestionChange(index, e.target.value)}
-                                            placeholder="Type your question here..."
+                                                        placeholder="Type your question here..."
                                                         rows="2"
                                                         className="w-full p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm bg-white/90 backdrop-blur-sm transition-all duration-200 resize-none"
                                                     />
@@ -856,569 +537,126 @@ const CustomizationForm = () => {
                                                 >
                                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                        </svg>
+                                                    </svg>
                                                 </button>
-                                    </div>
-                                </div>
+                                            </div>
+                                        </div>
                                     ))}
                                     
-                                    <button
-                                        type="button"
-                                        onClick={handleAddQuestion}
-                                        className="w-full p-2 border-2 border-dashed border-purple-300 rounded-lg text-purple-600 hover:border-purple-400 hover:bg-purple-50 transition-colors text-sm"
-                                    >
-                                        + Add New Question
-                                    </button>
+                                    {(formData.questions || []).length < 6 && (
+                                        <button
+                                            type="button"
+                                            onClick={handleAddQuestion}
+                                            className="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md flex items-center gap-2"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                            </svg>
+                                            Add Question
+                                        </button>
+                                    )}
                                 </div>
 
                             </div>
 
-                            {/* Script Generation Section */}
+                            {/* Script Preview Section */}
                             <div className="bg-amber-50/50 rounded-lg p-3 border border-amber-200/30">
                                 <h3 className="text-base font-semibold text-amber-700 mb-2 flex items-center">
                                     <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                                     </svg>
-                                    Dynamic Client Script Generator
+                                    Script Preview
                                 </h3>
-                                <p className="text-xs text-amber-600 mb-3">
-                                    Generate unique scripts for different clients. Each script will have custom branding and settings.
-                                </p>
-                                
-                                {/* Client Information */}
-                                <div className="bg-white/60 rounded p-3 border border-amber-200 mb-3">
-                                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                                        Client Name <span className="text-red-500">*</span>
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={formData.clientName || ''}
-                                        onChange={(e) => handleInputChange('clientName', e.target.value)}
-                                        placeholder="e.g., Delhi University, IIT Mumbai"
-                                        className="w-full p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-sm bg-white/90 backdrop-blur-sm transition-all duration-200"
-                                    />
-                                    <p className="text-xs text-slate-500 mt-1">This will be used to identify the client and customize the script</p>
-                                </div>
-                                
-                                <div className="space-y-3">
-                                    {/* API Configuration */}
-                                    <div className="bg-white/60 rounded p-3 border border-amber-200">
-                                        <label className="block text-sm font-medium text-slate-700 mb-2">
-                                            API Base URL <span className="text-red-500">*</span>
-                                        </label>
-                                        <input
-                                            type="url"
-                                            value={formData.apiBaseUrl || 'http://localhost:5000'}
-                                            onChange={(e) => handleInputChange('apiBaseUrl', e.target.value)}
-                                            placeholder="https://your-api-domain.com"
-                                            className="w-full p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-sm bg-white/90 backdrop-blur-sm transition-all duration-200"
-                                        />
-                                        <p className="text-xs text-slate-500 mt-1">Your backend API URL where the script will make requests</p>
-                                    </div>
+                                <div className="flex flex-col sm:flex-row gap-3">
+                                    <div className="flex-1 min-w-0">
+                                        <div className="bg-gray-900 rounded-lg overflow-hidden">
+                                            <pre className="text-green-400 p-3 text-xs max-h-60 overflow-y-auto font-mono whitespace-pre-wrap break-words">
+{`// Customization Configuration
+const customization = {
+  // Web URL Settings
+  webUrl: "${formData.webUrl || ''}",
+  webName: "${formData.webName || ''}",
+  status: "${formData.status || 'active'}",
+  
+  // Terms and Policy URLs
+  policyUrl: "${formData.policyUrl || ''}",
+  termsUrl: "${formData.termsUrl || ''}",
+  questions: ${JSON.stringify(formData.questions || [], null, 2)},
+  
+  // Ambassador Card Settings
+  tilesAndButtonColor: "${formData.tilesAndButtonColor || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'}",
+  textColor: "${formData.textColor || '#ffffff'}",
+  borderColor: "${formData.borderColor || '#e5e7eb'}",
+  borderSize: "${formData.borderSize || '3'}",
+  
+  // Legacy Settings
+  ambassadorCardBackgroundColor: "${formData.ambassadorCardBackgroundColor || '#3b82f6'}",
+  ambassadorCardBorderColor: "${formData.ambassadorCardBorderColor || '#e5e7eb'}",
+  chatBackgroundColor: "${formData.chatBackgroundColor || '#3b82f6'}",
+  chatTextColor: "${formData.chatTextColor || '#ffffff'}"
+};
 
-                                    {/* Script Preview */}
-                                    <div className="flex space-x-3">
-                                        <div className="flex-1">
-                                            <pre className="bg-gray-900 text-green-400 p-3 rounded-lg text-xs overflow-x-auto max-h-80 overflow-y-auto font-mono">
-{`<!-- LeadX Ambassador Chat Widget -->
-<script>
-(function() {
-  // Configuration
-  const config = {
-    apiBaseUrl: "${formData.apiBaseUrl || 'http://localhost:5000'}",
-    webUrl: "${formData.webUrl || ''}",
-    webName: "${formData.webName || ''}",
-    status: "${formData.status || 'active'}",
-    policyUrl: "${formData.policyUrl || ''}",
-    termsUrl: "${formData.termsUrl || ''}",
-    questions: ${JSON.stringify(formData.questions || [], null, 2)},
-    tilesAndButtonColor: "${formData.tilesAndButtonColor || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'}",
-    textColor: "${formData.textColor || '#ffffff'}",
-    borderColor: "${formData.borderColor || '#e5e7eb'}",
-    borderSize: "${formData.borderSize || '3'}"
-  };
-
-  // Create widget container
-  const widgetContainer = document.createElement('div');
-  widgetContainer.id = 'leadx-ambassador-widget';
-  widgetContainer.innerHTML = \`
-    <div style="
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      z-index: 9999;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    ">
-      <div id="ambassador-cards" style="
-        display: none;
-        position: absolute;
-        bottom: 70px;
-        right: 0;
-        width: 300px;
-        max-height: 400px;
-        overflow-y: auto;
-        background: white;
-        border-radius: \${config.borderSize}px;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-        border: 1px solid \${config.borderColor};
-      ">
-        <!-- Ambassador cards will be loaded here -->
-      </div>
-      
-      <button id="chat-toggle" style="
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        border: none;
-        background: \${config.tilesAndButtonColor};
-        color: \${config.textColor};
-        cursor: pointer;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        transition: all 0.3s ease;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 24px;
-      " onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
-        💬
-      </button>
-    </div>
-  \`;
-
-  // Load ambassadors
-  async function loadAmbassadors() {
-    try {
-      const response = await fetch(\`\${config.apiBaseUrl}/api/ambassadors/public\`);
-      const data = await response.json();
-      
-      if (data.success && data.data.length > 0) {
-        const cardsContainer = document.getElementById('ambassador-cards');
-        cardsContainer.innerHTML = data.data.map(ambassador => \`
-          <div style="
-            padding: 15px;
-            border-bottom: 1px solid #eee;
-            cursor: pointer;
-            transition: background 0.2s;
-          " onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'"
-          onclick="openChat('\${ambassador._id}', '\${ambassador.name}', '\${ambassador.email}')">
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <div style="
-                width: 40px;
-                height: 40px;
-                border-radius: 50%;
-                background: \${config.tilesAndButtonColor};
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                color: \${config.textColor};
-                font-weight: bold;
-              ">
-                \${ambassador.name.charAt(0).toUpperCase()}
-              </div>
-              <div>
-                <div style="font-weight: 600; color: #333;">\${ambassador.name}</div>
-                <div style="font-size: 12px; color: #666;">\${ambassador.course || 'Student Ambassador'}</div>
-              </div>
-            </div>
-          </div>
-        \`).join('');
-      }
-    } catch (error) {
-      console.error('Error loading ambassadors:', error);
-    }
-  }
-
-  // Open chat modal
-  function openChat(ambassadorId, ambassadorName, ambassadorEmail) {
-    // Create modal
-    const modal = document.createElement('div');
-    modal.style.cssText = \`
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.5);
-      z-index: 10000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    \`;
-    
-    modal.innerHTML = \`
-      <div style="
-        background: white;
-        border-radius: 12px;
-        width: 90%;
-        max-width: 500px;
-        max-height: 80vh;
-        overflow-y: auto;
-        box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-      ">
-        <div style="padding: 20px; border-bottom: 1px solid #eee;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h3 style="margin: 0; color: #333;">Chat with \${ambassadorName}</h3>
-            <button onclick="this.closest('.modal').remove()" style="
-              background: none;
-              border: none;
-              font-size: 24px;
-              cursor: pointer;
-              color: #666;
-            ">×</button>
-          </div>
-        </div>
-        
-        <div style="padding: 20px;">
-          <form id="chat-form">
-            <div style="margin-bottom: 15px;">
-              <label style="display: block; margin-bottom: 5px; font-weight: 500;">Your Message *</label>
-              <textarea name="message" required style="
-                width: 100%;
-                padding: 10px;
-                border: 1px solid #ddd;
-                border-radius: 6px;
-                resize: vertical;
-                min-height: 80px;
-              " placeholder="Ask your question..."></textarea>
-            </div>
-            
-            <div style="margin-bottom: 15px;">
-              <label style="display: block; margin-bottom: 5px; font-weight: 500;">Your Name *</label>
-              <input type="text" name="name" required style="
-                width: 100%;
-                padding: 10px;
-                border: 1px solid #ddd;
-                border-radius: 6px;
-              " placeholder="Enter your name">
-            </div>
-            
-            <div style="margin-bottom: 15px;">
-              <label style="display: block; margin-bottom: 5px; font-weight: 500;">Your Email *</label>
-              <input type="email" name="email" required style="
-                width: 100%;
-                padding: 10px;
-                border: 1px solid #ddd;
-                border-radius: 6px;
-              " placeholder="Enter your email">
-            </div>
-            
-            <div style="margin-bottom: 15px;">
-              <label style="display: block; margin-bottom: 5px; font-weight: 500;">Your Mobile *</label>
-              <input type="tel" name="mobile" required style="
-                width: 100%;
-                padding: 10px;
-                border: 1px solid #ddd;
-                border-radius: 6px;
-              " placeholder="Enter your mobile number">
-            </div>
-            
-            <div style="margin-bottom: 15px;">
-              <label style="display: flex; align-items: center; gap: 8px;">
-                <input type="checkbox" name="terms" required>
-                <span style="font-size: 14px;">
-                  I agree to the 
-                  <a href="\${config.termsUrl}" target="_blank" style="color: #007bff;">Terms of Use</a> and 
-                  <a href="\${config.policyUrl}" target="_blank" style="color: #007bff;">Privacy Policy</a>
-                </span>
-              </label>
-            </div>
-            
-            <button type="submit" style="
-              width: 100%;
-              padding: 12px;
-              background: \${config.tilesAndButtonColor};
-              color: \${config.textColor};
-              border: none;
-              border-radius: 6px;
-              cursor: pointer;
-              font-weight: 500;
-              transition: opacity 0.2s;
-            " onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
-              Send Message
-            </button>
-          </form>
-        </div>
-      </div>
-    \`;
-    
-    modal.className = 'modal';
-    document.body.appendChild(modal);
-    
-    // Handle form submission
-    document.getElementById('chat-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      const formData = new FormData(e.target);
-      const userData = {
-        name: formData.get('name'),
-        email: formData.get('email'),
-        mobile: formData.get('mobile'),
-        message: formData.get('message'),
-        ambassadorId: ambassadorId,
-        ambassadorName: ambassadorName,
-        ambassadorEmail: ambassadorEmail
-      };
-      
-      try {
-        // Auto-register user with hashed password
-        const response = await fetch(\`\${config.apiBaseUrl}/api/user/auto-register\`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            name: userData.name,
-            email: userData.email,
-            mobile: userData.mobile,
-            password: '123456', // Default password
-            role: 'user'
-          })
-        });
-        
-        if (response.ok) {
-          // Send chat message
-          const chatResponse = await fetch(\`\${config.apiBaseUrl}/api/chat/send\`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              ambassadorId: ambassadorId,
-              message: userData.message,
-              userEmail: userData.email
-            })
-          });
-          
-          if (chatResponse.ok) {
-            alert('Message sent successfully! You will receive an email when the ambassador replies.');
-            modal.remove();
-          } else {
-            alert('Error sending message. Please try again.');
-          }
-        } else {
-          alert('Error registering user. Please try again.');
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        alert('An error occurred. Please try again.');
-      }
-    });
-  }
-
-  // Toggle ambassador cards
-  document.getElementById('chat-toggle').addEventListener('click', function() {
-    const cards = document.getElementById('ambassador-cards');
-    cards.style.display = cards.style.display === 'none' ? 'block' : 'none';
-  });
-
-  // Close cards when clicking outside
-  document.addEventListener('click', function(e) {
-    const widget = document.getElementById('leadx-ambassador-widget');
-    const cards = document.getElementById('ambassador-cards');
-    if (!widget.contains(e.target)) {
-      cards.style.display = 'none';
-    }
-  });
-
-  // Initialize
-  document.body.appendChild(widgetContainer);
-  loadAmbassadors();
-})();
-</script>`}
-                                            </pre>
-                                        </div>
-                                        <div className="flex flex-col space-y-2">
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    if (!formData.clientName) {
-                                                        toast.error('Please enter client name first!');
-                                                        return;
-                                                    }
-                                                    const script = generateEmbeddableScript(formData);
-                                                    navigator.clipboard.writeText(script);
-                                                    toast.success(`Script for ${formData.clientName} copied to clipboard!`);
-                                                }}
-                                                className="px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm flex items-center space-x-1"
-                                            >
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                                </svg>
-                                                <span>Copy Script</span>
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    if (!formData.clientName) {
-                                                        toast.error('Please enter client name first!');
-                                                        return;
-                                                    }
-                                                    const script = generateEmbeddableScript(formData);
-                                                    const blob = new Blob([script], { type: 'text/javascript' });
-                                                    const url = URL.createObjectURL(blob);
-                                                    const a = document.createElement('a');
-                                                    a.href = url;
-                                                    a.download = `leadx-widget-${formData.clientName.replace(/\s+/g, '-').toLowerCase()}.js`;
-                                                    a.click();
-                                                    URL.revokeObjectURL(url);
-                                                    toast.success(`Script for ${formData.clientName} downloaded!`);
-                                                }}
-                                                className="px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm flex items-center space-x-1"
-                                            >
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                </svg>
-                                                <span>Download</span>
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    if (!formData.clientName) {
-                                                        toast.error('Please enter client name first!');
-                                                        return;
-                                                    }
-                                                    const html = generateHTMLExample(formData);
-                                                    navigator.clipboard.writeText(html);
-                                                    toast.success(`HTML example for ${formData.clientName} copied!`);
-                                                }}
-                                                className="px-3 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors text-sm flex items-center space-x-1"
-                                            >
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                </svg>
-                                                <span>HTML Example</span>
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    if (!formData.clientName) {
-                                                        toast.error('Please enter client name first!');
-                                                        return;
-                                                    }
-                                                    // Save client configuration
-                                                    const clientConfig = {
-                                                        id: `client_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-                                                        name: formData.clientName,
-                                                        webUrl: formData.webUrl,
-                                                        webName: formData.webName,
-                                                        apiBaseUrl: formData.apiBaseUrl,
-                                                        status: formData.status,
-                                                        policyUrl: formData.policyUrl,
-                                                        termsUrl: formData.termsUrl,
-                                                        questions: formData.questions,
-                                                        tilesAndButtonColor: formData.tilesAndButtonColor,
-                                                        textColor: formData.textColor,
-                                                        borderColor: formData.borderColor,
-                                                        borderSize: formData.borderSize,
-                                                        createdAt: new Date().toISOString()
-                                                    };
-                                                    
-                                                    // Save to localStorage
-                                                    const existingClients = JSON.parse(localStorage.getItem('leadxClients') || '[]');
-                                                    existingClients.push(clientConfig);
-                                                    localStorage.setItem('leadxClients', JSON.stringify(existingClients));
-                                                    
-                                                    toast.success(`Client ${formData.clientName} saved successfully!`);
-                                                }}
-                                                className="px-3 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-sm flex items-center space-x-1"
-                                            >
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                                </svg>
-                                                <span>Save Client</span>
-                                            </button>
+// Apply customization
+localStorage.setItem('customization', JSON.stringify(customization));`}
+                                        </pre>
                                         </div>
                                     </div>
-                                </div>
-                            </div>
+                                    <div className="flex flex-col space-y-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const script = `// Customization Configuration
+const customization = {
+  // Web URL Settings
+  webUrl: "${formData.webUrl || ''}",
+  webName: "${formData.webName || ''}",
+  status: "${formData.status || 'active'}",
+  
+  // Terms and Policy URLs
+  policyUrl: "${formData.policyUrl || ''}",
+  termsUrl: "${formData.termsUrl || ''}",
+  questions: ${JSON.stringify(formData.questions || [], null, 2)},
+  
+  // Ambassador Card Settings
+  tilesAndButtonColor: "${formData.tilesAndButtonColor || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'}",
+  textColor: "${formData.textColor || '#ffffff'}",
+  borderColor: "${formData.borderColor || '#e5e7eb'}",
+  borderSize: "${formData.borderSize || '3'}",
+  
+  // Legacy Settings
+  ambassadorCardBackgroundColor: "${formData.ambassadorCardBackgroundColor || '#3b82f6'}",
+  ambassadorCardBorderColor: "${formData.ambassadorCardBorderColor || '#e5e7eb'}",
+  chatBackgroundColor: "${formData.chatBackgroundColor || '#3b82f6'}",
+  chatTextColor: "${formData.chatTextColor || '#ffffff'}"
+};
 
-                            {/* Client Management Section */}
-                            <div className="bg-blue-50/50 rounded-lg p-3 border border-blue-200/30">
-                                <h3 className="text-base font-semibold text-blue-700 mb-2 flex items-center">
-                                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                                    </svg>
-                                    Saved Clients
-                                </h3>
-                                <p className="text-xs text-blue-600 mb-3">
-                                    View and manage your saved client configurations.
-                                </p>
-                                
-                                <div className="space-y-2">
-                                    {(() => {
-                                        const savedClients = JSON.parse(localStorage.getItem('leadxClients') || '[]');
-                                        if (savedClients.length === 0) {
-                                            return (
-                                                <div className="text-center py-4 text-gray-500">
-                                                    <svg className="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                                                    </svg>
-                                                    <p className="text-sm">No clients saved yet</p>
-                                                </div>
-                                            );
-                                        }
-                                        
-                                        return savedClients.map((client, index) => (
-                                            <div key={client.id} className="bg-white/60 rounded p-3 border border-blue-200">
-                                                <div className="flex items-center justify-between">
-                                                    <div>
-                                                        <h4 className="font-medium text-gray-800">{client.name}</h4>
-                                                        <p className="text-xs text-gray-500">{client.webName} • {client.webUrl}</p>
-                                                        <p className="text-xs text-gray-400">Created: {new Date(client.createdAt).toLocaleDateString()}</p>
-                                                    </div>
-                                                    <div className="flex space-x-2">
-                                                        <button
-                                                            onClick={() => {
-                                                                // Load client configuration
-                                                                setFormData(prev => ({
-                                                                    ...prev,
-                                                                    clientName: client.name,
-                                                                    webUrl: client.webUrl,
-                                                                    webName: client.webName,
-                                                                    apiBaseUrl: client.apiBaseUrl,
-                                                                    status: client.status,
-                                                                    policyUrl: client.policyUrl,
-                                                                    termsUrl: client.termsUrl,
-                                                                    questions: client.questions,
-                                                                    tilesAndButtonColor: client.tilesAndButtonColor,
-                                                                    textColor: client.textColor,
-                                                                    borderColor: client.borderColor,
-                                                                    borderSize: client.borderSize
-                                                                }));
-                                                                toast.success(`Loaded configuration for ${client.name}`);
-                                                            }}
-                                                            className="px-2 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600"
-                                                        >
-                                                            Load
-                                                        </button>
-                                                        <button
-                                                            onClick={() => {
-                                                                const script = generateEmbeddableScript(client);
-                                                                navigator.clipboard.writeText(script);
-                                                                toast.success(`Script for ${client.name} copied!`);
-                                                            }}
-                                                            className="px-2 py-1 bg-green-500 text-white rounded text-xs hover:bg-green-600"
-                                                        >
-                                                            Copy
-                                                        </button>
-                                                        <button
-                                                            onClick={() => {
-                                                                const updatedClients = savedClients.filter(c => c.id !== client.id);
-                                                                localStorage.setItem('leadxClients', JSON.stringify(updatedClients));
-                                                                toast.success(`Client ${client.name} deleted`);
-                                                                // Force re-render
-                                                                window.location.reload();
-                                                            }}
-                                                            className="px-2 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600"
-                                                        >
-                                                            Delete
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ));
-                                    })()}
+// Apply customization
+localStorage.setItem('customization', JSON.stringify(customization));`;
+                                                navigator.clipboard.writeText(script);
+                                                toast.success('Script copied to clipboard!');
+                                            }}
+                                            className="px-3 py-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm flex items-center justify-center space-x-1"
+                                            title="Copy Script"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                            </svg>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const json = JSON.stringify(formData, null, 2);
+                                                navigator.clipboard.writeText(json);
+                                                toast.success('JSON configuration copied to clipboard!');
+                                            }}
+                                            className="px-3 py-1.5 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm flex items-center justify-center space-x-1"
+                                            title="Copy JSON"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                            </svg>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 
@@ -1431,7 +669,7 @@ const CustomizationForm = () => {
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                     </svg>
-                                    <span>Save Configuration</span>
+                                    <span>Generate</span>
                                 </button>
                             </div>
                         </form>

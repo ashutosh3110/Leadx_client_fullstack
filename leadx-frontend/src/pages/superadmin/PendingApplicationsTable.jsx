@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import Pagination from '../user/Pagination';
 
 const PendingApplicationsTable = ({ 
     pendingApplications, 
@@ -8,6 +9,8 @@ const PendingApplicationsTable = ({
     handleViewAmbassadorDetails 
 }) => {
     const [searchTerm, setSearchTerm] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
 
     // Filter applications based on search term
     const filteredApplications = useMemo(() => {
@@ -20,6 +23,26 @@ const PendingApplicationsTable = ({
             application.email?.toLowerCase().includes(searchTerm.toLowerCase())
         );
     }, [pendingApplications, searchTerm]);
+
+    // Pagination logic
+    const totalPages = Math.ceil(filteredApplications.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedApplications = filteredApplications.slice(startIndex, endIndex);
+
+    // Reset to first page when search changes
+    React.useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm]);
+
+    const handlePageChange = (page) => {
+        setCurrentPage(page);
+    };
+
+    const handleItemsPerPageChange = (newItemsPerPage) => {
+        setItemsPerPage(newItemsPerPage);
+        setCurrentPage(1);
+    };
     return (
         <div>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-4">
@@ -58,7 +81,7 @@ const PendingApplicationsTable = ({
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200">
-                        {filteredApplications.length > 0 ? filteredApplications.map((application, index) => (
+                        {paginatedApplications.length > 0 ? paginatedApplications.map((application, index) => (
                             <tr key={application._id || index} className="hover:bg-yellow-50/50 transition-colors duration-200">
                                 <td className="px-2 lg:px-4 py-4 whitespace-nowrap">
                                     <div className="flex items-center">
@@ -150,6 +173,17 @@ const PendingApplicationsTable = ({
                     </tbody>
                 </table>
             </div>
+
+            {/* Pagination */}
+            {filteredApplications.length > 0 && (
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    itemsPerPage={itemsPerPage}
+                    onPageChange={handlePageChange}
+                    onItemsPerPageChange={handleItemsPerPageChange}
+                />
+            )}
         </div>
     );
 };

@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useColorContext } from '../../context/ColorContext';
 import { useCustomization } from '../../context/CustomizationContext';
+import api from '../utils/Api';
+import { toast } from 'react-toastify';
 
 const ChatModal = ({ isOpen, onClose, ambassador }) => {
   const { ambassadorDashboardColor } = useColorContext();
@@ -19,8 +21,8 @@ const ChatModal = ({ isOpen, onClose, ambassador }) => {
     country: 'India', // Default to India for within
     countryCode: '+91',
     selectedCourses: [],
-    recaptcha: false,
-    terms: false
+    terms: false,
+    alternativeMobile: ''
   });
   const [errors, setErrors] = useState({});
   const [showCourseDropdown, setShowCourseDropdown] = useState(false);
@@ -30,6 +32,7 @@ const ChatModal = ({ isOpen, onClose, ambassador }) => {
   const [loadingCountries, setLoadingCountries] = useState(false);
   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
   const [countrySearch, setCountrySearch] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const dropdownRef = useRef(null);
   const buttonRef = useRef(null);
 
@@ -236,6 +239,15 @@ const ChatModal = ({ isOpen, onClose, ambassador }) => {
       newErrors.mobile = 'Please enter a valid 10-digit mobile number';
     }
     
+    // Alternative mobile validation - required if WhatsApp is not checked
+    if (!formData.whatsapp) {
+      if (!formData.alternativeMobile.trim()) {
+        newErrors.alternativeMobile = 'Alternative mobile number is required';
+      } else if (!/^[0-9]{10}$/.test(formData.alternativeMobile)) {
+        newErrors.alternativeMobile = 'Please enter a valid 10-digit alternative mobile number';
+      }
+    }
+    
     // Only require country and city for outside India
     if (formData.location === 'outside') {
       if (!formData.country.trim()) {
@@ -251,9 +263,6 @@ const ChatModal = ({ isOpen, onClose, ambassador }) => {
       newErrors.state = 'State is required';
     }
     
-    if (!formData.recaptcha) {
-      newErrors.recaptcha = 'Please verify you are not a robot';
-    }
     
     if (!formData.terms) {
       newErrors.terms = 'Please accept the terms and conditions';
@@ -261,6 +270,45 @@ const ChatModal = ({ isOpen, onClose, ambassador }) => {
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const handleFormSubmission = async () => {
+    setIsSubmitting(true);
+    try {
+      // Start chat with backend
+      const response = await api.post('/chat/start', {
+        ambassadorId: ambassador._id,
+        name: formData.name,
+        email: formData.email,
+        phone: formData.mobile,
+        alternativeMobile: formData.alternativeMobile
+      });
+
+      if (response.data.success) {
+        const chat = response.data.data;
+        
+        // Send the initial message
+        const messageResponse = await api.post('/chat/send', {
+          chatId: chat._id,
+          receiver: ambassador._id,
+          content: formData.message
+        });
+
+        if (messageResponse.data.success) {
+          toast.success('Your message has been sent successfully!');
+          setCurrentStep(4); // Show success message
+        } else {
+          throw new Error('Failed to send message');
+        }
+      } else {
+        throw new Error('Failed to start chat');
+      }
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      toast.error('Failed to send message. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleContinue = () => {
@@ -275,43 +323,8 @@ const ChatModal = ({ isOpen, onClose, ambassador }) => {
     if (isValid && currentStep < 3) {
       setCurrentStep(currentStep + 1);
     } else if (isValid && currentStep === 3) {
-      // Submit form
-      console.log('Form submitted:', formData);
-      
-      // Store chat conversation in localStorage
-      const chatConversation = {
-        _id: `chat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        ambassadorId: ambassador._id,
-        ambassadorName: ambassador.name,
-        ambassadorEmail: ambassador.email,
-        userData: {
-          name: formData.name,
-          email: formData.email,
-          mobile: formData.mobile,
-          location: formData.location,
-          state: formData.location === 'within' ? formData.state : '',
-          city: formData.location === 'outside' ? formData.city : '',
-          country: formData.location === 'outside' ? formData.country : 'India',
-          countryCode: formData.location === 'within' ? '+91' : formData.countryCode,
-          interestedCourses: formData.selectedCourses
-        },
-        message: formData.message,
-        timestamp: new Date().toISOString(),
-        status: 'pending',
-        unreadCount: 0,
-        lastMessage: {
-          content: formData.message,
-          sender: 'user',
-          timestamp: new Date().toISOString()
-        }
-      };
-      
-      // Store in localStorage
-      const existingConversations = JSON.parse(localStorage.getItem('chatConversations') || '[]');
-      existingConversations.push(chatConversation);
-      localStorage.setItem('chatConversations', JSON.stringify(existingConversations));
-      
-      setCurrentStep(4); // Show success message
+      // Submit form to backend
+      handleFormSubmission();
     }
   };
 
@@ -414,15 +427,8 @@ const getProfileImage=()=>{
       >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 rounded-full overflow-hidden">
-              <img 
-                src={getProfileImage()} 
-                alt={ambassador?.name}
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <h2 className="text-lg font-bold" style={{ color: customization.textColor || '#111827' }}>
+          <div className="flex items-center">
+            <h2 className="text-lg font-bold text-gray-800">
               Get your query resolved in 3 easy steps
             </h2>
           </div>
@@ -804,23 +810,34 @@ const getProfileImage=()=>{
                   />
                   <span className="text-xs text-gray-600">This is also my WhatsApp number</span>
                 </label>
-              </div>
-
-              <div>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={formData.recaptcha}
-                  onChange={(e) => handleInputChange('recaptcha', e.target.checked)}
-                    className={`mr-1 ${errors.recaptcha ? 'border-red-500' : ''}`}
-                />
-                <span className="text-xs text-gray-600">I'm not a robot</span>
-                <div className="text-xs text-gray-500">reCAPTCHA</div>
-                </div>
-                {errors.recaptcha && (
-                  <p className="text-xs text-red-600 mt-1">{errors.recaptcha}</p>
+                
+                {/* Alternative Mobile Number - Show only if WhatsApp is not checked */}
+                {!formData.whatsapp && (
+                  <div className="mt-4">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      * Alternative Mobile Number
+                    </label>
+                    <div className="flex">
+                      <div className="flex items-center px-2 border border-gray-300 border-r-0 rounded-l-lg bg-gray-50">
+                        <span className="text-xs">{formData.countryCode}</span>
+                      </div>
+                      <input
+                        type="tel"
+                        value={formData.alternativeMobile}
+                        onChange={(e) => handleInputChange('alternativeMobile', e.target.value)}
+                        placeholder="Enter alternative mobile number"
+                        className={`flex-1 p-2 border rounded-r-lg focus:outline-none focus:ring-2 text-sm ${
+                          errors.alternativeMobile ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-red-500'
+                        }`}
+                      />
+                    </div>
+                    {errors.alternativeMobile && (
+                      <p className="text-xs text-red-600 mt-1">{errors.alternativeMobile}</p>
+                    )}
+                  </div>
                 )}
               </div>
+
 
               <div>
               <div className="flex items-center space-x-2">
@@ -901,6 +918,11 @@ const getProfileImage=()=>{
               <p className="text-xs text-gray-500">
                 If the email is not in your inbox, don't forget to check your junk mail or spam folders.
               </p>
+              <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-xs text-green-800">
+                  <strong>Auto-logging enabled:</strong> Your conversation has been automatically logged in our system for tracking and follow-up.
+                </p>
+              </div>
             </div>
           )}
         </div>
@@ -916,14 +938,27 @@ const getProfileImage=()=>{
             </button>
             <button
               onClick={handleContinue}
-              className="px-4 py-2 rounded-lg transition-colors flex items-center space-x-1 text-sm"
+              disabled={isSubmitting}
+              className="px-4 py-2 rounded-lg transition-colors flex items-center space-x-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               style={{
                 background: customization.tilesAndButtonColor || '#ef4444',
                 color: customization.textColor || '#ffffff'
               }}
             >
-              <span>{currentStep === 3 ? 'Send Message' : 'Continue'}</span>
-              {currentStep < 3 && <span>&gt;</span>}
+              {isSubmitting ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span>Sending...</span>
+                </>
+              ) : (
+                <>
+                  <span>{currentStep === 3 ? 'Send Message' : 'Continue'}</span>
+                  {currentStep < 3 && <span>&gt;</span>}
+                </>
+              )}
             </button>
           </div>
         )}

@@ -30,12 +30,12 @@ const Sidebar = () => {
       { name: "Rewards", path: "/ambassador/rewards", icon: <FaGift /> },
       { name: "Chat", path: "/ambassador/chat", icon: <FaComments /> },
     ],
-    admin: [
-      { name: "Overview", path: "/admin", icon: <FaHome /> },
-      { name: "Ambassadors", path: "/admin/ambassadors", icon: <FaUsers /> },
-      { name: "Rewards", path: "/admin/rewards", icon: <FaGift /> },
-      { name: "Chat", path: "/admin/chat", icon: <FaComments /> },
-    ],
+    // admin: [
+    //   { name: "Overview", path: "/admin", icon: <FaHome /> },
+    //   { name: "Ambassadors", path: "/admin/ambassadors", icon: <FaUsers /> },
+    //   { name: "Rewards", path: "/admin/rewards", icon: <FaGift /> },
+    //   { name: "Chat", path: "/admin/chat", icon: <FaComments /> },
+    // ],
     superadmin: [
       { name: "Overview", path: "/superadmin", icon: <FaHome /> },
       {

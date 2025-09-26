@@ -47,7 +47,7 @@ const AmbassadorDetailModal = ({
 
     return (
         <div 
-            className="fixed inset-0 flex items-center justify-center p-4"
+            className="fixed inset-0 flex items-center justify-center p-2 sm:p-4"
             style={{ 
                 zIndex: 9999,
                 backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -56,14 +56,14 @@ const AmbassadorDetailModal = ({
             onClick={onClose}
         >
             <div 
-                className="bg-white rounded-lg shadow-lg border border-slate-200 max-w-lg w-full max-h-[70vh] flex flex-col overflow-hidden"
+                className="bg-white rounded-lg shadow-lg border border-slate-200 max-w-lg w-full max-h-[90vh] sm:max-h-[70vh] flex flex-col overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Modal Header */}
                 <div className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 h-1"></div>
-                <div className="flex items-center justify-between p-4 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-blue-50">
-                    <div className="flex items-center space-x-2">
-                        <div className="w-8 h-8 rounded-full overflow-hidden border border-white shadow">
+                <div className="flex items-center justify-between p-3 sm:p-4 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-blue-50">
+                    <div className="flex items-center space-x-2 min-w-0 flex-1">
+                        <div className="w-8 h-8 rounded-full overflow-hidden border border-white shadow flex-shrink-0">
                             <img
                                 src={ambassador.profileImage ? `http://localhost:5000/${ambassador.profileImage}` : 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'}
                                 alt={ambassador.name}
@@ -73,25 +73,25 @@ const AmbassadorDetailModal = ({
                                 }}
                             />
                         </div>
-                        <div>
-                            <h2 className="text-base font-bold text-slate-800">{ambassador.name}</h2>
-                            <p className="text-xs text-slate-600">{ambassador.email}</p>
+                        <div className="min-w-0 flex-1">
+                            <h2 className="text-sm sm:text-base font-bold text-slate-800 truncate">{ambassador.name}</h2>
+                            <p className="text-xs text-slate-600 truncate">{ambassador.email}</p>
                         </div>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
                         {!ambassador.isVerified && (
                             <>
                                 <button
                                     onClick={() => handleApproveApplication(ambassador._id)}
                                     disabled={loading}
-                                    className="px-4 py-2 border-2 border-green-500 text-green-600 hover:bg-green-500 hover:text-white text-sm font-semibold rounded-full transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed disabled:border-green-300 disabled:text-green-300"
+                                    className="px-2 sm:px-4 py-1.5 sm:py-2 border-2 border-green-500 text-green-600 hover:bg-green-500 hover:text-white text-xs sm:text-sm font-semibold rounded-full transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed disabled:border-green-300 disabled:text-green-300"
                                 >
                                     Approve
                                 </button>
                                 <button
                                     onClick={() => handleRejectApplication(ambassador._id)}
                                     disabled={loading}
-                                    className="px-4 py-2 border-2 border-red-500 text-red-600 hover:bg-red-500 hover:text-white text-sm font-semibold rounded-full transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed disabled:border-red-300 disabled:text-red-300"
+                                    className="px-2 sm:px-4 py-1.5 sm:py-2 border-2 border-red-500 text-red-600 hover:bg-red-500 hover:text-white text-xs sm:text-sm font-semibold rounded-full transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed disabled:border-red-300 disabled:text-red-300"
                                 >
                                     Reject
                                 </button>
@@ -118,11 +118,11 @@ const AmbassadorDetailModal = ({
                 </div>
 
                 {/* Modal Content */}
-                <div className="flex-1 overflow-y-auto p-3" style={{ maxHeight: 'calc(70vh - 120px)' }}>
+                <div className="flex-1 overflow-y-auto p-2 sm:p-3" style={{ maxHeight: 'calc(90vh - 120px)' }}>
                     <div className="space-y-3">
                         {/* Compact Information Grid */}
-                        <div className="bg-slate-50 rounded-lg p-3 border border-slate-200/50">
-                            <div className="grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
+                        <div className="bg-slate-50 rounded-lg p-2 sm:p-3 border border-slate-200/50">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-2 text-xs">
                                 <div className="flex flex-col">
                                     <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Phone</span>
                                     <span className="text-slate-800 font-medium">{ambassador.phone || 'Not provided'}</span>

@@ -14,11 +14,21 @@ const Sidebar = () => {
   const location = useLocation()
 
   const menus = [
-    { name: "Overview", path: "/dashboard", icon: <FaHome /> },
-    { name: "Profile", path: "/dashboard/profile", icon: <FaUser /> },
-    { name: "Rewards", path: "/dashboard/rewards", icon: <FaGift /> },
-    { name: "Chat", path: "/dashboard/chat", icon: <FaComments /> },
+    { name: "Overview", path: "/ambassador", icon: <FaHome /> },
+    { name: "Profile", path: "/ambassador/profile", icon: <FaUser /> },
+    { name: "Rewards", path: "/ambassador/rewards", icon: <FaGift /> },
+    { name: "Chat", path: "/ambassador/chat", icon: <FaComments /> },
   ]
+
+  // Helper function to check if menu is active
+  const isActive = (menuPath) => {
+    const currentPath = location.pathname
+    console.log("Current path:", currentPath, "Menu path:", menuPath)
+    if (menuPath === "/ambassador") {
+      return currentPath === "/ambassador" || currentPath === "/ambassador/"
+    }
+    return currentPath === menuPath
+  }
 
   return (
     <>
@@ -44,9 +54,9 @@ const Sidebar = () => {
               to={menu.path}
               onClick={() => setOpen(false)}
               className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${
-                location.pathname === menu.path
-                  ? "bg-white text-[rgb(188,23,32)] font-semibold"
-                  : "hover:bg-white hover:text-[rgb(188,23,32)]"
+                isActive(menu.path)
+                  ? "bg-white text-[rgb(188,23,32)] font-semibold shadow-md"
+                  : "hover:bg-white hover:text-[rgb(188,23,32)] hover:shadow-md"
               }`}
             >
               {menu.icon}

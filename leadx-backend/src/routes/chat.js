@@ -12,7 +12,6 @@ import {
   adminGetMessages,
   adminSendAsAmbassador,
   adminGetChatStats,
-  sendPublicMessage,
 } from "../controllers/Chat.js"
 
 const router = Router()
@@ -52,10 +51,4 @@ router.get(
 )
 router.put("/message/:messageId", authenticate, editMessage)
 router.delete("/message/:messageId", authenticate, deleteMessage)
-
-// ==========================
-// PUBLIC CHAT ROUTES (for embeddable script)
-// ==========================
-router.post("/send", sendPublicMessage) // Public endpoint for embeddable script
-
 export default router
