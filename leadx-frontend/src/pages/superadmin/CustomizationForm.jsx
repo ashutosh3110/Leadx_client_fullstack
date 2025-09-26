@@ -722,112 +722,54 @@ const CustomizationForm = () => {
                 </div>
               </div>
 
-              {/* Ambassador Selection Section */}
-              <div className="bg-orange-50/50 rounded-lg p-3 border border-orange-200/30">
-                <h2 className="text-base font-semibold text-orange-700 mb-2 flex items-center">
-                  <svg
-                    className="w-4 h-4 mr-1"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                    />
-                  </svg>
-                  Select Ambassadors
-                </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-auto p-2 border rounded bg-white">
-                  {ambassadors.map((a) => {
-                    const checked = selectedAmbassadorIds.includes(a._id)
-                    return (
-                      <label key={a._id} className={`flex items-center gap-2 p-2 rounded border ${checked ? 'border-orange-500 bg-orange-50' : 'border-slate-200'}`}>
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={(e) => {
-                            const next = e.target.checked
-                              ? [...selectedAmbassadorIds, a._id]
-                              : selectedAmbassadorIds.filter((id) => id !== a._id)
-                            setSelectedAmbassadorIds(next)
-                          }}
-                        />
-                        <span className="font-medium text-slate-700">{a.name}</span>
-                        <span className="text-xs text-slate-500">{a.email}</span>
-                      </label>
-                    )
-                  })}
-                  {!ambassadors.length && (
-                    <div className="text-slate-500 text-sm">No verified ambassadors found.</div>
-                  )}
-                </div>
-                <p className="text-xs text-slate-500 mt-2">Only selected ambassadors will appear in the client's widget.</p>
-              </div>
-
               {/* Script Generation Result */}
               {generatedCode && (
                 <div className="bg-emerald-50/50 rounded-lg p-3 border border-emerald-200/30">
                   <div className="flex items-center justify-between mb-2">
-                    <h2 className="text-base font-semibold text-emerald-700">Generated Script</h2>
+                    <h2 className="text-base font-semibold text-emerald-700">
+                      Generated Script
+                    </h2>
                     <button
                       type="button"
-                      onClick={() => { navigator.clipboard.writeText(generatedCode); toast.success('Script copied!') }}
+                      onClick={() => {
+                        navigator.clipboard.writeText(generatedCode)
+                        toast.success("Script copied!")
+                      }}
                       className="inline-flex items-center justify-center w-8 h-8 rounded bg-emerald-600 text-white hover:bg-emerald-700"
                       aria-label="Copy script"
                       title="Copy script"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="w-4 h-4"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <rect
+                          x="9"
+                          y="9"
+                          width="13"
+                          height="13"
+                          rx="2"
+                          ry="2"
+                        ></rect>
                         <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
                       </svg>
                     </button>
                   </div>
-                  <div className="text-xs text-slate-600 mb-2">Embed this snippet on the client website:</div>
-                  <pre className="bg-slate-900 text-green-300 text-xs p-3 rounded overflow-auto"><code>{generatedCode}</code></pre>
+                  <div className="text-xs text-slate-600 mb-2">
+                    Embed this snippet on the client website:
+                  </div>
+                  <pre className="bg-slate-900 text-green-300 text-xs p-3 rounded overflow-auto">
+                    <code>{generatedCode}</code>
+                  </pre>
                 </div>
               )}
 
-              {/* Sales History */}
-              <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
-                <div className="flex items-center justify-between mb-2">
-                  <h2 className="text-base font-semibold text-slate-700">Script History</h2>
-                  <span className="text-xs text-slate-500">{loading ? 'Loading...' : ''}</span>
-                </div>
-                <div className="overflow-auto">
-                  <table className="min-w-full text-sm">
-                    <thead>
-                      <tr className="text-left border-b">
-                        <th className="p-2">Client</th>
-                        <th className="p-2">Email</th>
-                        <th className="p-2">Website</th>
-                        <th className="p-2">Status</th>
-                        <th className="p-2">Created</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {salesHistory.map((row) => (
-                        <tr key={row._id} className="border-b align-top">
-                          <td className="p-2">{row.clientWebName || row.soldTo?.clientName || '-'}</td>
-                          <td className="p-2">{row.soldTo?.clientEmail || '-'}</td>
-                          <td className="p-2">{row.soldTo?.websiteUrl || row.clientWebUrl || '-'}</td>
-                          <td className="p-2">
-                            <span className={`px-2 py-1 rounded text-xs ${row.status ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}>{row.status ? 'Active' : 'Inactive'}</span>
-                          </td>
-                          <td className="p-2">{new Date(row.createdAt).toLocaleString()}</td>
-                        </tr>
-                      ))}
-                      {!salesHistory.length && (
-                        <tr>
-                          <td className="p-2 text-slate-500" colSpan={5}>No history yet.</td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
               {/* Terms and Policy URL Section */}
               <div className="bg-blue-50/50 rounded-lg p-3 border border-blue-200/30">
                 <h2 className="text-base font-semibold text-blue-700 mb-2 flex items-center">

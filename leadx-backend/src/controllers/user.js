@@ -4,6 +4,8 @@ import { User, userValidationSchema } from "../models/user.js"
 import errGen from "../utils/errGen.js"
 import respo from "../utils/respo.js"
 import { sendEmail } from "../utils/mailer.js" // helper for email
+import { LoginHistory } from "../models/LoginHistory.js"
+import geoip from "geoip-lite"
 
 // 🔑 Register Ambassador
 export const registerUser = async (req, res, next) => {
@@ -68,6 +70,31 @@ export const loginUser = async (req, res, next) => {
       { expiresIn: "7d" }
     )
 
+    // 👇 Define IP properly
+    const ip =
+      req.headers["x-forwarded-for"]?.split(",")[0] ||
+      req.socket?.remoteAddress ||
+      ""
+
+    // 👇 Save login history (only if ambassador and not local IP)
+    if (
+      user.role === "ambassador" &&
+      ip !== "::1" &&
+      ip !== "127.0.0.1" &&
+      !ip.startsWith("::ffff:127.")
+    ) {
+      const geo = geoip.lookup(ip)
+
+      await LoginHistory.create({
+        userId: user._id,
+        ipAddress: ip,
+        region: geo?.region || "",
+        city: geo?.city || "",
+        isp: geo?.org || "",
+        loginTime: new Date(),
+      })
+    }
+
     const safeUser = {
       id: user._id,
       name: user.name,
@@ -82,6 +109,39 @@ export const loginUser = async (req, res, next) => {
     next(err)
   }
 }
+
+// export const loginUser = async (req, res, next) => {
+//   try {
+//     const { email, password } = req.body
+//     if (!email || !password)
+//       return next(errGen(400, "Email and password are required"))
+
+//     const user = await User.findOne({ email })
+//     if (!user) return next(errGen(404, "User not found"))
+
+//     const isMatch = await bcrypt.compare(password, user.password)
+//     if (!isMatch) return next(errGen(400, "Invalid credentials"))
+
+//     const token = JWT.sign(
+//       { id: user._id, role: user.role },
+//       process.env.JWT_ACCESS_SECRET,
+//       { expiresIn: "7d" }
+//     )
+
+//     const safeUser = {
+//       id: user._id,
+//       name: user.name,
+//       email: user.email,
+//       role: user.role,
+//     }
+
+//     res
+//       .status(200)
+//       .json(respo(true, "Login successful", { token, user: safeUser }))
+//   } catch (err) {
+//     next(err)
+//   }
+// }
 // 👤 Get Own Profile
 export const getMyProfile = async (req, res, next) => {
   try {
@@ -571,6 +631,20 @@ The LeadX Team`
       .json(respo(true, "User auto-registered successfully", safeUser))
   } catch (err) {
     console.error("❌ Auto-register error:", err)
+    next(err)
+  }
+}
+export const getAmbassadorLogins = async (req, res, next) => {
+  try {
+    const logs = await LoginHistory.find()
+      .sort({ loginTime: -1 })
+      .populate("userId", "name email role")
+      .limit(2000)
+
+    const filtered = logs.filter((log) => log.userId?.role === "ambassador")
+
+    res.status(200).json(respo(true, "Login history fetched", filtered))
+  } catch (err) {
     next(err)
   }
 }
