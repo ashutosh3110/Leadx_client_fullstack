@@ -20,6 +20,7 @@ import ManageAmbassadors from "./pages/superadmin/ManageAmbassadors"
 import AmbassadorList from "./pages/user/AmbassadorList"
 import UserLayout from "./pages/user/Layout"
 import AmbassadorLoginTable from "./pages/auth/LoginHistory"
+import EmbedView from "./pages/embed/EmbedView"
 
 function App() {
   return (
@@ -59,6 +60,7 @@ function App() {
           </Route>
         </Route>
         <Route path="/ambassadors" element={<AmbassadorList />} />
+        <Route path="/embed/view/:configKey" element={<EmbedView />} />
         <Route path="/user" element={<UserLayout />} />
 
         <Route path="/unauthorized" element={<Unauthorized />} />

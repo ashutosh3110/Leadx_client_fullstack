@@ -12,7 +12,13 @@ const genKey = () => crypto.randomBytes(12).toString("hex")
 // Admin: Create embed config
 export const createConfig = async (req, res, next) => {
   try {
-    const { clientWebUrl, clientWebName, ambassadorIds = [], uiConfig = {}, soldTo } = req.body
+    const {
+      clientWebUrl,
+      clientWebName,
+      ambassadorIds = [],
+      uiConfig = {},
+      soldTo,
+    } = req.body
 
     const configKey = genKey()
 
@@ -93,7 +99,13 @@ export const toggleStatus = async (req, res, next) => {
 export const recordSale = async (req, res, next) => {
   try {
     const { id } = req.params
-    const { clientName, clientEmail, websiteUrl, status = "active", notes } = req.body
+    const {
+      clientName,
+      clientEmail,
+      websiteUrl,
+      status = "active",
+      notes,
+    } = req.body
 
     const cfg = await EmbedConfig.findById(id)
     if (!cfg) return next(errGen(404, "Config not found"))
@@ -112,7 +124,17 @@ export const recordSale = async (req, res, next) => {
 // Admin: Sales history
 export const salesHistory = async (req, res, next) => {
   try {
-    const list = await EmbedConfig.find({}, { configKey: 1, clientWebName: 1, soldTo: 1, history: 1, status: 1, createdAt: 1 })
+    const list = await EmbedConfig.find(
+      {},
+      {
+        configKey: 1,
+        clientWebName: 1,
+        soldTo: 1,
+        history: 1,
+        status: 1,
+        createdAt: 1,
+      }
+    )
     res.status(200).json(respo(true, "Sales history fetched", list))
   } catch (err) {
     next(err)
@@ -133,95 +155,25 @@ export const serveWidget = async (req, res, next) => {
   const API_BASE = window.LEADX_API_BASE || '${apiBase}';
   const CONFIG_KEY = '${configKey}';
   const UI = ${JSON.stringify(cfg.uiConfig || {})};
+  // Determine FRONTEND_BASE; allow host page to override.
+  const FRONTEND_BASE = window.LEADX_FRONTEND_BASE || API_BASE;
 
-  const style = document.createElement('style');
-  style.textContent = ` + "`" + `
-  .leadx-button { position: fixed; bottom: 24px; ${cfg.uiConfig?.position === 'left' ? 'left' : 'right'}: 24px; background: ${cfg.uiConfig?.themeColor || '#4f46e5'}; color: #fff; border: none; padding: 12px 16px; border-radius: 24px; box-shadow: 0 4px 16px rgba(0,0,0,0.2); cursor: pointer; z-index: 99999; }
-  .leadx-modal { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.4); z-index: 100000; }
-  .leadx-modal.open { display: flex; }
-  .leadx-card { width: 92%; max-width: 420px; background: #fff; border-radius: 12px; padding: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); font-family: system-ui, -apple-system, Segoe UI, Roboto; }
-  .leadx-header { font-weight: 700; margin-bottom: 8px; }
-  .leadx-amb-list { max-height: 160px; overflow: auto; margin-bottom: 12px; }
-  .leadx-amb-item { display: flex; align-items: center; gap: 8px; padding: 6px; border: 1px solid #eee; border-radius: 8px; margin-bottom: 8px; cursor: pointer; }
-  .leadx-amb-item.selected { outline: 2px solid ${cfg.uiConfig?.themeColor || '#4f46e5'}; }
-  .leadx-input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 8px; margin: 6px 0; }
-  .leadx-submit { width: 100%; padding: 10px; background: ${cfg.uiConfig?.themeColor || '#4f46e5'}; color: #fff; border: none; border-radius: 8px; cursor: pointer; }
-  ` + "`" + `;
-  document.head.appendChild(style);
-
-  const btn = document.createElement('button');
-  btn.className = 'leadx-button';
-  btn.textContent = UI.buttonText || 'Chat with Ambassador';
-  document.body.appendChild(btn);
-
-  const modal = document.createElement('div');
-  modal.className = 'leadx-modal';
-  modal.innerHTML = ` + "`" + `
-    <div class="leadx-card">
-      <div class="leadx-header">${cfg.uiConfig?.titleText || 'Ask our Ambassadors'}</div>
-      <div id="leadx-amb-list" class="leadx-amb-list">Loading ambassadors...</div>
-      <input id="leadx_name" placeholder="Your name" class="leadx-input"/>
-      <input id="leadx_email" placeholder="Email" class="leadx-input"/>
-      <input id="leadx_phone" placeholder="Phone" class="leadx-input"/>
-      <textarea id="leadx_msg" placeholder="Your question" class="leadx-input" rows="3"></textarea>
-      <button id="leadx_submit" class="leadx-submit">Send</button>
-    </div>
-  ` + "`" + `;
-  document.body.appendChild(modal);
-
-  let selectedAmb = null;
-  const ambList = modal.querySelector('#leadx-amb-list');
-
-  async function fetchAmbassadors() {
-    try {
-      const res = await fetch(API_BASE + '/api/auth/ambassadors/public');
-      const data = await res.json();
-      const ambassadors = (data?.data || []).filter(a => ${JSON.stringify((cfg.ambassadorIds || []).map(id=>id.toString()))}.includes(String(a._id)));
-      if (!ambassadors.length) { ambList.textContent = 'No ambassadors available.'; return; }
-      ambList.textContent = '';
-      ambassadors.forEach(a => {
-        const item = document.createElement('div');
-        item.className = 'leadx-amb-item';
-        item.innerHTML = '<img src="' + (a.profileImage || '') + '" onerror="this.style.display=\\'none\\'" width="32" height="32" style="border-radius:50%"/>' +
-          ' <div><div style="font-weight:600">' + (a.name || '') + '</div><div style="font-size:12px;color:#666">' + (a.course || '') + '</div></div>';
-        item.addEventListener('click', () => {
-          document.querySelectorAll('.leadx-amb-item').forEach(el => el.classList.remove('selected'));
-          item.classList.add('selected');
-          selectedAmb = a._id;
-        });
-        ambList.appendChild(item);
-      })
-    } catch (e) { ambList.textContent = 'Failed to load ambassadors'; }
+  // Insert iframe inline (at script tag position)
+  const scriptEl = document.currentScript;
+  const mount = document.createElement('div');
+  mount.style.width = '100%';
+  const iframe = document.createElement('iframe');
+  iframe.src = FRONTEND_BASE + '/embed/view/' + CONFIG_KEY;
+  iframe.style.width = '100%';
+  iframe.style.minHeight = '800px';
+  iframe.style.border = '0';
+  iframe.loading = 'lazy';
+  mount.appendChild(iframe);
+  if (scriptEl && scriptEl.parentNode) {
+    scriptEl.parentNode.insertBefore(mount, scriptEl.nextSibling);
+  } else {
+    document.body.appendChild(mount);
   }
-
-  btn.addEventListener('click', () => modal.classList.add('open'));
-  modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('open') });
-
-  modal.querySelector('#leadx_submit').addEventListener('click', async () => {
-    const name = modal.querySelector('#leadx_name').value.trim();
-    const email = modal.querySelector('#leadx_email').value.trim();
-    const phone = modal.querySelector('#leadx_phone').value.trim();
-    const msg = modal.querySelector('#leadx_msg').value.trim();
-    if (!selectedAmb) return alert('Please select an ambassador.');
-    if (!name || !email || !phone || !msg) return alert('Please fill all fields.');
-
-    try {
-      const res = await fetch(API_BASE + '/api/embed/submit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ configKey: CONFIG_KEY, ambassadorId: selectedAmb, name, email, phone, message: msg })
-      });
-      const data = await res.json();
-      if (data?.success) {
-        alert('Message submitted! We will contact you via email.');
-        modal.classList.remove('open');
-      } else {
-        alert(data?.message || 'Failed to submit');
-      }
-    } catch (e) { alert('Network error'); }
-  });
-
-  fetchAmbassadors();
 })();
     `
 
@@ -245,7 +197,11 @@ export const publicSubmit = async (req, res, next) => {
     if (!cfg) return next(errGen(404, "Invalid or inactive widget"))
 
     const ambassador = await User.findById(ambassadorId)
-    if (!ambassador || ambassador.role !== "ambassador" || !ambassador.isVerified) {
+    if (
+      !ambassador ||
+      ambassador.role !== "ambassador" ||
+      !ambassador.isVerified
+    ) {
       return next(errGen(404, "Ambassador not found or not verified"))
     }
 
@@ -253,20 +209,43 @@ export const publicSubmit = async (req, res, next) => {
     let user = await User.findOne({ email })
     if (!user) {
       const hashed = await bcrypt.hash("123456", 10)
-      user = await User.create({ name, email, phone, password: hashed, role: "user", isVerified: true })
+      user = await User.create({
+        name,
+        email,
+        phone,
+        password: hashed,
+        role: "user",
+        isVerified: true,
+      })
     }
 
     // Find or create chat
-    let chat = await Chat.findOne({ participants: { $all: [user._id, ambassador._id] } })
-    if (!chat) chat = await Chat.create({ participants: [user._id, ambassador._id] })
+    let chat = await Chat.findOne({
+      participants: { $all: [user._id, ambassador._id] },
+    })
+    if (!chat)
+      chat = await Chat.create({ participants: [user._id, ambassador._id] })
 
     // Create message from user to ambassador
-    const newMessage = await Message.create({ chatId: chat._id, sender: user._id, receiver: ambassador._id, content: message, isFormSubmission: true })
+    const newMessage = await Message.create({
+      chatId: chat._id,
+      sender: user._id,
+      receiver: ambassador._id,
+      content: message,
+      isFormSubmission: true,
+    })
 
     chat.lastMessage = newMessage._id
     await chat.save()
 
-    return res.status(201).json(respo(true, "Submitted successfully", { chatId: chat._id, messageId: newMessage._id }))
+    return res
+      .status(201)
+      .json(
+        respo(true, "Submitted successfully", {
+          chatId: chat._id,
+          messageId: newMessage._id,
+        })
+      )
   } catch (err) {
     next(err)
   }
