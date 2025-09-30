@@ -9,43 +9,28 @@ const ApprovedAmbassadorsTable = ({
     handleViewAmbassadorDetails
 }) => {
     const [searchTerm, setSearchTerm] = useState('');
-    const [courseFilter, setCourseFilter] = useState('');
-    const [countryFilter, setCountryFilter] = useState('');
     const [rewardFilter, setRewardFilter] = useState('');
+    const [statusFilter, setStatusFilter] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
-
-    // Get unique values for filter options
-    const uniqueCourses = useMemo(() => {
-        const courses = ambassadors.map(ambassador => ambassador.course).filter(Boolean);
-        return [...new Set(courses)].sort();
-    }, [ambassadors]);
-
-    const uniqueCountries = useMemo(() => {
-        const countries = ambassadors.map(ambassador => ambassador.country).filter(Boolean);
-        return [...new Set(countries)].sort();
-    }, [ambassadors]);
 
     // Filter ambassadors based on search term and filters
     const filteredAmbassadors = useMemo(() => {
         let filtered = ambassadors;
 
-        // Search filter
+        // Combined search filter - search by name, email, course, and country
         if (searchTerm.trim()) {
             filtered = filtered.filter(ambassador => 
                 ambassador.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                ambassador.email?.toLowerCase().includes(searchTerm.toLowerCase())
+                ambassador.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                ambassador.course?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                ambassador.country?.toLowerCase().includes(searchTerm.toLowerCase())
             );
         }
 
-        // Course filter
-        if (courseFilter) {
-            filtered = filtered.filter(ambassador => ambassador.course === courseFilter);
-        }
-
-        // Country filter
-        if (countryFilter) {
-            filtered = filtered.filter(ambassador => ambassador.country === countryFilter);
+        // Status filter
+        if (statusFilter) {
+            filtered = filtered.filter(ambassador => ambassador.status === statusFilter);
         }
 
         // Reward filter
@@ -58,7 +43,7 @@ const ApprovedAmbassadorsTable = ({
         }
 
         return filtered;
-    }, [ambassadors, searchTerm, courseFilter, countryFilter, rewardFilter]);
+    }, [ambassadors, searchTerm, statusFilter, rewardFilter]);
 
     // Pagination logic
     const totalPages = Math.ceil(filteredAmbassadors.length / itemsPerPage);
@@ -69,7 +54,7 @@ const ApprovedAmbassadorsTable = ({
     // Reset to first page when filters change
     React.useEffect(() => {
         setCurrentPage(1);
-    }, [searchTerm, courseFilter, countryFilter, rewardFilter]);
+    }, [searchTerm, statusFilter, rewardFilter]);
 
     const handlePageChange = (page) => {
         setCurrentPage(page);
@@ -92,10 +77,10 @@ const ApprovedAmbassadorsTable = ({
                     <div className="relative">
                         <input
                             type="text"
-                            placeholder="Search by name or email..."
+                            placeholder="Search by name, email, course or country..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white w-full sm:w-64"
+                            className="pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white w-full sm:w-80"
                         />
                         <svg className="w-4 h-4 text-slate-400 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -106,34 +91,18 @@ const ApprovedAmbassadorsTable = ({
 
             {/* Filters */}
             <div className="bg-white/60 backdrop-blur-sm rounded-lg p-4 mb-4 border border-slate-200">
-                <div className="flex flex-col lg:flex-row gap-4">
-                    {/* Course Filter */}
+                <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
+                    {/* Status Filter */}
                     <div className="flex-1">
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Course</label>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
                         <select
-                            value={courseFilter}
-                            onChange={(e) => setCourseFilter(e.target.value)}
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
                             className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white"
                         >
-                            <option value="">All Courses</option>
-                            {uniqueCourses.map(course => (
-                                <option key={course} value={course}>{course}</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {/* Country Filter */}
-                    <div className="flex-1">
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Country</label>
-                        <select
-                            value={countryFilter}
-                            onChange={(e) => setCountryFilter(e.target.value)}
-                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white"
-                        >
-                            <option value="">All Countries</option>
-                            {uniqueCountries.map(country => (
-                                <option key={country} value={country}>{country}</option>
-                            ))}
+                            <option value="">All Status</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
                         </select>
                     </div>
 
@@ -146,18 +115,17 @@ const ApprovedAmbassadorsTable = ({
                             className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white"
                         >
                             <option value="">All Rewards</option>
-                            <option value="hasReward">Has Reward</option>
-                            <option value="noReward">No Reward</option>
+                            <option value="hasReward">Added</option>
+                            <option value="noReward">Not Added</option>
                         </select>
                     </div>
 
                     {/* Clear Filters Button */}
-                    <div className="flex items-end">
+                    <div>
                         <button
                             onClick={() => {
                                 setSearchTerm('');
-                                setCourseFilter('');
-                                setCountryFilter('');
+                                setStatusFilter('');
                                 setRewardFilter('');
                             }}
                             className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm flex items-center space-x-2"
@@ -165,7 +133,7 @@ const ApprovedAmbassadorsTable = ({
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                             </svg>
-                            <span>Clear</span>
+                            <span>Clear All</span>
                         </button>
                     </div>
                 </div>
@@ -179,6 +147,7 @@ const ApprovedAmbassadorsTable = ({
                             <th className="px-2 lg:px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Ambassador</th>
                             <th className="px-2 lg:px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Course</th>
                             <th className="px-2 lg:px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Country</th>
+                            <th className="px-2 lg:px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Status</th>
                             <th className="px-2 lg:px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Reward</th>
                             <th className="px-2 lg:px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Joined</th>
                             <th className="px-2 lg:px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Actions</th>
@@ -229,6 +198,15 @@ const ApprovedAmbassadorsTable = ({
                                 </td>
                                 <td className="px-2 lg:px-4 py-4 whitespace-nowrap">
                                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                        ambassador.status === 'active'
+                                            ? 'bg-green-100 text-green-800 border border-green-200'
+                                            : 'bg-red-100 text-red-800 border border-red-200'
+                                    }`}>
+                                        {ambassador.status === 'active' ? 'Active' : 'Inactive'}
+                                    </span>
+                                </td>
+                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap">
+                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                                         ambassador.hasReward 
                                             ? 'bg-green-100 text-green-800 border border-green-200'
                                             : 'bg-gray-100 text-gray-800 border border-gray-200'
@@ -267,7 +245,7 @@ const ApprovedAmbassadorsTable = ({
                         ))}
                         {paginatedAmbassadors.length === 0 && (
                             <tr>
-                                <td colSpan="6" className="px-6 py-8 text-center">
+                                <td colSpan="7" className="px-6 py-8 text-center">
                                     <div className="flex flex-col items-center">
                                         <svg className="w-12 h-12 text-slate-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />

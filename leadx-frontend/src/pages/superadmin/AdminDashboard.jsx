@@ -35,6 +35,11 @@ import { useColorContext } from '../../context/ColorContext';
 const AdminDashboard = () => {
 
     console.log('AdminDashboard component is rendering...');
+    
+    // Debug: Check current user
+    const currentUser = JSON.parse(localStorage.getItem('authUser') || '{}');
+    console.log('🔍 Current user from localStorage:', currentUser);
+    console.log('🔍 User role:', currentUser.user?.role);
 
     const navigate = useNavigate();
 
@@ -508,13 +513,9 @@ const AdminDashboard = () => {
     // Edit and Delete functionality for approved ambassadors
 
     const handleEditAmbassador = (ambassador) => {
-
-        // TODO: Implement edit functionality
-
         console.log('Edit ambassador:', ambassador);
-
-        toast.success('Edit functionality will be implemented soon!');
-
+        // Refresh ambassadors data after edit
+        fetchDashboardData();
     };
 
 
@@ -531,28 +532,23 @@ const AdminDashboard = () => {
 
 
 
-                // TODO: Implement delete API call
+                // Call delete API
+                const response = await ambassadorAPI.deleteAmbassador(ambassadorId);
+                
+                if (response.success) {
+                    // Remove from local state
+                    setAmbassadors(prev => prev.filter(ambassador => ambassador._id !== ambassadorId));
 
-                // const response = await ambassadorAPI.deleteAmbassador(ambassadorId);
+                    setStats(prev => ({
+                        ...prev,
+                        totalAmbassadors: prev.totalAmbassadors - 1,
+                        activeAmbassadors: prev.activeAmbassadors - 1
+                    }));
 
-
-                // For now, just remove from local state
-
-                setAmbassadors(prev => prev.filter(ambassador => ambassador._id !== ambassadorId));
-
-                setStats(prev => ({
-
-                    ...prev,
-
-                    totalAmbassadors: prev.totalAmbassadors - 1,
-
-                    activeAmbassadors: prev.activeAmbassadors - 1
-
-                }));
-
-
-
-                toast.success('✅ Ambassador deleted successfully!');
+                    toast.success('✅ Ambassador deleted successfully!');
+                } else {
+                    toast.error('❌ Failed to delete ambassador. Please try again.');
+                }
 
             } catch (error) {
 
@@ -601,6 +597,7 @@ const AdminDashboard = () => {
 
 
             // Filter ambassadors based on verification status
+            // Once verified (approved), ambassadors stay in approved table regardless of active/inactive status
 
             const verifiedAmbassadors = allAmbassadors.filter(user =>
 
@@ -712,7 +709,7 @@ const AdminDashboard = () => {
 
     return (
 
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex flex-col lg:flex-row">
+        <div className="min-h-screen bg-white flex flex-col lg:flex-row">
 
             {/* Fixed Desktop Sidebar */}
             <AdminSidebar
@@ -737,10 +734,11 @@ const AdminDashboard = () => {
                     />
                     <div className="fixed inset-y-0 left-0 z-50 w-64 lg:hidden">
                     <div 
-                        className="w-64 h-screen shadow-lg flex flex-col"
+                        className="w-64 h-screen shadow-2xl flex flex-col backdrop-blur-sm"
                         style={{ 
-                            backgroundColor: '#4682B4',
-                            borderRight: `1px solid #4682B480`
+                            backgroundColor: '#1098e8',
+                            borderRight: `1px solid rgba(16, 152, 232, 0.2)`,
+                            boxShadow: '0 0 20px rgba(0, 0, 0, 0.1)'
                         }}
                     >
                         {/* Mobile Close Button */}
@@ -759,24 +757,12 @@ const AdminDashboard = () => {
                             <div className="p-4">
                                 {/* Logo */}
                                 <div className="flex items-center justify-center mb-8">
-                                    <div className="bg-gradient-to-br from-purple-900 via-blue-900 to-purple-800 p-4 rounded-xl shadow-lg">
-                                        <div className="flex items-center space-x-3">
-                                            <div className="relative">
-                                                <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center relative">
-                                                    <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
-                                                        <div className="w-4 h-2 bg-blue-600 rounded-sm relative">
-                                                            <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-2 h-1 bg-orange-400 rounded-sm"></div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="text-white">
-                                                <div className="text-sm font-bold leading-tight">
-                                                    <div className="text-blue-400">LEAD</div>
-                                                    <div className="text-orange-400">EXAMINE</div>
-                                                </div>
-                                            </div>
-                                        </div>
+                                    <div className="p-2">
+                                        <img
+                                            src="/logo-new.png"
+                                            alt="LeadX Logo"
+                                            className="h-8 sm:h-10 object-contain"
+                                        />
                                     </div>
                                 </div>
 
@@ -797,10 +783,10 @@ const AdminDashboard = () => {
                                                         handleCloseMobileMenu();
                                                     }
                                                 }}
-                                                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 text-left ${
+                                                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-300 text-left group ${
                                                     activeTab === item.id
-                                                        ? 'shadow-lg bg-white/20 text-white'
-                                                        : 'text-white/80 hover:text-white'
+                                                        ? 'bg-white/30 text-white shadow-xl scale-105 border border-white/30'
+                                                        : 'text-white/90 hover:text-white hover:bg-white/10 hover:shadow-lg hover:scale-105 active:scale-95'
                                                 }`}
                                             >
                                                 {item.icon}
@@ -917,17 +903,13 @@ const AdminDashboard = () => {
 
             {/* Main Content Area */}
             <div
-                className="flex-1 flex flex-col lg:ml-64 min-h-screen relative z-20 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100"
-                style={{
-                    background: `linear-gradient(135deg, ${adminDashboardColor}15, ${adminDashboardColor}10)`
-                }}
+                className="flex-1 flex flex-col lg:ml-64 min-h-screen relative z-20 bg-white"
             >
 
                 {/* Header */}
                 <div
-                    className="backdrop-blur-sm border-b sticky top-0 z-30"
+                    className="backdrop-blur-sm border-b sticky top-0 z-30 bg-white"
                     style={{
-                        background: `linear-gradient(135deg, ${adminDashboardColor}25, ${adminDashboardColor}15)`,
                         borderColor: `${adminDashboardColor}40`
                     }}
                 >
@@ -1004,54 +986,10 @@ const AdminDashboard = () => {
                         </div>
                     )}
                     
+
                     {/* Render nested routes */}
                     <Outlet />
 
-                    {activeTab === 'overview' && <Overview stats={stats} />}
-
-                    {/* Ambassadors Tab */}
-                    {activeTab === 'ambassadors' && (
-                        <div className="space-y-4 sm:space-y-6">
-                            <PendingApplicationsTable
-                                pendingApplications={pendingApplications}
-                                handleApproveApplication={handleApproveApplication}
-                                handleRejectApplication={handleRejectApplication}
-                                loading={loading}
-                                handleViewAmbassadorDetails={handleViewAmbassadorDetails}
-                            />
-
-                            <ApprovedAmbassadorsTable
-                                ambassadors={ambassadors}
-                                handleEditAmbassador={handleEditAmbassador}
-                                handleDeleteAmbassador={handleDeleteAmbassador}
-                                loading={loading}
-                                handleViewAmbassadorDetails={handleViewAmbassadorDetails}
-                            />
-                        </div>
-                    )}
-
-                    {activeTab === 'rewards' && (
-                        <RewardsTab
-                            rewards={rewards}
-                            adminDashboardColor={adminDashboardColor}
-                            onEditReward={handleEditReward}
-                            onDeleteReward={handleDeleteReward}
-                        />
-                    )}
-                    
-                    {activeTab === 'users' && <UserManagement />}
-                    
-                    {activeTab === 'settings' && (
-                        <div className="space-y-4 sm:space-y-6">
-                            <SimpleSettingsForm />
-                        </div>
-                    )}
-
-                    {activeTab === 'customize' && (
-                        <div className="space-y-4 sm:space-y-6">
-                            <CustomizationForm />
-                        </div>
-                    )}
                 </div>
 
             </div>

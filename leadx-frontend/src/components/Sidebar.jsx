@@ -26,9 +26,10 @@ const Sidebar = () => {
   const menusByRole = {
     ambassador: [
       { name: "Overview", path: "/ambassador", icon: <FaHome /> },
-      { name: "Profile", path: "/ambassador/profile", icon: <FaUser /> },
-      { name: "Rewards", path: "/ambassador/rewards", icon: <FaGift /> },
+      { name: "Users", path: "/ambassador/users", icon: <FaUsers /> },
       { name: "Chat", path: "/ambassador/chat", icon: <FaComments /> },
+      { name: "Rewards", path: "/ambassador/rewards", icon: <FaGift /> },
+      { name: "Profile", path: "/ambassador/profile", icon: <FaUser /> },
     ],
     // admin: [
     //   { name: "Overview", path: "/admin", icon: <FaHome /> },

@@ -13,10 +13,14 @@ const generatePassword = () => crypto.randomBytes(4).toString("hex")
 // startChat controller update
 export const startChat = async (req, res, next) => {
   try {
-    const { ambassadorId, name, email, phone, alternativeMobile } = req.body
+    console.log("🔍 startChat called with:", req.body)
+    const { ambassadorId, name, email, phone, alternativeMobile, country, state, city } = req.body
 
     let user = await User.findOne({ email })
+    console.log("🔍 Existing user found:", user ? user.name : "No existing user")
+    
     if (!user) {
+      console.log("🔍 Creating new user...")
       const plainPassword = generatePassword()
       const hashedPassword = await bcrypt.hash(plainPassword, 10)
 
@@ -25,34 +29,53 @@ export const startChat = async (req, res, next) => {
         email,
         phone,
         alternativeMobile,
+        country: country || "Not specified",
+        state: state || "",
+        city: city || "",
         role: "user",
         password: hashedPassword,
       })
+      
+      console.log("✅ New user created:", user._id, user.name)
 
-      // send password via email (placeholder)
+      // send password via email (optional - don't fail if email service is not configured)
       if (email) {
-        await sendEmail(
-          email,
-          "Welcome to LeadX",
-          `Hello ${name},\n\nYour account has been created.\nLogin with:\nEmail: ${email}\nPassword: ${plainPassword}`
-        )
+        try {
+          await sendEmail(
+            email,
+            "Welcome to LeadX",
+            `Hello ${name},\n\nYour account has been created.\nLogin with:\nEmail: ${email}\nPassword: ${plainPassword}`
+          )
+          console.log("✅ Welcome email sent successfully")
+        } catch (emailError) {
+          console.log("⚠️ Email service not configured or failed:", emailError.message)
+        }
       }
 
-      // send password via WhatsApp (placeholder)
+      // send password via WhatsApp (optional - don't fail if WhatsApp service is not configured)
       if (phone) {
-        await sendWhatsApp(
-          phone,
-          `Hello ${name}, welcome to LeadX!\n\nYour login details:\nEmail: ${email}\nPassword: ${plainPassword}`
-        )
+        try {
+          await sendWhatsApp(
+            phone,
+            `Hello ${name}, welcome to LeadX!\n\nYour login details:\nEmail: ${email}\nPassword: ${plainPassword}`
+          )
+          console.log("✅ Welcome WhatsApp sent successfully")
+        } catch (whatsappError) {
+          console.log("⚠️ WhatsApp service not configured or failed:", whatsappError.message)
+        }
       }
     }
 
+    console.log("🔍 Looking for existing chat between user:", user._id, "and ambassador:", ambassadorId)
     let chat = await Chat.findOne({
       participants: { $all: [user._id, ambassadorId] },
     })
 
+    console.log("🔍 Existing chat found:", chat ? chat._id : "No existing chat")
     if (!chat) {
+      console.log("🔍 Creating new chat...")
       chat = await Chat.create({ participants: [user._id, ambassadorId] })
+      console.log("✅ New chat created:", chat._id)
     }
 
     const populatedChat = await Chat.findById(chat._id).populate(
@@ -60,8 +83,21 @@ export const startChat = async (req, res, next) => {
       "name email role profileImage"
     )
 
+    console.log("✅ Chat started successfully:", {
+      chatId: populatedChat._id,
+      participants: populatedChat.participants.length,
+      user: populatedChat.participants.find(p => p.role === 'user')?.name,
+      ambassador: populatedChat.participants.find(p => p.role === 'ambassador')?.name
+    })
+
     res.status(200).json(respo(true, "Chat started", populatedChat))
   } catch (err) {
+    console.error("❌ Error in startChat:", err)
+    console.error("❌ Error details:", {
+      message: err.message,
+      stack: err.stack,
+      name: err.name
+    })
     next(err)
   }
 }
@@ -69,8 +105,16 @@ export const startChat = async (req, res, next) => {
 // 🔹 Send a message
 export const sendMessage = async (req, res) => {
   try {
+    console.log("🔍 sendMessage called with:", req.body)
     const { chatId, receiver, content } = req.body
     const sender = req.user.id
+
+    console.log("🔍 Message details:", {
+      chatId,
+      sender,
+      receiver,
+      content: content.substring(0, 50) + "..."
+    })
 
     if (!chatId || !receiver || !content) {
       return res.status(400).json({
@@ -79,12 +123,15 @@ export const sendMessage = async (req, res) => {
       })
     }
 
+    console.log("🔍 Creating new message...")
     const newMessage = await Message.create({
       chatId,
       sender,
       receiver,
       content,
     })
+    
+    console.log("✅ New message created:", newMessage._id)
 
     const populatedMessage = await Message.findById(newMessage._id).populate(
       "sender receiver",
@@ -351,6 +398,84 @@ export const adminSendAsAmbassador = async (req, res, next) => {
 
     res.status(200).json(respo(true, "Message sent", populatedMessage))
   } catch (err) {
+    next(err)
+  }
+}
+
+// 🔹 Get Ambassador's Users (users who chatted with this ambassador)
+export const getMyUsers = async (req, res, next) => {
+  try {
+    const ambassadorId = req.user.id
+    console.log('🔍 Getting users for ambassador:', ambassadorId)
+
+    // Get all chats where this ambassador is a participant
+    const chats = await Chat.find({ participants: ambassadorId })
+      .populate('participants', 'name email phone country state profileImage role conversionStatus')
+      .populate('lastMessage', 'content createdAt')
+      .sort({ updatedAt: -1 })
+
+    console.log(`📊 Found ${chats.length} chats for ambassador`)
+
+    // Extract unique users
+    const usersMap = new Map()
+    
+    for (const chat of chats) {
+      // Filter participants to get only users (not the ambassador himself)
+      const users = chat.participants.filter(
+        p => p && p.role === 'user' && p._id.toString() !== ambassadorId
+      )
+
+      for (const user of users) {
+        if (!usersMap.has(user._id.toString())) {
+          // Get message count for this user in this chat
+          const messageCount = await Message.countDocuments({
+            chatId: chat._id,
+            $or: [
+              { sender: user._id },
+              { receiver: user._id }
+            ]
+          })
+
+          // Get last message time for this chat
+          const lastMessage = await Message.findOne({
+            chatId: chat._id
+          }).sort({ createdAt: -1 })
+
+          usersMap.set(user._id.toString(), {
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            phone: user.phone,
+            country: user.country,
+            state: user.state,
+            profileImage: user.profileImage,
+            conversionStatus: user.conversionStatus || 'pending',
+            messageCount: messageCount,
+            lastActivity: lastMessage?.createdAt || chat.updatedAt
+          })
+        } else {
+          // Update message count if user already exists
+          const existingUser = usersMap.get(user._id.toString())
+          const additionalMessages = await Message.countDocuments({
+            chatId: chat._id,
+            $or: [
+              { sender: user._id },
+              { receiver: user._id }
+            ]
+          })
+          existingUser.messageCount += additionalMessages
+        }
+      }
+    }
+
+    const usersList = Array.from(usersMap.values())
+    console.log(`✅ Found ${usersList.length} unique users for ambassador`)
+    console.log('👥 Users:', usersList.map(u => ({ name: u.name, messages: u.messageCount })))
+
+    res.status(200).json(respo(true, 'Users fetched successfully', usersList))
+  } catch (err) {
+    console.error('❌ Error getting ambassador users:', err)
+    console.error('❌ Error stack:', err.stack)
     next(err)
   }
 }

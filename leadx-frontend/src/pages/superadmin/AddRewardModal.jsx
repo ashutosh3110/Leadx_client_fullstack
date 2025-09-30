@@ -208,25 +208,24 @@ const AddRewardModal = ({
                             </div>
                         </div>
 
-                        {/* Currency */}
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
-                                Currency *
-                            </label>
-                            <select
-                                name="currency"
-                                value={formData.currency}
-                                onChange={handleInputChange}
-                                required
-                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-                            >
-                                {currencyOptions.map(currency => (
-                                    <option key={currency.value} value={currency.value}>
-                                        {currency.label}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
+                        {/* Currency - Only show for non-India countries */}
+                        {ambassador.country !== 'India' && (
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                    Currency *
+                                </label>
+                                <select
+                                    name="currency"
+                                    value={formData.currency}
+                                    onChange={handleInputChange}
+                                    required
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                                >
+                                    <option value="USD">USD ($)</option>
+                                </select>
+                            </div>
+                        )}
+
 
                         {/* State (only for India) */}
                         {ambassador.country === 'India' && (

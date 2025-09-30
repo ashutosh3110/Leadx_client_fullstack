@@ -16,6 +16,7 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
     console.log('API Request - Token added:', token ? 'Present' : 'Missing');
+    console.log('API Request - Full token:', token);
   } else {
     console.log('API Request - No token found');
   }
@@ -56,6 +57,24 @@ export const ambassadorAPI = {
   // Complete program
   completeProgram: async (data) => {
     const response = await api.patch('/api/ambessdor/complete-program', data);
+    return response.data;
+  },
+
+  // Update ambassador
+  updateAmbassador: async (ambassadorId, data) => {
+    console.log('🔍 updateAmbassador API called');
+    console.log('🔍 Ambassador ID:', ambassadorId);
+    console.log('🔍 Update data:', data);
+    console.log('🔍 Status in update data:', data.status);
+    const response = await api.put(`/api/auth/${ambassadorId}`, data);
+    console.log('🔍 API response:', response.data);
+    console.log('🔍 Updated status from API:', response.data?.status);
+    return response.data;
+  },
+
+  // Delete ambassador
+  deleteAmbassador: async (ambassadorId) => {
+    const response = await api.delete(`/api/auth/${ambassadorId}`);
     return response.data;
   },
 };

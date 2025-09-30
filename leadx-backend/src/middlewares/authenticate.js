@@ -35,13 +35,18 @@ export const authenticate = (req, res, next) => {
 export const checkRole = (role) => {
   return (req, res, next) => {
     const userRole = req.user?.role
+    console.log('🔍 checkRole - Required role:', role)
+    console.log('🔍 checkRole - User role:', userRole)
+    console.log('🔍 checkRole - User object:', req.user)
 
     if (userRole !== role) {
+      console.log('🔍 checkRole - Access denied, role mismatch')
       return next(
         errGen(403, "You don't have permissions to perform this task")
       )
     }
 
+    console.log('🔍 checkRole - Access granted')
     next()
   }
 }

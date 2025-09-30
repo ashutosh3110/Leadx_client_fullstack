@@ -40,20 +40,34 @@ const ChatModal = ({ isOpen, onClose, ambassador }) => {
   const fetchCountries = async () => {
     try {
       setLoadingCountries(true);
+      console.log('🌍 Fetching countries from API...');
+      
       const response = await fetch('https://restcountries.com/v3.1/all');
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const data = await response.json();
-      console.log('Countries API response:', data.slice(0, 3)); // Debug first 3 countries
+      console.log('🌍 Countries API response received:', data.length, 'countries');
+      
+      // Check if data is array
+      if (!Array.isArray(data)) {
+        throw new Error('Invalid data format received from API');
+      }
       
       const countryList = data.map(country => ({
-        name: country.name?.common || country.name,
-        code: country.cca2 || country.cca3,
-        callingCode: country.callingCodes?.[0] || country.idd?.root + (country.idd?.suffixes?.[0] || '') || '+1'
+        name: country.name?.common || country.name || 'Unknown',
+        code: country.cca2 || country.cca3 || 'XX',
+        callingCode: country.idd?.root + (country.idd?.suffixes?.[0] || '') || '+1'
       })).sort((a, b) => a.name.localeCompare(b.name));
       
-      console.log('Processed countries:', countryList.slice(0, 5)); // Debug first 5 processed countries
+      console.log('🌍 Processed countries:', countryList.length, 'countries ready');
       setCountries(countryList);
     } catch (error) {
-      console.error('Error fetching countries:', error);
+      console.error('❌ Error fetching countries:', error);
+      console.log('🔄 Using fallback countries...');
+      
       // Fallback countries if API fails
       const fallbackCountries = [
         { name: 'United States', code: 'US', callingCode: '+1' },
@@ -275,8 +289,8 @@ const ChatModal = ({ isOpen, onClose, ambassador }) => {
   const handleFormSubmission = async () => {
     setIsSubmitting(true);
     try {
-      // Start chat with backend
-      const response = await api.post('/chat/start', {
+      console.log('🚀 Starting chat submission...');
+      console.log('📝 Form data:', {
         ambassadorId: ambassador._id,
         name: formData.name,
         email: formData.email,
@@ -284,15 +298,33 @@ const ChatModal = ({ isOpen, onClose, ambassador }) => {
         alternativeMobile: formData.alternativeMobile
       });
 
+      // Start chat with backend
+      const response = await api.post('/chat/start', {
+        ambassadorId: ambassador._id,
+        name: formData.name,
+        email: formData.email,
+        phone: formData.mobile,
+        alternativeMobile: formData.alternativeMobile,
+        country: formData.country,
+        state: formData.state,
+        city: formData.city
+      });
+
+      console.log('✅ Chat start response:', response.data);
+
       if (response.data.success) {
         const chat = response.data.data;
+        console.log('💬 Chat created:', chat._id);
         
         // Send the initial message
+        console.log('📤 Sending initial message...');
         const messageResponse = await api.post('/chat/send', {
           chatId: chat._id,
           receiver: ambassador._id,
           content: formData.message
         });
+
+        console.log('✅ Message send response:', messageResponse.data);
 
         if (messageResponse.data.success) {
           toast.success('Your message has been sent successfully!');
@@ -304,8 +336,21 @@ const ChatModal = ({ isOpen, onClose, ambassador }) => {
         throw new Error('Failed to start chat');
       }
     } catch (error) {
-      console.error('Error submitting form:', error);
-      toast.error('Failed to send message. Please try again.');
+      console.error('❌ Error submitting form:', error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        statusText: error.response?.statusText
+      });
+      
+      if (error.response?.status === 500) {
+        toast.error('Server error. Please try again later.');
+      } else if (error.response?.status === 400) {
+        toast.error('Invalid data. Please check your information.');
+      } else {
+        toast.error('Failed to send message. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }

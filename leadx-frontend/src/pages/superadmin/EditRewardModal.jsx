@@ -10,8 +10,7 @@ const EditRewardModal = ({
     const [formData, setFormData] = useState({
         amount: '',
         currency: 'INR',
-        remarks: '',
-        status: 'pending'
+        remarks: ''
     });
 
     const [loading, setLoading] = useState(false);
@@ -21,11 +20,6 @@ const EditRewardModal = ({
         { value: 'USD', label: 'USD ($)' }
     ];
 
-    const statusOptions = [
-        { value: 'pending', label: 'Pending' },
-        { value: 'approved', label: 'Approved' },
-        { value: 'paid', label: 'Paid' }
-    ];
 
     useEffect(() => {
         if (isOpen && reward) {
@@ -34,8 +28,7 @@ const EditRewardModal = ({
             setFormData({
                 amount: reward.amount || '',
                 currency: reward.currency || 'INR',
-                remarks: reward.remarks || '',
-                status: reward.status || 'pending'
+                remarks: reward.remarks || ''
             });
         }
     }, [isOpen, reward]);
@@ -46,8 +39,7 @@ const EditRewardModal = ({
             setFormData({
                 amount: '',
                 currency: 'INR',
-                remarks: '',
-                status: 'pending'
+                remarks: ''
             });
         }
     }, [isOpen]);
@@ -70,7 +62,6 @@ const EditRewardModal = ({
                 amount: parseFloat(formData.amount),
                 currency: formData.currency,
                 remarks: formData.remarks,
-                status: formData.status,
                 ambassadorId: reward.ambassadorId,
                 ambassadorName: reward.ambassadorName,
                 country: reward.country,
@@ -142,7 +133,6 @@ const EditRewardModal = ({
                         <h3 className="text-sm font-medium text-slate-700 mb-2">Ambassador Details</h3>
                         <div className="text-sm text-slate-600">
                             <div className="font-medium">{reward.ambassadorName}</div>
-                            <div className="text-xs text-slate-500">ID: {reward.ambassadorId}</div>
                             <div className="text-xs text-slate-500">
                                 {reward.country} {reward.state && `- ${reward.state}`}
                             </div>
@@ -167,45 +157,24 @@ const EditRewardModal = ({
                         />
                     </div>
 
-                    {/* Currency */}
-                    <div className="space-y-2">
-                        <label className="block text-sm font-medium text-slate-700">
-                            Currency <span className="text-red-500">*</span>
-                        </label>
-                        <select
-                            name="currency"
-                            value={formData.currency}
-                            onChange={handleInputChange}
-                            required
-                            className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors appearance-none"
-                        >
-                            {currencyOptions.map((option) => (
-                                <option key={option.value} value={option.value}>
-                                    {option.label}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
+                    {/* Currency - Only show for non-India countries */}
+                    {reward.country !== 'India' && (
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium text-slate-700">
+                                Currency <span className="text-red-500">*</span>
+                            </label>
+                            <select
+                                name="currency"
+                                value={formData.currency}
+                                onChange={handleInputChange}
+                                required
+                                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors appearance-none"
+                            >
+                                <option value="USD">USD ($)</option>
+                            </select>
+                        </div>
+                    )}
 
-                    {/* Status */}
-                    <div className="space-y-2">
-                        <label className="block text-sm font-medium text-slate-700">
-                            Status <span className="text-red-500">*</span>
-                        </label>
-                        <select
-                            name="status"
-                            value={formData.status}
-                            onChange={handleInputChange}
-                            required
-                            className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors appearance-none"
-                        >
-                            {statusOptions.map((option) => (
-                                <option key={option.value} value={option.value}>
-                                    {option.label}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
 
                     {/* Remarks */}
                     <div className="space-y-2">

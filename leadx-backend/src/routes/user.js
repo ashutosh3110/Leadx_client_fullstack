@@ -27,6 +27,8 @@ import {
   getPublicAmbassadors,
   getAmbassadorLogins,
   getAllUsers,
+  getAllUsersWithChatHistory,
+  updateUserConversionStatus,
 } from "../controllers/user.js"
  
 const router = Router()
@@ -74,6 +76,9 @@ router.get("/ambassadors", getAllAmbassadors)
 // Users list (Admin)
 router.get("/users", authenticate, checkRole("admin"), getAllUsers)
 
+// Users with chat history (Admin)
+router.get("/users/chat-history", authenticate, checkRole("admin"), getAllUsersWithChatHistory)
+
 // Manage users
 router.get(
   "/verify/ambassadors",
@@ -88,6 +93,12 @@ router.get(
 router.get("/ambassadors/public", getPublicAmbassadors)
 router.post("/auto-register", autoRegisterUser)
 router.get("/ambassador-logins", getAmbassadorLogins) // ✅ moved above dynamic routes
+
+/* ==========================
+   🔄 USER CONVERSION STATUS (must be before dynamic routes)
+========================== */
+// Update user conversion status (Ambassador can mark as converted, Admin can mark as enrolled)
+router.patch("/user/:userId/conversion-status", authenticate, updateUserConversionStatus)
  
 /* ==========================
    🧠 Dynamic Routes (must come last)

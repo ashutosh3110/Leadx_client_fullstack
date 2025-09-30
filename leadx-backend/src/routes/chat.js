@@ -12,6 +12,7 @@ import {
   adminGetMessages,
   adminSendAsAmbassador,
   adminGetChatStats,
+  getMyUsers,
 } from "../controllers/Chat.js"
 
 const router = Router()
@@ -19,6 +20,7 @@ const router = Router()
 router.post("/start", authenticate, startChat)
 router.post("/send", authenticate, sendMessage)
 router.get("/my", authenticate, getMyChats)
+router.get("/my-users", authenticate, getMyUsers)
 router.get("/:chatId", authenticate, getMessages)
 router.delete("/:chatId", authenticate, deleteChat)
 

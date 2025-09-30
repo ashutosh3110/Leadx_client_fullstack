@@ -31,9 +31,13 @@ const Login = () => {
       try {
         setLoading(true)
         const res = await axios.post(`${API_URL}/api/auth/login`, values)
+        console.log('🔍 Login response:', res.data)
         const token = res.data.data.token
         const user = res.data.data.user
         const role = user.role
+        
+        console.log('🔍 Login user:', user)
+        console.log('🔍 Login role:', role)
         
         // Use setAuth function to properly store auth data
         setAuth(token, user)

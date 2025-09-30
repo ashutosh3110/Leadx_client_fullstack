@@ -73,18 +73,18 @@ const PendingApplicationsTable = ({
                 <table className="w-full divide-y divide-slate-200" style={{ minWidth: '600px' }}>
                     <thead className="bg-gradient-to-r from-yellow-50 to-orange-50">
                         <tr>
-                            <th className="px-2 lg:px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Applicant</th>
-                            <th className="px-2 lg:px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Course</th>
-                            <th className="px-2 lg:px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Country</th>
-                            <th className="px-2 lg:px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Applied</th>
+                            <th className="px-2 lg:px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Applicant</th>
+                            <th className="px-2 lg:px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Course</th>
+                            <th className="px-2 lg:px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Country</th>
+                            <th className="px-2 lg:px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Applied</th>
                             <th className="px-2 lg:px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200">
                         {paginatedApplications.length > 0 ? paginatedApplications.map((application, index) => (
                             <tr key={application._id || index} className="hover:bg-yellow-50/50 transition-colors duration-200">
-                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap">
-                                    <div className="flex items-center">
+                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-center">
+                                    <div className="flex items-center justify-center">
                                         <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-yellow-200 flex-shrink-0">
                                             {application.profileImage ? (
                                                 <img
@@ -117,13 +117,13 @@ const PendingApplicationsTable = ({
                                         </div>
                                     </div>
                                 </td>
-                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-sm text-slate-900">
+                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-sm text-slate-900 text-center">
                                     <div className="truncate max-w-32">{application.course || 'Not specified'}</div>
                                 </td>
-                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-sm text-slate-900">
+                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-sm text-slate-900 text-center">
                                     <div className="truncate max-w-24">{application.country || 'Not specified'}</div>
                                 </td>
-                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-sm text-slate-500">
+                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-sm text-slate-500 text-center">
                                     {new Date(application.createdAt).toLocaleDateString()}
                                 </td>
                                 <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-center">

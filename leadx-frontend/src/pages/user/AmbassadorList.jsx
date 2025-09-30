@@ -44,9 +44,9 @@ const AmbassadorList = () => {
           
           console.log('Users from API:', users);
           
-          // Filter only VERIFIED ambassadors (approved by admin)
+          // Filter only VERIFIED and ACTIVE ambassadors (approved by admin and active status)
           const ambassadorUsers = users.filter(user => 
-            user.role === 'ambassador' && user.isVerified === true
+            user.role === 'ambassador' && user.isVerified === true && user.status === 'active'
           );
           
           console.log('Filtered ambassadors:', ambassadorUsers);

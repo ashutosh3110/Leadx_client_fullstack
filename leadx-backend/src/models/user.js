@@ -38,6 +38,16 @@ const userSchema = new Schema(
 
     isVerified: { type: Boolean, default: false },
     hasReward: { type: Boolean, default: false },
+    status: { 
+      type: String, 
+      enum: ["active", "inactive"], 
+      default: "active" 
+    },
+    conversionStatus: {
+      type: String,
+      enum: ["pending", "converted", "enrolled"],
+      default: "pending"
+    },
 
     // For reset password (only if user/ambassador registered with password)
     resetCode: { type: String },
@@ -79,6 +89,7 @@ const userValidationSchema = Joi.object({
   role: Joi.string().valid("user", "ambassador", "admin").default("user"),
   isVerified: Joi.boolean().default(false),
   hasReward: Joi.boolean().default(false),
+  status: Joi.string().valid("active", "inactive").default("active"),
 })
 
 export { User, userValidationSchema }

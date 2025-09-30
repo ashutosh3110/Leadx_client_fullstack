@@ -15,6 +15,7 @@ import Layout from "./pages/ambassador/Layout"
 import Profile from "./pages/ambassador/Profile"
 import Rewards from "./pages/ambassador/Rewards"
 import Chat from "./pages/ambassador/Chat"
+import Users from "./pages/ambassador/Users"
 import AmbassadorList from "./pages/user/AmbassadorList"
 import UserLayout from "./pages/user/Layout"
 
@@ -69,6 +70,7 @@ function App() {
         <Route element={<ProtectedRoute allowedRoles={["ambassador"]} />}>
           <Route path="/ambassador" element={<Layout />}>
             <Route index element={<Dashboard />} />
+            <Route path="users" element={<Users />} />
             <Route path="profile" element={<Profile />} />
             <Route path="rewards" element={<Rewards />} />
             <Route path="chat" element={<Chat />} />

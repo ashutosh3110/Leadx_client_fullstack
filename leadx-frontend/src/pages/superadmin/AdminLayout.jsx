@@ -13,6 +13,7 @@ import ApprovedAmbassadorsTable from './ApprovedAmbassadorsTable';
 import AmbassadorDetailModal from './AmbassadorDetailModal';
 import AddRewardModal from './AddRewardModal';
 import EditRewardModal from './EditRewardModal';
+import EditAmbassadorModal from './EditAmbassadorModal';
 import RewardsTab from './RewardTab';
 
 import Overview from './Overview';
@@ -66,11 +67,13 @@ const AdminLayout = () => {
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [isAddRewardModalOpen, setIsAddRewardModalOpen] = useState(false);
     const [isEditRewardModalOpen, setIsEditRewardModalOpen] = useState(false);
+    const [isEditAmbassadorModalOpen, setIsEditAmbassadorModalOpen] = useState(false);
     const [selectedReward, setSelectedReward] = useState(null);
 
     const [isSettingsDropdownOpen, setIsSettingsDropdownOpen] = useState(false);
     const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState('overview');
 
     // Color context
     const { adminDashboardColor, adminTextColor } = useColorContext();
@@ -78,6 +81,28 @@ const AdminLayout = () => {
     useEffect(() => {
         fetchDashboardData();
     }, []);
+
+    // Update activeTab based on current location
+    useEffect(() => {
+        const path = location.pathname;
+        if (path === '/admin' || path === '/admin/overview') {
+            setActiveTab('overview');
+        } else if (path === '/admin/ambassadors') {
+            setActiveTab('ambassadors');
+        } else if (path === '/admin/rewards') {
+            setActiveTab('rewards');
+        } else if (path === '/admin/users') {
+            setActiveTab('users');
+        } else if (path === '/admin/ambassador-login') {
+            setActiveTab('ambassador-login');
+        } else if (path === '/admin/chat') {
+            setActiveTab('chat');
+        } else if (path === '/admin/settings') {
+            setActiveTab('settings');
+        } else if (path === '/admin/customize') {
+            setActiveTab('customize');
+        }
+    }, [location.pathname]);
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -356,7 +381,46 @@ const AdminLayout = () => {
     // Edit and Delete functionality for approved ambassadors
     const handleEditAmbassador = (ambassador) => {
         console.log('Edit ambassador:', ambassador);
-        toast.success('Edit functionality will be implemented soon!');
+        setSelectedAmbassador(ambassador);
+        setIsEditAmbassadorModalOpen(true);
+    };
+
+    const handleCloseEditAmbassadorModal = async () => {
+        setIsEditAmbassadorModalOpen(false);
+        setSelectedAmbassador(null);
+        // Refresh dashboard data to get updated status
+        await fetchDashboardData();
+    };
+
+    const handleUpdateAmbassador = async (ambassadorId, updatedData) => {
+        try {
+            setLoading(true);
+            console.log('Updating ambassador:', ambassadorId, updatedData);
+            console.log('🔍 Status in update data:', updatedData.status);
+            
+            const response = await ambassadorAPI.updateAmbassador(ambassadorId, updatedData);
+            console.log('Update response:', response);
+            console.log('🔍 Updated ambassador status:', response.data?.status);
+            
+            if (response.success) {
+                // Update local state with the response data (which has the updated status)
+                setAmbassadors(prev => prev.map(ambassador => 
+                    ambassador._id === ambassadorId 
+                        ? { ...ambassador, ...response.data } // Use response.data instead of updatedData
+                        : ambassador
+                ));
+                
+                toast.success('✅ Ambassador updated successfully!');
+            } else {
+                toast.error(`❌ Failed to update ambassador: ${response.message}`);
+            }
+        } catch (error) {
+            console.error('Update error:', error);
+            toast.error(`❌ Failed to update ambassador: ${error.message}`);
+            throw error;
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleDeleteAmbassador = async (ambassadorId) => {
@@ -365,14 +429,23 @@ const AdminLayout = () => {
                 setLoading(true);
                 console.log('Deleting ambassador:', ambassadorId);
 
-                setAmbassadors(prev => prev.filter(ambassador => ambassador._id !== ambassadorId));
-                setStats(prev => ({
-                    ...prev,
-                    totalAmbassadors: prev.totalAmbassadors - 1,
-                    activeAmbassadors: prev.activeAmbassadors - 1
-                }));
+                // Call delete API
+                const response = await ambassadorAPI.deleteAmbassador(ambassadorId);
+                console.log('Delete response:', response);
+                
+                if (response.success) {
+                    // Remove from local state
+                    setAmbassadors(prev => prev.filter(ambassador => ambassador._id !== ambassadorId));
+                    setStats(prev => ({
+                        ...prev,
+                        totalAmbassadors: prev.totalAmbassadors - 1,
+                        activeAmbassadors: prev.activeAmbassadors - 1
+                    }));
 
-                toast.success('✅ Ambassador deleted successfully!');
+                    toast.success('✅ Ambassador deleted successfully!');
+                } else {
+                    toast.error(`❌ Failed to delete ambassador: ${response.message}`);
+                }
 
             } catch (error) {
                 console.error('Delete error:', error);
@@ -475,6 +548,8 @@ const AdminLayout = () => {
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex flex-col lg:flex-row">
             {/* Fixed Desktop Sidebar */}
             <AdminSidebar
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
                 adminDashboardColor={adminDashboardColor}
                 adminTextColor={adminTextColor}
                 isSettingsDropdownOpen={isSettingsDropdownOpen}
@@ -704,6 +779,13 @@ const AdminLayout = () => {
                 reward={selectedReward}
                 onClose={handleCloseEditRewardModal}
                 onSubmit={handleUpdateReward}
+            />
+
+            <EditAmbassadorModal
+                isOpen={isEditAmbassadorModalOpen}
+                ambassador={selectedAmbassador}
+                onClose={handleCloseEditAmbassadorModal}
+                onUpdate={handleUpdateAmbassador}
             />
         </div>
     );

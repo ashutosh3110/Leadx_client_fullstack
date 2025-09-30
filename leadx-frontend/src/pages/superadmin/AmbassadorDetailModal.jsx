@@ -9,6 +9,7 @@ const AmbassadorDetailModal = ({
     handleAddReward,
     loading 
 }) => {
+
     if (!isOpen || !ambassador) return null;
 
     const getLanguages = () => {
