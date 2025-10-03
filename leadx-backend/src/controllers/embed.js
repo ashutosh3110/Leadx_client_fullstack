@@ -188,12 +188,24 @@ export const serveWidget = async (req, res, next) => {
 // Public: combined submit - auto register user and send message
 export const publicSubmit = async (req, res, next) => {
   try {
-    const { configKey, ambassadorId, name, email, phone, message } = req.body
-    if (!configKey || !ambassadorId || !name || !email || !phone || !message) {
+    const { configKey, configId, ambassadorId, name, email, phone, message } =
+      req.body
+    if (!ambassadorId || !name || !email || !phone || !message) {
       return next(errGen(400, "Missing fields"))
     }
 
-    const cfg = await EmbedConfig.findOne({ configKey, status: true })
+    // Handle both old configKey and new configId
+    let cfg = null
+    if (configKey) {
+      cfg = await EmbedConfig.findOne({ configKey, status: true })
+    } else if (configId) {
+      // Import CustomizationConfig here to avoid circular dependency
+      const { CustomizationConfig } = await import(
+        "../models/CustomizationConfig.js"
+      )
+      cfg = await CustomizationConfig.findOne({ configId, isActive: true })
+    }
+
     if (!cfg) return next(errGen(404, "Invalid or inactive widget"))
 
     const ambassador = await User.findById(ambassadorId)
@@ -238,14 +250,12 @@ export const publicSubmit = async (req, res, next) => {
     chat.lastMessage = newMessage._id
     await chat.save()
 
-    return res
-      .status(201)
-      .json(
-        respo(true, "Submitted successfully", {
-          chatId: chat._id,
-          messageId: newMessage._id,
-        })
-      )
+    return res.status(201).json(
+      respo(true, "Submitted successfully", {
+        chatId: chat._id,
+        messageId: newMessage._id,
+      })
+    )
   } catch (err) {
     next(err)
   }

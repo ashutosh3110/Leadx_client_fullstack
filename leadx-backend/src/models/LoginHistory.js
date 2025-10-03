@@ -1,4 +1,3 @@
-// models/loginHistory.js
 import mongoose from "mongoose"
 
 const loginHistorySchema = new mongoose.Schema(
@@ -8,11 +7,10 @@ const loginHistorySchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    ipAddress: String,
+    ip: String,
     region: String,
     city: String,
     isp: String,
-    loginTime: Date,
     browser: String,
     os: String,
     device: String,

@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom"
 const Navbar = () => {
   const navigate = useNavigate()
   const authUser = JSON.parse(localStorage.getItem("authUser"))
-  const role = authUser?.user?.name || ""
+  const role = authUser?.user?.name || "Ambassador"
   const handleLogout = () => {
     localStorage.removeItem("token")
     localStorage.removeItem("role")
@@ -13,7 +13,7 @@ const Navbar = () => {
 
   return (
     <div className="bg-white shadow-md px-6 py-3 flex items-center justify-between">
-      <h1 className="text-lg font-semibold text-gray-700">Welcome, ${role}</h1>
+      <h1 className="text-lg font-semibold text-gray-700">Welcome, {role}</h1>
       <button
         onClick={handleLogout}
         className="flex items-center gap-2 bg-[rgb(188,23,32)] text-white px-4 py-2 rounded-lg shadow hover:opacity-90 transition"

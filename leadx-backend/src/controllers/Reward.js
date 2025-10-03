@@ -43,7 +43,7 @@ export const createReward = async (req, res, next) => {
     // Populate ambassador details
     const populatedReward = await Reward.findById(newReward._id).populate(
       "ambassador",
-      "name email role profileImage"
+      "name email role profileImage course program country state"
     )
 
     console.log("createReward - Populated reward:", populatedReward)
@@ -84,7 +84,10 @@ export const getAllRewards = async (req, res, next) => {
     }
 
     const rewards = await Reward.find(query)
-      .populate("ambassador", "name email role profileImage phone")
+      .populate(
+        "ambassador",
+        "name email role profileImage phone course program country state"
+      )
       .sort({ createdAt: -1 })
 
     res.status(200).json(respo(true, "All rewards fetched", rewards))
@@ -134,7 +137,10 @@ export const getMyRewards = async (req, res, next) => {
     )
 
     const rewards = await Reward.find(query)
-      .populate("ambassador", "name email role profileImage")
+      .populate(
+        "ambassador",
+        "name email role profileImage course program country state"
+      )
       .sort({ createdAt: -1 })
 
     console.log("getMyRewards - Found rewards:", rewards.length)

@@ -85,48 +85,42 @@ const RewardsTab = ({ rewards, adminDashboardColor, onEditReward, onDeleteReward
         <table className="w-full divide-y divide-slate-200" style={{ minWidth: '700px' }}>
           <thead className="bg-gradient-to-r from-yellow-50 to-orange-50">
             <tr>
-              <th className="px-2 lg:px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Ambassador</th>
-              <th className="px-2 lg:px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Amount</th>
-              <th className="px-2 lg:px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Remarks</th>
-              <th className="px-2 lg:px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Country</th>
-              <th className="px-2 lg:px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Date</th>
-              <th className="px-2 lg:px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Actions</th>
+              <th className="px-2 lg:px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Ambassador</th>
+              <th className="px-2 lg:px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Amount</th>
+              <th className="px-2 lg:px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Remarks</th>
+              <th className="px-2 lg:px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Country</th>
+              <th className="px-2 lg:px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Date</th>
+              <th className="px-2 lg:px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
             {filteredRewards.map((reward, index) => (
               <tr key={reward.id || index} className="hover:bg-yellow-50/50 transition-colors duration-200">
-                <td className="px-2 lg:px-4 py-4 whitespace-nowrap">
-                  <div className="flex items-center">
-                    <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-yellow-200 flex-shrink-0">
-                      <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-sm font-bold">
-                        {reward.ambassadorName?.charAt(0)?.toUpperCase() || 'A'}
-                      </div>
-                    </div>
-                    <div className="ml-3 min-w-0 flex-1">
-                      <div className="text-sm font-semibold text-slate-900 truncate">
-                        {reward.ambassadorName || 'Unknown Ambassador'}
-                      </div>
-                      <div className="text-xs text-slate-500 truncate">ID: {reward.ambassadorId || 'N/A'}</div>
-                    </div>
+                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-center">
+                  <div className="text-sm font-semibold text-slate-900">
+                    {reward.ambassadorName || 'Unknown Ambassador'}
                   </div>
                 </td>
-                <td className="px-2 lg:px-4 py-4 whitespace-nowrap">
-                  <div className="text-sm font-semibold text-slate-900">
+                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-center">
+                  <div className="text-sm font-semibold text-slate-900 text-center">
                     {getCurrencySymbol(reward.currency || 'USD')}{reward.amount || 0}
                   </div>
-                  <div className="text-xs text-slate-500">{reward.currency || 'USD'}</div>
+                  <div className="text-xs text-slate-500 text-center">{reward.currency || 'USD'}</div>
                 </td>
-                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-sm text-slate-900">
-                  <div className="truncate max-w-32">{reward.remarks || 'No remarks'}</div>
+                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-sm text-slate-900 text-center">
+                  <div className="flex justify-center">
+                    <div className="truncate max-w-32 text-center">{reward.remarks || 'No remarks'}</div>
+                  </div>
                 </td>
-                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-sm text-slate-900">
-                  <div className="truncate max-w-24">{reward.country || 'Not specified'}</div>
-                  {reward.state && (
-                    <div className="text-xs text-slate-500 truncate">{reward.state}</div>
-                  )}
+                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-sm text-slate-900 text-center">
+                  <div className="flex flex-col items-center">
+                    <div className="truncate max-w-24">{reward.country || 'Not specified'}</div>
+                    {reward.state && (
+                      <div className="text-xs text-slate-500 truncate">{reward.state}</div>
+                    )}
+                  </div>
                 </td>
-                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-sm text-slate-500">
+                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-sm text-slate-500 text-center">
                   {reward.createdAt ? new Date(reward.createdAt).toLocaleDateString() : 'N/A'}
                 </td>
                 <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-center">

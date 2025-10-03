@@ -8,15 +8,40 @@ import respo from "../utils/respo.js"
 import { onlineUsers } from "../sockets/chatSocket.js"
 import bcrypt from "bcryptjs"
 import crypto from "crypto"
-// helper to generate random password
-const generatePassword = () => crypto.randomBytes(4).toString("hex")
+// helper to generate default password for users
+const generatePassword = () => "123456"
 // startChat controller update
 export const startChat = async (req, res, next) => {
   try {
-    const { ambassadorId, name, email, phone } = req.body
+    console.log("🔍 startChat called with:", req.body)
+    console.log("🔍 User authenticated:", !!req.user)
+    const {
+      ambassadorId,
+      name,
+      email,
+      phone,
+      alternativeMobile,
+      country,
+      state,
+      city,
+    } = req.body
+
+    // Validate required fields
+    if (!ambassadorId || !name || !email) {
+      return res.status(400).json({
+        success: false,
+        message: "ambassadorId, name, and email are required",
+      })
+    }
 
     let user = await User.findOne({ email })
+    console.log(
+      "🔍 Existing user found:",
+      user ? user.name : "No existing user"
+    )
+
     if (!user) {
+      console.log("🔍 Creating new user...")
       const plainPassword = generatePassword()
       const hashedPassword = await bcrypt.hash(plainPassword, 10)
 
@@ -24,34 +49,65 @@ export const startChat = async (req, res, next) => {
         name,
         email,
         phone,
+        alternativeMobile,
+        country: country || "Not specified",
+        state: state || "",
+        city: city || "",
         role: "user",
         password: hashedPassword,
       })
 
-      // send password via email (placeholder)
+      console.log("✅ New user created:", user._id, user.name)
+
+      // send password via email (optional - don't fail if email service is not configured)
       if (email) {
-        await sendEmail(
-          email,
-          "Welcome to LeadX",
-          `Hello ${name},\n\nYour account has been created.\nLogin with:\nEmail: ${email}\nPassword: ${plainPassword}`
-        )
+        try {
+          await sendEmail(
+            email,
+            "Welcome to LeadX - Your Login Details",
+            `Hello ${name},\n\nYour account has been created successfully!\n\n🔑 LOGIN DETAILS:\nEmail: ${email}\nPassword: ${plainPassword}\n\nYou can now login to your account using these credentials.\n\nThanks,\nThe LeadX Team`
+          )
+          console.log("✅ Welcome email sent successfully")
+        } catch (emailError) {
+          console.log(
+            "⚠️ Email service not configured or failed:",
+            emailError.message
+          )
+        }
       }
 
-      // send password via WhatsApp (placeholder)
+      // send password via WhatsApp (optional - don't fail if WhatsApp service is not configured)
       if (phone) {
-        await sendWhatsApp(
-          phone,
-          `Hello ${name}, welcome to LeadX!\n\nYour login details:\nEmail: ${email}\nPassword: ${plainPassword}`
-        )
+        try {
+          await sendWhatsApp(
+            phone,
+            `Hello ${name}, welcome to LeadX! 🎉\n\n🔑 Your login details:\nEmail: ${email}\nPassword: ${plainPassword}\n\nYou can now login to your account using these credentials.`
+          )
+          console.log("✅ Welcome WhatsApp sent successfully")
+        } catch (whatsappError) {
+          console.log(
+            "⚠️ WhatsApp service not configured or failed:",
+            whatsappError.message
+          )
+        }
       }
     }
 
+    console.log(
+      "🔍 Looking for existing chat between user:",
+      user._id,
+      "and ambassador:",
+      ambassadorId
+    )
     let chat = await Chat.findOne({
       participants: { $all: [user._id, ambassadorId] },
     })
 
+    console.log("🔍 Existing chat found:", chat ? chat._id : "No existing chat")
     if (!chat) {
+      console.log("🔍 Creating new chat...")
       chat = await Chat.create({ participants: [user._id, ambassadorId] })
+      console.log("✅ New chat created:", chat._id)
     }
 
     const populatedChat = await Chat.findById(chat._id).populate(
@@ -59,8 +115,23 @@ export const startChat = async (req, res, next) => {
       "name email role profileImage"
     )
 
+    console.log("✅ Chat started successfully:", {
+      chatId: populatedChat._id,
+      participants: populatedChat.participants.length,
+      user: populatedChat.participants.find((p) => p.role === "user")?.name,
+      ambassador: populatedChat.participants.find(
+        (p) => p.role === "ambassador"
+      )?.name,
+    })
+
     res.status(200).json(respo(true, "Chat started", populatedChat))
   } catch (err) {
+    console.error("❌ Error in startChat:", err)
+    console.error("❌ Error details:", {
+      message: err.message,
+      stack: err.stack,
+      name: err.name,
+    })
     next(err)
   }
 }
@@ -68,8 +139,16 @@ export const startChat = async (req, res, next) => {
 // 🔹 Send a message
 export const sendMessage = async (req, res) => {
   try {
+    console.log("🔍 sendMessage called with:", req.body)
     const { chatId, receiver, content } = req.body
     const sender = req.user.id
+
+    console.log("🔍 Message details:", {
+      chatId,
+      sender,
+      receiver,
+      content: content.substring(0, 50) + "...",
+    })
 
     if (!chatId || !receiver || !content) {
       return res.status(400).json({
@@ -78,12 +157,15 @@ export const sendMessage = async (req, res) => {
       })
     }
 
+    console.log("🔍 Creating new message...")
     const newMessage = await Message.create({
       chatId,
       sender,
       receiver,
       content,
     })
+
+    console.log("✅ New message created:", newMessage._id)
 
     const populatedMessage = await Message.findById(newMessage._id).populate(
       "sender receiver",
@@ -116,7 +198,10 @@ export const sendMessage = async (req, res) => {
             console.log("⚠️ Email notification failed, but continuing...")
           }
         } catch (emailError) {
-          console.log("⚠️ Email service not configured or failed:", emailError.message)
+          console.log(
+            "⚠️ Email service not configured or failed:",
+            emailError.message
+          )
         }
       }
 
@@ -129,7 +214,10 @@ export const sendMessage = async (req, res) => {
           )
           console.log("✅ WhatsApp notification sent successfully")
         } catch (whatsappError) {
-          console.log("⚠️ WhatsApp service not configured or failed:", whatsappError.message)
+          console.log(
+            "⚠️ WhatsApp service not configured or failed:",
+            whatsappError.message
+          )
         }
       }
     }
@@ -164,15 +252,15 @@ export const editMessage = async (req, res) => {
     }
 
     // Check if message is within 5-minute edit window
-    const messageTime = new Date(msg.createdAt);
-    const currentTime = new Date();
-    const timeDifference = currentTime - messageTime;
-    const fiveMinutesInMs = 5 * 60 * 1000; // 5 minutes in milliseconds
+    const messageTime = new Date(msg.createdAt)
+    const currentTime = new Date()
+    const timeDifference = currentTime - messageTime
+    const fiveMinutesInMs = 5 * 60 * 1000 // 5 minutes in milliseconds
 
     if (timeDifference > fiveMinutesInMs) {
-      return res.status(403).json({ 
-        success: false, 
-        message: "Message can only be edited within 5 minutes of sending" 
+      return res.status(403).json({
+        success: false,
+        message: "Message can only be edited within 5 minutes of sending",
       })
     }
 
@@ -354,144 +442,162 @@ export const adminSendAsAmbassador = async (req, res, next) => {
   }
 }
 
+// 🔹 Get Ambassador's Users (users who chatted with this ambassador)
+export const getMyUsers = async (req, res, next) => {
+  try {
+    const ambassadorId = req.user.id
+    console.log("🔍 Getting users for ambassador:", ambassadorId)
+
+    // Get all chats where this ambassador is a participant
+    const chats = await Chat.find({ participants: ambassadorId })
+      .populate(
+        "participants",
+        "name email phone country state profileImage role conversionStatus"
+      )
+      .populate("lastMessage", "content createdAt")
+      .sort({ updatedAt: -1 })
+
+    console.log(`📊 Found ${chats.length} chats for ambassador`)
+
+    // Extract unique users
+    const usersMap = new Map()
+
+    for (const chat of chats) {
+      // Filter participants to get only users (not the ambassador himself)
+      const users = chat.participants.filter(
+        (p) => p && p.role === "user" && p._id.toString() !== ambassadorId
+      )
+
+      for (const user of users) {
+        if (!usersMap.has(user._id.toString())) {
+          // Get message count for this user in this chat
+          const messageCount = await Message.countDocuments({
+            chatId: chat._id,
+            $or: [{ sender: user._id }, { receiver: user._id }],
+          })
+
+          // Get last message time for this chat
+          const lastMessage = await Message.findOne({
+            chatId: chat._id,
+          }).sort({ createdAt: -1 })
+
+          usersMap.set(user._id.toString(), {
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            phone: user.phone,
+            country: user.country,
+            state: user.state,
+            profileImage: user.profileImage,
+            conversionStatus: user.conversionStatus || "pending",
+            messageCount: messageCount,
+            lastActivity: lastMessage?.createdAt || chat.updatedAt,
+          })
+        } else {
+          // Update message count if user already exists
+          const existingUser = usersMap.get(user._id.toString())
+          const additionalMessages = await Message.countDocuments({
+            chatId: chat._id,
+            $or: [{ sender: user._id }, { receiver: user._id }],
+          })
+          existingUser.messageCount += additionalMessages
+        }
+      }
+    }
+
+    const usersList = Array.from(usersMap.values())
+    console.log(`✅ Found ${usersList.length} unique users for ambassador`)
+    console.log(
+      "👥 Users:",
+      usersList.map((u) => ({ name: u.name, messages: u.messageCount }))
+    )
+
+    res.status(200).json(respo(true, "Users fetched successfully", usersList))
+  } catch (err) {
+    console.error("❌ Error getting ambassador users:", err)
+    console.error("❌ Error stack:", err.stack)
+    next(err)
+  }
+}
+
 // 🔹 Admin: Get chat statistics with time filter
 export const adminGetChatStats = async (req, res, next) => {
   try {
     if (req.user.role !== "admin") return next(errGen(403, "Forbidden"))
 
-    const { hours = 24, type = 'all' } = req.query
+    const { hours = 24, type = "all" } = req.query
     const hoursAgo = new Date(Date.now() - hours * 60 * 60 * 1000)
 
     // Build query based on time filter
     const timeQuery = { createdAt: { $gte: hoursAgo } }
 
     // Get all messages in the time period
-    const allMessages = await Message.find(timeQuery)
-      .populate("sender", "name email role")
+    const allMessages = await Message.find(timeQuery).populate(
+      "sender",
+      "name email role"
+    )
 
     // Separate messages by type (ambassador vs student)
     let filteredMessages = allMessages
 
-    if (type === 'ambassador') {
+    if (type === "ambassador") {
       // Messages where sender is ambassador or receiver is ambassador
-      filteredMessages = allMessages.filter(msg => 
-        msg.sender?.role === 'ambassador' || 
-        (typeof msg.receiver === 'object' && msg.receiver?.role === 'ambassador')
+      filteredMessages = allMessages.filter(
+        (msg) =>
+          msg.sender?.role === "ambassador" ||
+          (typeof msg.receiver === "object" &&
+            msg.receiver?.role === "ambassador")
       )
-    } else if (type === 'student') {
+    } else if (type === "student") {
       // Messages where sender is not ambassador (student/user)
-      filteredMessages = allMessages.filter(msg => 
-        msg.sender?.role !== 'ambassador' && 
-        (typeof msg.receiver === 'object' ? msg.receiver?.role !== 'ambassador' : true)
+      filteredMessages = allMessages.filter(
+        (msg) =>
+          msg.sender?.role !== "ambassador" &&
+          (typeof msg.receiver === "object"
+            ? msg.receiver?.role !== "ambassador"
+            : true)
       )
     }
 
     // Group messages by chatId to get conversations
     const conversations = {}
-    filteredMessages.forEach(message => {
+    filteredMessages.forEach((message) => {
       const chatId = message.chatId.toString()
       if (!conversations[chatId]) {
         conversations[chatId] = {
           messages: [],
           hasReply: false,
-          isFormSubmission: message.isFormSubmission || false
+          isFormSubmission: message.isFormSubmission || false,
         }
       }
       conversations[chatId].messages.push(message)
-      
+
       // Check if conversation has a reply (message from ambassador or admin)
-      if (message.sender?.role === 'ambassador' || message.sender?.role === 'admin' || message.isAdminReply) {
+      if (
+        message.sender?.role === "ambassador" ||
+        message.sender?.role === "admin" ||
+        message.isAdminReply
+      ) {
         conversations[chatId].hasReply = true
       }
     })
 
     const totalChats = Object.keys(conversations).length
-    const unrepliedChats = Object.values(conversations).filter(conv => !conv.hasReply).length
+    const unrepliedChats = Object.values(conversations).filter(
+      (conv) => !conv.hasReply
+    ).length
     const repliedChats = totalChats - unrepliedChats
 
-    res.status(200).json(respo(true, "Chat statistics fetched", {
-      totalChats,
-      unrepliedChats,
-      repliedChats,
-      timeFilter: `${hours} hours`,
-      type: type
-    }))
-  } catch (err) {
-    next(err)
-  }
-}
-
-// 🌐 Send Public Message (for embeddable script)
-export const sendPublicMessage = async (req, res, next) => {
-  try {
-    console.log("🔍 Public message request body:", req.body)
-    
-    const { ambassadorId, message, userEmail } = req.body
-    
-    // Validate required fields
-    if (!ambassadorId || !message || !userEmail) {
-      return next(errGen(400, "Ambassador ID, message, and user email are required"))
-    }
-    
-    // Find the ambassador
-    const ambassador = await User.findById(ambassadorId)
-    if (!ambassador || ambassador.role !== "ambassador" || !ambassador.isVerified) {
-      return next(errGen(404, "Ambassador not found or not verified"))
-    }
-    
-    // Find the user by email
-    const user = await User.findOne({ email: userEmail, role: "user" })
-    if (!user) {
-      return next(errGen(404, "User not found. Please register first."))
-    }
-    
-    // Find or create chat between user and ambassador
-    let chat = await Chat.findOne({
-      participants: { $all: [user._id, ambassadorId] }
-    })
-    
-    if (!chat) {
-      // Create new chat
-      chat = await Chat.create({
-        participants: [user._id, ambassadorId]
+    res.status(200).json(
+      respo(true, "Chat statistics fetched", {
+        totalChats,
+        unrepliedChats,
+        repliedChats,
+        timeFilter: `${hours} hours`,
+        type: type,
       })
-      console.log("✅ New chat created:", chat._id)
-    }
-    
-    // Create message
-    const newMessage = await Message.create({
-      chatId: chat._id,
-      sender: user._id,
-      receiver: ambassador._id,
-      content: message
-    })
-    
-    // Update chat's last message
-    chat.lastMessage = newMessage._id
-    await chat.save()
-    
-    console.log("✅ Public message sent successfully:", newMessage._id)
-    
-    // Send email notification to ambassador
-    try {
-      await sendEmail(
-        ambassador.email,
-        "New Message from Student",
-        `Hello ${ambassador.name},\n\nYou have received a new message from ${user.name} (${user.email}):\n\n"${message}"\n\nPlease log in to your dashboard to respond.\n\nBest regards,\nLeadX Team`
-      )
-      console.log("✅ Email notification sent to ambassador")
-    } catch (emailError) {
-      console.error("❌ Error sending email notification:", emailError)
-      // Don't fail the request if email fails
-    }
-    
-    res.status(200).json(respo(true, "Message sent successfully", {
-      messageId: newMessage._id,
-      chatId: chat._id,
-      ambassadorName: ambassador.name
-    }))
+    )
   } catch (err) {
-    console.error("❌ Public message error:", err)
     next(err)
   }
 }

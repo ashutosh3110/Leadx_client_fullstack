@@ -22,10 +22,13 @@ import {
   createAdmin,
   getMyProfile,
   approveAmbassador,
-  rejectAmbassador,
   autoRegisterUser,
+  rejectAmbassador,
   getPublicAmbassadors,
   getAmbassadorLogins,
+  getAllUsers,
+  getAllUsersWithChatHistory,
+  updateUserConversionStatus,
 } from "../controllers/user.js"
 
 const router = Router()
@@ -37,7 +40,6 @@ router.post("/register", registerUser)
 router.post("/login", loginUser)
 router.post("/logout", authenticate, logout)
 router.get("/me", authenticate, getMyProfile)
-
 /* ==========================
    👤 USER PROFILE ROUTES
 ========================== */
@@ -70,6 +72,17 @@ router.post("/create", authenticate, checkRole("admin"), createAdmin)
 // Ambassadors list (Admin)
 router.get("/ambassadors", getAllAmbassadors)
 
+// Users list (Admin)
+router.get("/users", authenticate, checkRole("admin"), getAllUsers)
+
+// Users with chat history (Admin)
+router.get(
+  "/users/chat-history",
+  authenticate,
+  checkRole("admin"),
+  getAllUsersWithChatHistory
+)
+
 // Manage users
 router.get(
   "/verify/ambassadors",
@@ -86,10 +99,20 @@ router.post("/auto-register", autoRegisterUser)
 router.get("/ambassador-logins", getAmbassadorLogins) // ✅ moved above dynamic routes
 
 /* ==========================
+   🔄 USER CONVERSION STATUS (must be before dynamic routes)
+========================== */
+// Update user conversion status (Ambassador can mark as converted, Admin can mark as enrolled)
+router.patch(
+  "/user/:userId/conversion-status",
+  authenticate,
+  updateUserConversionStatus
+)
+
+/* ==========================
    🧠 Dynamic Routes (must come last)
 ========================== */
 
-// ✅ Add ObjectId validation here  
+// ✅ Add ObjectId validation here
 router.get("/:id", async (req, res, next) => {
   const { id } = req.params
   if (!mongoose.Types.ObjectId.isValid(id)) {
