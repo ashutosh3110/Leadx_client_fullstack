@@ -56,9 +56,13 @@ const AddRewardModal = ({
             console.log('AddRewardModal - Ambassador country:', ambassador.country);
             console.log('AddRewardModal - Ambassador state:', ambassador.state);
             
+            // Default to India if country is not specified
+            const country = ambassador.country || 'India';
+            
             // Set currency based on country
-            const currency = getCurrencyByCountry(ambassador.country);
+            const currency = getCurrencyByCountry(country);
             console.log('AddRewardModal - Selected currency:', currency);
+            console.log('AddRewardModal - Using country:', country);
             
             setFormData(prev => ({
                 ...prev,
@@ -92,29 +96,73 @@ const AddRewardModal = ({
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        // Validate amount
+        if (!formData.amount || formData.amount.trim() === '') {
+            toast.error('Please enter an amount');
+            return;
+        }
+        
+        const amount = parseFloat(formData.amount);
+        if (isNaN(amount) || amount <= 0) {
+            toast.error('Please enter a valid amount greater than 0');
+            return;
+        }
+        
+        // Get country with fallback
+        const country = ambassador.country || 'India';
+        
+        // Validate state for India
+        if (country === 'India' && !formData.state) {
+            toast.error('Please select a state');
+            return;
+        }
+        
+        // Validate city for outside India
+        if (country !== 'India' && !formData.city) {
+            toast.error('Please enter a city');
+            return;
+        }
+        
         setLoading(true);
 
         try {
             const rewardData = {
                 ambassadorId: ambassador._id,
                 ambassadorName: ambassador.name,
-                amount: parseFloat(formData.amount),
+                amount: amount,
                 currency: formData.currency,
-                state: ambassador.country === 'India' ? formData.state : null,
-                city: ambassador.country !== 'India' ? formData.city : null,
-                country: ambassador.country,
+                state: country === 'India' ? formData.state : null,
+                city: country !== 'India' ? formData.city : null,
+                country: country,
                 remarks: formData.remarks,
                 date: new Date().toISOString()
             };
 
-            console.log('AddRewardModal - Submitting reward data:', rewardData);
-            console.log('AddRewardModal - Ambassador country from data:', rewardData.country);
+            console.log('✅ AddRewardModal - Form Data:', formData);
+            console.log('✅ AddRewardModal - Parsed Amount:', amount);
+            console.log('✅ AddRewardModal - Reward Data to Submit:', rewardData);
+            console.log('✅ AddRewardModal - Is Amount Valid?', !isNaN(amount) && amount > 0);
 
             await onSubmit(rewardData);
+            
+            // Reset form after successful submission
+            setFormData({
+                amount: '',
+                currency: 'INR',
+                state: '',
+                city: '',
+                remarks: ''
+            });
+            
+            toast.success('Reward added successfully!');
             onClose();
         } catch (error) {
-            console.error('Error adding reward:', error);
-            toast.error('Error adding reward. Please try again.');
+            console.error('❌ Error adding reward:', error);
+            console.error('❌ Error response:', error.response?.data);
+            
+            const errorMessage = error.response?.data?.message || error.message || 'Error adding reward';
+            toast.error(errorMessage);
         } finally {
             setLoading(false);
         }
@@ -181,7 +229,7 @@ const AddRewardModal = ({
                         <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
                             <div className="flex items-center justify-between">
                                 <span className="text-sm font-medium text-slate-600">Country:</span>
-                                <span className="text-sm font-semibold text-slate-800">{ambassador.country || 'Not specified'}</span>
+                                <span className="text-sm font-semibold text-slate-800">{ambassador.country || 'India (Default)'}</span>
                             </div>
                         </div>
 
@@ -197,10 +245,10 @@ const AddRewardModal = ({
                                     value={formData.amount}
                                     onChange={handleInputChange}
                                     required
-                                    min="0"
+                                    min="0.01"
                                     step="0.01"
                                     className="w-full pl-12 pr-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-                                    placeholder="Enter amount"
+                                    placeholder="Enter amount (e.g., 5000)"
                                 />
                                 <span className="absolute left-3 top-2 text-sm font-medium text-slate-500">
                                     {getCurrencySymbol(formData.currency)}
@@ -208,27 +256,28 @@ const AddRewardModal = ({
                             </div>
                         </div>
 
-                        {/* Currency - Only show for non-India countries */}
-                        {ambassador.country !== 'India' && (
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">
-                                    Currency *
-                                </label>
-                                <select
-                                    name="currency"
-                                    value={formData.currency}
-                                    onChange={handleInputChange}
-                                    required
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-                                >
-                                    <option value="USD">USD ($)</option>
-                                </select>
-                            </div>
-                        )}
-
+                        {/* Currency */}
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                                Currency *
+                            </label>
+                            <select
+                                name="currency"
+                                value={formData.currency}
+                                onChange={handleInputChange}
+                                required
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                            >
+                                {currencyOptions.map(currency => (
+                                    <option key={currency.value} value={currency.value}>
+                                        {currency.label}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
 
                         {/* State (only for India) */}
-                        {ambassador.country === 'India' && (
+                        {(ambassador.country === 'India' || !ambassador.country) && (
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-1">
                                     State *
@@ -249,7 +298,7 @@ const AddRewardModal = ({
                         )}
 
                         {/* City (only for outside India) */}
-                        {ambassador.country !== 'India' && (
+                        {ambassador.country && ambassador.country !== 'India' && (
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-1">
                                     City *

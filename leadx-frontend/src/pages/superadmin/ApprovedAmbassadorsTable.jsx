@@ -144,20 +144,20 @@ const ApprovedAmbassadorsTable = ({
                 <table className="w-full divide-y divide-slate-200" style={{ minWidth: '600px' }}>
                     <thead className="bg-gradient-to-r from-yellow-50 to-orange-50">
                         <tr>
-                            <th className="px-2 lg:px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Ambassador</th>
-                            <th className="px-2 lg:px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Course</th>
-                            <th className="px-2 lg:px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Country</th>
-                            <th className="px-2 lg:px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Status</th>
-                            <th className="px-2 lg:px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Reward</th>
-                            <th className="px-2 lg:px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Joined</th>
-                            <th className="px-2 lg:px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Actions</th>
+                            <th className="px-2 lg:px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Ambassador</th>
+                            <th className="px-2 lg:px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Course</th>
+                            <th className="px-2 lg:px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Country</th>
+                            <th className="px-2 lg:px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Status</th>
+                            <th className="px-2 lg:px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Reward</th>
+                            <th className="px-2 lg:px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Joined</th>
+                            <th className="px-2 lg:px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200">
                         {paginatedAmbassadors.map((ambassador, index) => (
                             <tr key={ambassador._id || index} className="hover:bg-yellow-50/50 transition-colors duration-200">
-                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap">
-                                    <div className="flex items-center">
+                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-center">
+                                    <div className="flex items-center justify-center">
                                         <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-yellow-200 flex-shrink-0">
                                             {ambassador.profileImage ? (
                                                 <img
@@ -179,24 +179,24 @@ const ApprovedAmbassadorsTable = ({
                                                 </div>
                                             )}
                                         </div>
-                                        <div className="ml-3 min-w-0 flex-1">
+                                        <div className="ml-3 min-w-0 flex-1 text-center">
                                             <button
                                                 onClick={() => handleViewAmbassadorDetails(ambassador)}
-                                                className="text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors cursor-pointer text-left truncate block w-full"
+                                                className="text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors cursor-pointer text-center truncate block w-full"
                                             >
                                                 {ambassador.name}
                                             </button>
-                                            <div className="text-xs text-slate-500 truncate">{ambassador.email}</div>
+                                            <div className="text-xs text-slate-500 truncate text-center">{ambassador.email}</div>
                                         </div>
                                     </div>
                                 </td>
-                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-sm text-slate-900">
+                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-sm text-slate-900 text-center">
                                     <div className="truncate max-w-32">{ambassador.course || 'Not specified'}</div>
                                 </td>
-                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-sm text-slate-900">
+                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-sm text-slate-900 text-center">
                                     <div className="truncate max-w-24">{ambassador.country || 'Not specified'}</div>
                                 </td>
-                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap">
+                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-center">
                                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                                         ambassador.status === 'active'
                                             ? 'bg-green-100 text-green-800 border border-green-200'
@@ -205,7 +205,7 @@ const ApprovedAmbassadorsTable = ({
                                         {ambassador.status === 'active' ? 'Active' : 'Inactive'}
                                     </span>
                                 </td>
-                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap">
+                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-center">
                                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                                         ambassador.hasReward 
                                             ? 'bg-green-100 text-green-800 border border-green-200'
@@ -214,7 +214,7 @@ const ApprovedAmbassadorsTable = ({
                                         {ambassador.hasReward ? 'Added' : 'Not Added'}
                                     </span>
                                 </td>
-                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-sm text-slate-500">
+                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-sm text-slate-500 text-center">
                                     {new Date(ambassador.createdAt).toLocaleDateString()}
                                 </td>
                                 <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-center">

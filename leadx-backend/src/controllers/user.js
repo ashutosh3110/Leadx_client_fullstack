@@ -73,8 +73,10 @@ export const loginUser = async (req, res, next) => {
     }
     
     console.log('🔍 User found:', user._id, 'Role:', user.role)
-    console.log('🔍 User password hash:', user.password.substring(0, 20) + '...')
- 
+    console.log('🔍 User password hash:', user.password ? user.password.substring(0, 20) + '...' : 'No password stored')
+    console.log('🔍 Login attempt password:', password)
+    console.log('🔍 User has password field:', !!user.password)
+
     const isMatch = await bcrypt.compare(password, user.password)
     console.log('🔍 Password match result:', isMatch)
     
@@ -707,7 +709,9 @@ export const autoRegisterUser = async (req, res, next) => {
  
     const hashedPassword = await bcrypt.hash(password, 10)
     console.log("✅ Password hashed successfully")
- 
+    console.log("🔍 Original password:", password)
+    console.log("🔍 Hashed password:", hashedPassword.substring(0, 20) + "...")
+
     const newUser = await User.create({
       name,
       email,
@@ -719,6 +723,9 @@ export const autoRegisterUser = async (req, res, next) => {
       alternatePhone,
       isVerified: true, // Optional: mark as verified
     })
+    
+    console.log("🔍 User created with password:", newUser.password ? "Yes" : "No")
+    console.log("🔍 User password hash:", newUser.password ? newUser.password.substring(0, 20) + "..." : "No password")
  
     console.log("✅ User auto-registered successfully:", newUser._id)
  

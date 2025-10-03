@@ -17,6 +17,9 @@ import {
 
 const router = Router()
 
+// Public route for starting chats (no authentication required)
+router.post("/start-public", startChat)
+// Authenticated route for existing users
 router.post("/start", authenticate, startChat)
 router.post("/send", authenticate, sendMessage)
 router.get("/my", authenticate, getMyChats)

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
-import { ambassadorAPI, approvalAPI, rewardsAPI } from '../utils/apicopy';
+import { ambassadorAPI, approvalAPI, rewardsAPI } from '../utils/Api';
 
 import ProfileDropdown from './ProfileDropdown';
 import SimpleSettingsForm from './SimpleSettingsForm';

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { Outlet, useNavigate } from 'react-router-dom';
 
-import { ambassadorAPI, approvalAPI, rewardsAPI } from '../utils/apicopy';
+import { ambassadorAPI, approvalAPI, rewardsAPI } from '../utils/Api';
 
 // import api from '../pages/utils/apicopy';
 

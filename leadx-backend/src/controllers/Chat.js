@@ -8,13 +8,22 @@ import respo from "../utils/respo.js"
 import { onlineUsers } from "../sockets/chatSocket.js"
 import bcrypt from "bcryptjs"
 import crypto from "crypto"
-// helper to generate random password
-const generatePassword = () => crypto.randomBytes(4).toString("hex")
+// helper to generate default password for users
+const generatePassword = () => "123456"
 // startChat controller update
 export const startChat = async (req, res, next) => {
   try {
     console.log("🔍 startChat called with:", req.body)
+    console.log("🔍 User authenticated:", !!req.user)
     const { ambassadorId, name, email, phone, alternativeMobile, country, state, city } = req.body
+
+    // Validate required fields
+    if (!ambassadorId || !name || !email) {
+      return res.status(400).json({
+        success: false,
+        message: "ambassadorId, name, and email are required"
+      })
+    }
 
     let user = await User.findOne({ email })
     console.log("🔍 Existing user found:", user ? user.name : "No existing user")
@@ -43,8 +52,8 @@ export const startChat = async (req, res, next) => {
         try {
           await sendEmail(
             email,
-            "Welcome to LeadX",
-            `Hello ${name},\n\nYour account has been created.\nLogin with:\nEmail: ${email}\nPassword: ${plainPassword}`
+            "Welcome to LeadX - Your Login Details",
+            `Hello ${name},\n\nYour account has been created successfully!\n\n🔑 LOGIN DETAILS:\nEmail: ${email}\nPassword: ${plainPassword}\n\nYou can now login to your account using these credentials.\n\nThanks,\nThe LeadX Team`
           )
           console.log("✅ Welcome email sent successfully")
         } catch (emailError) {
@@ -57,7 +66,7 @@ export const startChat = async (req, res, next) => {
         try {
           await sendWhatsApp(
             phone,
-            `Hello ${name}, welcome to LeadX!\n\nYour login details:\nEmail: ${email}\nPassword: ${plainPassword}`
+            `Hello ${name}, welcome to LeadX! 🎉\n\n🔑 Your login details:\nEmail: ${email}\nPassword: ${plainPassword}\n\nYou can now login to your account using these credentials.`
           )
           console.log("✅ Welcome WhatsApp sent successfully")
         } catch (whatsappError) {

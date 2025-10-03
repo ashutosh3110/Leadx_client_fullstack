@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react"
 import { useColorContext } from "../../context/ColorContext"
-import { rewardsAPI } from "../utils/apicopy"
+import { rewardsAPI } from "../utils/Api"
 import { getToken, getUser } from "../utils/auth"
 
 const Rewards = () => {

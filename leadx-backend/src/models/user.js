@@ -10,7 +10,7 @@ const userSchema = new Schema(
     email: { type: String, required: true, unique: true },
     phone: { type: String, required: true },
     alternativeMobile: { type: String },
-    password: { type: String }, // ❌ not required for normal users
+    password: { type: String, required: true }, // ✅ required for all users
 
     // Program / Education Info (only for ambassadors)
     program: { type: String },

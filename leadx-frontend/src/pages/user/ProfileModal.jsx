@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ambassadorAPI } from '../utils/apicopy'
-import api from "../utils/apicopy"
+import { ambassadorAPI } from '../utils/Api'
+import api from "../utils/Api"
 
 const ProfileModal = ({ isOpen, onClose, ambassador }) => {
     const [profileData, setProfileData] = useState(ambassador || {});

@@ -106,14 +106,14 @@ const PendingApplicationsTable = ({
                                                 </div>
                                             )}
                                         </div>
-                                        <div className="ml-3 min-w-0 flex-1">
+                                        <div className="ml-3 min-w-0 flex-1 text-center">
                                             <button 
                                                 onClick={() => handleViewAmbassadorDetails(application)}
-                                                className="text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors cursor-pointer text-left truncate block w-full"
+                                                className="text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors cursor-pointer text-center truncate block w-full"
                                             >
                                                 {application.name}
                                             </button>
-                                            <div className="text-xs text-slate-500 truncate">{application.email}</div>
+                                            <div className="text-xs text-slate-500 truncate text-center">{application.email}</div>
                                         </div>
                                     </div>
                                 </td>
