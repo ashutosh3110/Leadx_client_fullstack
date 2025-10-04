@@ -4,7 +4,7 @@ const { Schema } = mongoose
 
 const customizationConfigSchema = new Schema(
   {
-    configId: { type: String, unique: true, required: true }, // unique identifier for the script
+    configId: { type: String, unique: true }, // unique identifier for the script
     adminId: { type: Schema.Types.ObjectId, ref: "User", required: true },
 
     // Client Information
@@ -53,17 +53,7 @@ const customizationConfigSchema = new Schema(
   { timestamps: true }
 )
 
-// Generate unique config ID before saving
-customizationConfigSchema.pre("save", function (next) {
-  if (!this.configId) {
-    this.configId =
-      "config_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9)
-  }
-  if (!this.scriptUrl) {
-    this.scriptUrl = `/api/embed/script/${this.configId}.js`
-  }
-  next()
-})
+// Note: configId and scriptUrl are generated in the controller
 
 export const CustomizationConfig = mongoose.model(
   "CustomizationConfig",

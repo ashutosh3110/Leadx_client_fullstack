@@ -17,8 +17,7 @@ const ScriptGeneratorForm = () => {
     borderColor: "#e5e7eb",
     borderSize: "3",
     questions: [],
-    selectedAmbassadorIds: [],
-    price: "",
+    isActive: true,
   })
 
   const [ambassadors, setAmbassadors] = useState([])
@@ -84,15 +83,6 @@ const ScriptGeneratorForm = () => {
     }))
   }
 
-  const handleAmbassadorSelection = (ambassadorId) => {
-    setFormData((prev) => ({
-      ...prev,
-      selectedAmbassadorIds: prev.selectedAmbassadorIds.includes(ambassadorId)
-        ? prev.selectedAmbassadorIds.filter((id) => id !== ambassadorId)
-        : [...prev.selectedAmbassadorIds, ambassadorId],
-    }))
-  }
-
   const handleSubmit = async (e) => {
     e.preventDefault()
 
@@ -104,11 +94,6 @@ const ScriptGeneratorForm = () => {
       !formData.webName
     ) {
       toast.error("Please fill in all required fields")
-      return
-    }
-
-    if (formData.selectedAmbassadorIds.length === 0) {
-      toast.error("Please select at least one ambassador")
       return
     }
 
@@ -143,8 +128,7 @@ const ScriptGeneratorForm = () => {
           borderColor: "#e5e7eb",
           borderSize: "3",
           questions: [],
-          selectedAmbassadorIds: [],
-          price: "",
+          isActive: true,
         })
       }
     } catch (error) {
@@ -265,17 +249,21 @@ const ScriptGeneratorForm = () => {
 
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Price ($)
+                      Script Status
                     </label>
-                    <input
-                      type="number"
-                      value={formData.price}
+                    <select
+                      value={formData.isActive ? "active" : "inactive"}
                       onChange={(e) =>
-                        handleInputChange("price", e.target.value)
+                        handleInputChange(
+                          "isActive",
+                          e.target.value === "active"
+                        )
                       }
-                      placeholder="1000"
                       className="w-full p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    />
+                    >
+                      <option value="active">Active</option>
+                      <option value="inactive">Inactive</option>
+                    </select>
                   </div>
                 </div>
               </div>
@@ -561,74 +549,6 @@ const ScriptGeneratorForm = () => {
                 ))}
               </div>
 
-              {/* Ambassador Selection */}
-              <div className="bg-indigo-50/50 rounded-lg p-4 border border-indigo-200/30">
-                <h2 className="text-lg font-semibold text-indigo-700 mb-4 flex items-center">
-                  <svg
-                    className="w-5 h-5 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                    />
-                  </svg>
-                  Select Ambassadors ({formData.selectedAmbassadorIds.length}{" "}
-                  selected)
-                </h2>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-60 overflow-y-auto">
-                  {ambassadors.map((ambassador) => (
-                    <div
-                      key={ambassador._id}
-                      className={`p-3 border-2 rounded-lg cursor-pointer transition-all ${
-                        formData.selectedAmbassadorIds.includes(ambassador._id)
-                          ? "border-indigo-500 bg-indigo-100"
-                          : "border-slate-200 hover:border-indigo-300"
-                      }`}
-                      onClick={() => handleAmbassadorSelection(ambassador._id)}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <img
-                          src={
-                            ambassador.profilePicture || "/default-avatar.png"
-                          }
-                          alt={ambassador.name}
-                          className="w-10 h-10 rounded-full object-cover"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-slate-900 truncate">
-                            {ambassador.name}
-                          </p>
-                          <p className="text-xs text-slate-500 truncate">
-                            {ambassador.email}
-                          </p>
-                        </div>
-                        {formData.selectedAmbassadorIds.includes(
-                          ambassador._id
-                        ) && (
-                          <svg
-                            className="w-5 h-5 text-indigo-500"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
               {/* Submit Button */}
               <div className="flex justify-center">
                 <button
@@ -667,10 +587,6 @@ const ScriptGeneratorForm = () => {
                         <p className="text-xs text-slate-500 mt-1">
                           Created:{" "}
                           {new Date(config.createdAt).toLocaleDateString()}
-                        </p>
-                        <p className="text-xs text-slate-500">
-                          Ambassadors:{" "}
-                          {config.selectedAmbassadorIds?.length || 0}
                         </p>
                       </div>
                       <div className="flex space-x-2">
