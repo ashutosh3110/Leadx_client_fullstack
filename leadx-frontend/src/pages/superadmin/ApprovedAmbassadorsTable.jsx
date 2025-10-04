@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import Pagination from '../user/Pagination';
 
 const ApprovedAmbassadorsTable = ({
     ambassadors,
@@ -8,18 +9,61 @@ const ApprovedAmbassadorsTable = ({
     handleViewAmbassadorDetails
 }) => {
     const [searchTerm, setSearchTerm] = useState('');
+    const [rewardFilter, setRewardFilter] = useState('');
+    const [statusFilter, setStatusFilter] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
 
-    // Filter ambassadors based on search term
+    // Filter ambassadors based on search term and filters
     const filteredAmbassadors = useMemo(() => {
-        if (!searchTerm.trim()) {
-            return ambassadors;
+        let filtered = ambassadors;
+
+        // Combined search filter - search by name, email, course, and country
+        if (searchTerm.trim()) {
+            filtered = filtered.filter(ambassador => 
+                ambassador.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                ambassador.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                ambassador.course?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                ambassador.country?.toLowerCase().includes(searchTerm.toLowerCase())
+            );
         }
-        
-        return ambassadors.filter(ambassador => 
-            ambassador.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            ambassador.email?.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-    }, [ambassadors, searchTerm]);
+
+        // Status filter
+        if (statusFilter) {
+            filtered = filtered.filter(ambassador => ambassador.status === statusFilter);
+        }
+
+        // Reward filter
+        if (rewardFilter) {
+            if (rewardFilter === 'hasReward') {
+                filtered = filtered.filter(ambassador => ambassador.hasReward);
+            } else if (rewardFilter === 'noReward') {
+                filtered = filtered.filter(ambassador => !ambassador.hasReward);
+            }
+        }
+
+        return filtered;
+    }, [ambassadors, searchTerm, statusFilter, rewardFilter]);
+
+    // Pagination logic
+    const totalPages = Math.ceil(filteredAmbassadors.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedAmbassadors = filteredAmbassadors.slice(startIndex, endIndex);
+
+    // Reset to first page when filters change
+    React.useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, statusFilter, rewardFilter]);
+
+    const handlePageChange = (page) => {
+        setCurrentPage(page);
+    };
+
+    const handleItemsPerPageChange = (newItemsPerPage) => {
+        setItemsPerPage(newItemsPerPage);
+        setCurrentPage(1);
+    };
     return (
         <div>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-4">
@@ -33,10 +77,10 @@ const ApprovedAmbassadorsTable = ({
                     <div className="relative">
                         <input
                             type="text"
-                            placeholder="Search by name or email..."
+                            placeholder="Search by name, email, course or country..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white w-full sm:w-64"
+                            className="pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white w-full sm:w-80"
                         />
                         <svg className="w-4 h-4 text-slate-400 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -45,25 +89,75 @@ const ApprovedAmbassadorsTable = ({
                 </div>
             </div>
 
+            {/* Filters */}
+            <div className="bg-white/60 backdrop-blur-sm rounded-lg p-4 mb-4 border border-slate-200">
+                <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
+                    {/* Status Filter */}
+                    <div className="flex-1">
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white"
+                        >
+                            <option value="">All Status</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+
+                    {/* Reward Filter */}
+                    <div className="flex-1">
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Reward Status</label>
+                        <select
+                            value={rewardFilter}
+                            onChange={(e) => setRewardFilter(e.target.value)}
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white"
+                        >
+                            <option value="">All Rewards</option>
+                            <option value="hasReward">Added</option>
+                            <option value="noReward">Not Added</option>
+                        </select>
+                    </div>
+
+                    {/* Clear Filters Button */}
+                    <div>
+                        <button
+                            onClick={() => {
+                                setSearchTerm('');
+                                setStatusFilter('');
+                                setRewardFilter('');
+                            }}
+                            className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm flex items-center space-x-2"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            <span>Clear All</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             {/* Responsive container with horizontal scroll */}
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-slate-200 overflow-x-auto">
-                <table className="w-full divide-y divide-slate-200" style={{ minWidth: '700px' }}>
+                <table className="w-full divide-y divide-slate-200" style={{ minWidth: '600px' }}>
                     <thead className="bg-gradient-to-r from-yellow-50 to-orange-50">
                         <tr>
-                            <th className="px-2 lg:px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Ambassador</th>
-                            <th className="px-2 lg:px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Profile</th>
-                            <th className="px-2 lg:px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Course</th>
-                            <th className="px-2 lg:px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Country</th>
-                            <th className="px-2 lg:px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Reward</th>
-                            <th className="px-2 lg:px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Joined</th>
-                            <th className="px-2 lg:px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Actions</th>
+                            <th className="px-2 lg:px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Ambassador</th>
+                            <th className="px-2 lg:px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Course</th>
+                            <th className="px-2 lg:px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Country</th>
+                            <th className="px-2 lg:px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Status</th>
+                            <th className="px-2 lg:px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Reward</th>
+                            <th className="px-2 lg:px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Joined</th>
+                            <th className="px-2 lg:px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200">
-                        {filteredAmbassadors.map((ambassador, index) => (
+                        {paginatedAmbassadors.map((ambassador, index) => (
                             <tr key={ambassador._id || index} className="hover:bg-yellow-50/50 transition-colors duration-200">
-                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap">
-                                    <div className="flex items-center">
+                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-center">
+                                    <div className="flex items-center justify-center">
                                         <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-yellow-200 flex-shrink-0">
                                             {ambassador.profileImage ? (
                                                 <img
@@ -85,32 +179,33 @@ const ApprovedAmbassadorsTable = ({
                                                 </div>
                                             )}
                                         </div>
-                                        <div className="ml-3 min-w-0 flex-1">
+                                        <div className="ml-3 min-w-0 flex-1 text-center">
                                             <button
                                                 onClick={() => handleViewAmbassadorDetails(ambassador)}
-                                                className="text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors cursor-pointer text-left truncate block w-full"
+                                                className="text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors cursor-pointer text-center truncate block w-full"
                                             >
                                                 {ambassador.name}
                                             </button>
-                                            <div className="text-xs text-slate-500 truncate">{ambassador.email}</div>
+                                            <div className="text-xs text-slate-500 truncate text-center">{ambassador.email}</div>
                                         </div>
                                     </div>
                                 </td>
-                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap">
-                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${ambassador.isVerified
-                                            ? 'bg-green-100 text-green-800 border border-green-200'
-                                            : 'bg-yellow-100 text-yellow-800 border border-yellow-200'
-                                        }`}>
-                                        {ambassador.isVerified ? 'Verified' : 'Unverified'}
-                                    </span>
-                                </td>
-                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-sm text-slate-900">
+                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-sm text-slate-900 text-center">
                                     <div className="truncate max-w-32">{ambassador.course || 'Not specified'}</div>
                                 </td>
-                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-sm text-slate-900">
+                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-sm text-slate-900 text-center">
                                     <div className="truncate max-w-24">{ambassador.country || 'Not specified'}</div>
                                 </td>
-                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap">
+                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-center">
+                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                        ambassador.status === 'active'
+                                            ? 'bg-green-100 text-green-800 border border-green-200'
+                                            : 'bg-red-100 text-red-800 border border-red-200'
+                                    }`}>
+                                        {ambassador.status === 'active' ? 'Active' : 'Inactive'}
+                                    </span>
+                                </td>
+                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-center">
                                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                                         ambassador.hasReward 
                                             ? 'bg-green-100 text-green-800 border border-green-200'
@@ -119,7 +214,7 @@ const ApprovedAmbassadorsTable = ({
                                         {ambassador.hasReward ? 'Added' : 'Not Added'}
                                     </span>
                                 </td>
-                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-sm text-slate-500">
+                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-sm text-slate-500 text-center">
                                     {new Date(ambassador.createdAt).toLocaleDateString()}
                                 </td>
                                 <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-center">
@@ -148,7 +243,7 @@ const ApprovedAmbassadorsTable = ({
                                 </td>
                             </tr>
                         ))}
-                        {filteredAmbassadors.length === 0 && (
+                        {paginatedAmbassadors.length === 0 && (
                             <tr>
                                 <td colSpan="7" className="px-6 py-8 text-center">
                                     <div className="flex flex-col items-center">
@@ -176,6 +271,17 @@ const ApprovedAmbassadorsTable = ({
                     </tbody>
                 </table>
             </div>
+
+            {/* Pagination */}
+            {filteredAmbassadors.length > 0 && (
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    itemsPerPage={itemsPerPage}
+                    onPageChange={handlePageChange}
+                    onItemsPerPageChange={handleItemsPerPageChange}
+                />
+            )}
         </div>
     );
 };

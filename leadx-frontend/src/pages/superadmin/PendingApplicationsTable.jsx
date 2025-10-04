@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import Pagination from '../user/Pagination';
 
 const PendingApplicationsTable = ({ 
     pendingApplications, 
@@ -8,6 +9,8 @@ const PendingApplicationsTable = ({
     handleViewAmbassadorDetails 
 }) => {
     const [searchTerm, setSearchTerm] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
 
     // Filter applications based on search term
     const filteredApplications = useMemo(() => {
@@ -20,6 +23,26 @@ const PendingApplicationsTable = ({
             application.email?.toLowerCase().includes(searchTerm.toLowerCase())
         );
     }, [pendingApplications, searchTerm]);
+
+    // Pagination logic
+    const totalPages = Math.ceil(filteredApplications.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedApplications = filteredApplications.slice(startIndex, endIndex);
+
+    // Reset to first page when search changes
+    React.useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm]);
+
+    const handlePageChange = (page) => {
+        setCurrentPage(page);
+    };
+
+    const handleItemsPerPageChange = (newItemsPerPage) => {
+        setItemsPerPage(newItemsPerPage);
+        setCurrentPage(1);
+    };
     return (
         <div>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-4">
@@ -50,18 +73,18 @@ const PendingApplicationsTable = ({
                 <table className="w-full divide-y divide-slate-200" style={{ minWidth: '600px' }}>
                     <thead className="bg-gradient-to-r from-yellow-50 to-orange-50">
                         <tr>
-                            <th className="px-2 lg:px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Applicant</th>
-                            <th className="px-2 lg:px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Course</th>
-                            <th className="px-2 lg:px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Country</th>
-                            <th className="px-2 lg:px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Applied</th>
+                            <th className="px-2 lg:px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Applicant</th>
+                            <th className="px-2 lg:px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Course</th>
+                            <th className="px-2 lg:px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Country</th>
+                            <th className="px-2 lg:px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Applied</th>
                             <th className="px-2 lg:px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200">
-                        {filteredApplications.length > 0 ? filteredApplications.map((application, index) => (
+                        {paginatedApplications.length > 0 ? paginatedApplications.map((application, index) => (
                             <tr key={application._id || index} className="hover:bg-yellow-50/50 transition-colors duration-200">
-                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap">
-                                    <div className="flex items-center">
+                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-center">
+                                    <div className="flex items-center justify-center">
                                         <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-yellow-200 flex-shrink-0">
                                             {application.profileImage ? (
                                                 <img
@@ -83,24 +106,24 @@ const PendingApplicationsTable = ({
                                                 </div>
                                             )}
                                         </div>
-                                        <div className="ml-3 min-w-0 flex-1">
+                                        <div className="ml-3 min-w-0 flex-1 text-center">
                                             <button 
                                                 onClick={() => handleViewAmbassadorDetails(application)}
-                                                className="text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors cursor-pointer text-left truncate block w-full"
+                                                className="text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors cursor-pointer text-center truncate block w-full"
                                             >
                                                 {application.name}
                                             </button>
-                                            <div className="text-xs text-slate-500 truncate">{application.email}</div>
+                                            <div className="text-xs text-slate-500 truncate text-center">{application.email}</div>
                                         </div>
                                     </div>
                                 </td>
-                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-sm text-slate-900">
+                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-sm text-slate-900 text-center">
                                     <div className="truncate max-w-32">{application.course || 'Not specified'}</div>
                                 </td>
-                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-sm text-slate-900">
+                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-sm text-slate-900 text-center">
                                     <div className="truncate max-w-24">{application.country || 'Not specified'}</div>
                                 </td>
-                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-sm text-slate-500">
+                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-sm text-slate-500 text-center">
                                     {new Date(application.createdAt).toLocaleDateString()}
                                 </td>
                                 <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-center">
@@ -150,6 +173,17 @@ const PendingApplicationsTable = ({
                     </tbody>
                 </table>
             </div>
+
+            {/* Pagination */}
+            {filteredApplications.length > 0 && (
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    itemsPerPage={itemsPerPage}
+                    onPageChange={handlePageChange}
+                    onItemsPerPageChange={handleItemsPerPageChange}
+                />
+            )}
         </div>
     );
 };

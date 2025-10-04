@@ -31,11 +31,11 @@ const Overview = ({ stats }) => {
   }, [studentTimeFilter]);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       {/* For Ambassador Stats */}
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold text-gray-900">For Ambassador</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="space-y-3 sm:space-y-4">
+        <h2 className="text-lg sm:text-xl font-semibold text-gray-900">For Ambassador</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           <StatCard
             title="Total Ambassadors"
             value={stats.totalAmbassadors}
@@ -126,9 +126,9 @@ const Overview = ({ stats }) => {
       </div>
 
       {/* For Student Section */}
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold text-gray-900">For Student</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="space-y-3 sm:space-y-4">
+        <h2 className="text-lg sm:text-xl font-semibold text-gray-900">For Student</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           <StatCard
             title="Total Chats"
             value={studentChatStats.totalChats}
@@ -198,7 +198,7 @@ const Overview = ({ stats }) => {
           <select
             value={studentTimeFilter}
             onChange={(e) => setStudentTimeFilter(e.target.value)}
-            className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-2 sm:px-3 py-1 border border-gray-300 rounded-md text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="12">Last 12 Hours</option>
             <option value="24">Last 24 Hours</option>

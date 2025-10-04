@@ -32,6 +32,23 @@ const Chat = () => {
     return `${API_BASE_URL}/${normalized}`
   }
 
+  // Get user avatar (first letter of name)
+  const getUserAvatar = (user) => {
+    if (!user?.name) return "U"
+    return user.name.charAt(0).toUpperCase()
+  }
+
+  // Get avatar background color based on name
+  const getAvatarColor = (name) => {
+    if (!name) return "bg-gray-500"
+    const colors = [
+      "bg-red-500", "bg-blue-500", "bg-green-500", "bg-yellow-500", 
+      "bg-purple-500", "bg-pink-500", "bg-indigo-500", "bg-teal-500"
+    ]
+    const index = name.charCodeAt(0) % colors.length
+    return colors[index]
+  }
+
   // Auto scroll to bottom when messages update
   useEffect(() => {
     messageEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -284,11 +301,9 @@ const Chat = () => {
                   className="flex items-center gap-3 flex-1"
                   onClick={() => handleSelectChat(chat)}
                 >
-                  <img
-                    src={getImageUrl(other.profileImage)}
-                    alt="profile"
-                    className="w-10 h-10 rounded-full object-cover"
-                  />
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold ${getAvatarColor(other.name)}`}>
+                    {getUserAvatar(other)}
+                  </div>
                   <div className="flex flex-col">
                     <p className="font-medium">{other.name}</p>
                     <p className="text-xs text-gray-500 truncate w-40">
@@ -315,14 +330,9 @@ const Chat = () => {
           <>
             {/* Chat header */}
             <div className="p-4 border-b flex items-center gap-3 bg-white">
-              <img
-                src={getImageUrl(
-                  selectedChat.participants.find((p) => p._id !== userId)
-                    ?.profileImage
-                )}
-                alt="profile"
-                className="w-10 h-10 rounded-full object-cover"
-              />
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold ${getAvatarColor(selectedChat.participants.find((p) => p._id !== userId)?.name)}`}>
+                {getUserAvatar(selectedChat.participants.find((p) => p._id !== userId))}
+              </div>
               <p className="font-semibold">
                 {selectedChat.participants.find((p) => p._id !== userId)?.name}
               </p>
@@ -338,6 +348,13 @@ const Chat = () => {
                   }`}
                 >
                   <div className="flex items-center gap-2">
+                    {/* User Avatar - Show only for incoming messages */}
+                    {!isMine(msg) && (
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-semibold ${getAvatarColor(msg.sender?.name)}`}>
+                        {getUserAvatar(msg.sender)}
+                      </div>
+                    )}
+                    
                     <div
                       className={`max-w-xs px-3 py-2 rounded-lg break-words ${
                         isMine(msg)

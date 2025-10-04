@@ -12,14 +12,18 @@ import {
   adminGetMessages,
   adminSendAsAmbassador,
   adminGetChatStats,
-  sendPublicMessage,
+  getMyUsers,
 } from "../controllers/Chat.js"
 
 const router = Router()
 
+// Public route for starting chats (no authentication required)
+router.post("/start-public", startChat)
+// Authenticated route for existing users
 router.post("/start", authenticate, startChat)
 router.post("/send", authenticate, sendMessage)
 router.get("/my", authenticate, getMyChats)
+router.get("/my-users", authenticate, getMyUsers)
 router.get("/:chatId", authenticate, getMessages)
 router.delete("/:chatId", authenticate, deleteChat)
 
@@ -52,11 +56,4 @@ router.get(
 )
 router.put("/message/:messageId", authenticate, editMessage)
 router.delete("/message/:messageId", authenticate, deleteMessage)
-
-// ==========================
-// PUBLIC CHAT ROUTES (for embeddable script)
-// ==========================
-// Use a distinct path to avoid clashing with the authenticated "/send" above
-router.post("/public/send", sendPublicMessage) // Public endpoint for embeddable script
-
 export default router

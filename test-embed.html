@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LeadX Ambassador Widget Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      .header {
+        text-align: center;
+        margin-bottom: 40px;
+      }
+      .content {
+        margin-bottom: 40px;
+      }
+      .instructions {
+        background: #e3f2fd;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+      }
+      .script-example {
+        background: #f5f5f5;
+        padding: 15px;
+        border-radius: 4px;
+        font-family: monospace;
+        border-left: 4px solid #2196f3;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>🎓 University Website Demo</h1>
+        <p>
+          This is a sample university website where the LeadX Ambassador Widget
+          will be embedded
+        </p>
+      </div>
+
+      <div class="content">
+        <h2>About Our University</h2>
+        <p>
+          Welcome to our prestigious university! We offer world-class education
+          and have amazing student ambassadors ready to help you with any
+          questions about campus life, academics, and admissions.
+        </p>
+
+        <h3>Connect with Our Student Ambassadors</h3>
+        <p>
+          Our student ambassadors are here to help you learn more about
+          university life. Click the chat button below to get started!
+        </p>
+      </div>
+
+      <div class="instructions">
+        <h3>🔧 How to Test the Widget</h3>
+        <ol>
+          <li>
+            Start your LeadX backend server: <code>npm run dev</code> in the
+            leadx-backend folder
+          </li>
+          <li>
+            Start your LeadX frontend: <code>npm run dev</code> in the
+            leadx-frontend folder
+          </li>
+          <li>Login as admin and go to the Customize section</li>
+          <li>Fill out the form to generate a script</li>
+          <li>Copy the generated script tag</li>
+          <li>Replace the example script below with your generated script</li>
+        </ol>
+
+        <div class="script-example">
+          &lt;!-- Replace this with your generated script --&gt;<br />
+          &lt;script
+          src="http://localhost:5000/api/customization/script/YOUR_CONFIG_ID.js"&gt;&lt;/script&gt;
+          <script src="http://localhost:5000/api/customization/script/config_1759491388390_fxgdis0u5.js"></script>
+        </div>
+      </div>
+
+      <!-- This is where the LeadX widget will be embedded -->
+      <div id="leadx-widget-container">
+        <!-- The script will automatically inject the widget here -->
+      </div>
+
+      <div
+        style="
+          margin-top: 40px;
+          padding-top: 20px;
+          border-top: 1px solid #eee;
+          text-align: center;
+          color: #666;
+        "
+      >
+        <p>© 2024 University Demo - Powered by LeadX Ambassador Platform</p>
+      </div>
+    </div>
+
+    <!-- 
+    INSTRUCTIONS:
+    1. Start LeadX backend: npm run dev (in leadx-backend folder)
+    2. Start LeadX frontend: npm run dev (in leadx-frontend folder)  
+    3. Login as admin at http://localhost:3000
+    4. Go to Settings > Customize
+    5. Fill the form and click "Generate Script"
+    6. Copy the generated script tag
+    7. Replace the comment below with your script tag
+    8. Refresh this page to see the complete ambassador widget with AmbassadorCard UI!
+    -->
+
+    <!-- Paste your generated script tag here -->
+    <!-- Example: <script src="http://localhost:5000/api/customization/script/config_123456.js"></script> -->
+  </body>
+</html>
