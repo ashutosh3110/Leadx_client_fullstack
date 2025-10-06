@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test API Direct</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        background: #f5f5f5;
+      }
+      .container {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      .result {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+        margin: 10px 0;
+        font-family: monospace;
+        font-size: 12px;
+        white-space: pre-wrap;
+      }
+      button {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        margin: 5px;
+      }
+      button:hover {
+        background: #0056b3;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>API Test - Direct Ambassador Fetch</h1>
+      <p>This will test the API directly to see what data is being returned.</p>
+
+      <button onclick="testAPI()">Test API</button>
+      <button onclick="testScript()">Test Generated Script</button>
+
+      <div class="result" id="result">
+        Click "Test API" to check the ambassador data...
+      </div>
+    </div>
+
+    <script>
+      async function testAPI() {
+        const resultDiv = document.getElementById("result")
+        resultDiv.textContent = "Loading..."
+
+        try {
+          console.log("🔍 Testing API directly...")
+          const response = await fetch(
+            "http://localhost:5000/api/auth/ambassadors/public"
+          )
+          const result = await response.json()
+
+          resultDiv.textContent = `
+API Response:
+Status: ${response.status}
+Success: ${result.success}
+Message: ${result.message}
+Data Count: ${result.data ? result.data.length : 0}
+
+Raw Data:
+${JSON.stringify(result, null, 2)}
+                `
+
+          console.log("📊 API Result:", result)
+        } catch (error) {
+          console.error("❌ API Error:", error)
+          resultDiv.textContent = `Error: ${error.message}`
+        }
+      }
+
+      async function testScript() {
+        const resultDiv = document.getElementById("result")
+        resultDiv.textContent = "Loading script..."
+
+        try {
+          // Test the generated script URL
+          const scriptResponse = await fetch(
+            "http://localhost:5000/api/customization/script/config_1759733679900_u6o1s3dk4.js"
+          )
+          const scriptText = await scriptResponse.text()
+
+          resultDiv.textContent = `
+Script Response:
+Status: ${scriptResponse.status}
+Content-Type: ${scriptResponse.headers.get("content-type")}
+Script Length: ${scriptText.length} characters
+
+Script Preview (first 500 chars):
+${scriptText.substring(0, 500)}...
+                `
+        } catch (error) {
+          console.error("❌ Script Error:", error)
+          resultDiv.textContent = `Script Error: ${error.message}`
+        }
+      }
+    </script>
+  </body>
+</html>
