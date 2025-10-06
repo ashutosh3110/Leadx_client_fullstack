@@ -34,13 +34,22 @@ router.get("/my", authenticate, getMyRewards)
 router.get("/:id", authenticate, checkRole("admin"), getRewardById)
 
 // 🎁 Get Rewards by Ambassador (Admin only)
-router.get("/ambassador/:ambassadorId", authenticate, checkRole("admin"), getRewardsByAmbassador)
+router.get(
+  "/ambassador/:ambassadorId",
+  authenticate,
+  checkRole("admin"),
+  getRewardsByAmbassador
+)
 
 // ✏️ Update Reward Status (Admin only)
-router.patch("/:id/status", authenticate, checkRole("admin"), updateRewardStatus)
+router.patch(
+  "/:id/status",
+  authenticate,
+  checkRole("admin"),
+  updateRewardStatus
+)
 
 // ❌ Delete Reward (Admin only)
 router.delete("/:id", authenticate, checkRole("admin"), deleteReward)
 
 export default router
-

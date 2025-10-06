@@ -673,13 +673,14 @@ export const getPublicAmbassadors = async (req, res, next) => {
   try {
     console.log("🔍 Fetching public ambassadors...")
 
-    // Get only verified and active ambassadors with basic info
-    // Only ambassadors with status: "active" will appear in public cards
+    // Get only verified and active ambassadors with all necessary fields for AmbassadorCard UI
     const ambassadors = await User.find({
       role: "ambassador",
       isVerified: true,
       status: "active", // ✅ Only active ambassadors will be shown
-    }).select("name email course profileImage createdAt status")
+    }).select(
+      "name email course program profileImage thumbnailImage country state languages description about createdAt status"
+    )
 
     console.log(
       `✅ Found ${ambassadors.length} public ambassadors (active only)`

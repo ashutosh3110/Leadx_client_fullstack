@@ -19,7 +19,6 @@ export const createCustomization = async (req, res) => {
       borderColor,
       borderSize,
       questions,
-      selectedAmbassadorIds,
       isActive,
     } = req.body
 
@@ -32,33 +31,16 @@ export const createCustomization = async (req, res) => {
       })
     }
 
-    // If no ambassadors selected, use all verified ambassadors
-    let finalAmbassadorIds = selectedAmbassadorIds || []
-    if (!finalAmbassadorIds || finalAmbassadorIds.length === 0) {
-      const allAmbassadors = await User.find({
-        role: "ambassador",
-        isVerified: true,
-      }).select("_id")
-      finalAmbassadorIds = allAmbassadors.map((amb) => amb._id)
-    } else {
-      // Validate selected ambassadors exist
-      const ambassadors = await User.find({
-        _id: { $in: finalAmbassadorIds },
-        role: "ambassador",
-        isVerified: true,
-      })
-
-      if (ambassadors.length !== finalAmbassadorIds.length) {
-        return res.status(StatusCodes.BAD_REQUEST).json({
-          success: false,
-          message: "Some selected ambassadors are invalid or not verified",
-        })
-      }
-    }
+    // Get all verified ambassadors automatically
+    const allAmbassadors = await User.find({
+      role: "ambassador",
+      isVerified: true,
+    }).select("_id")
+    const finalAmbassadorIds = allAmbassadors.map((amb) => amb._id)
 
     // Generate unique configId
     const configId =
-      "config_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9)
+      "config_" + Date.now() + "_" + Math.random().toString(36).substring(2, 11)
     const scriptUrl = `/api/customization/script/${configId}.js`
 
     const customization = new CustomizationConfig({
@@ -79,7 +61,7 @@ export const createCustomization = async (req, res) => {
       borderSize,
       questions: questions || [],
       selectedAmbassadorIds: finalAmbassadorIds,
-      isActive: req.body.isActive !== undefined ? req.body.isActive : true,
+      isActive: isActive !== undefined ? isActive : true,
     })
 
     await customization.save()
@@ -187,7 +169,7 @@ export const deleteCustomization = async (req, res) => {
   }
 }
 
-// Generate embeddable script
+// Generate embeddable script with EXACT AmbassadorCard UI
 export const generateScript = async (req, res) => {
   try {
     const { configId } = req.params
@@ -210,11 +192,11 @@ export const generateScript = async (req, res) => {
       })
     }
 
-    // Generate the embeddable JavaScript
-    const script = generateEmbedScript(customization)
+    // Generate the script with EXACT AmbassadorCard UI
+    const script = generateAmbassadorCardScript(customization)
 
     res.setHeader("Content-Type", "application/javascript")
-    res.setHeader("Cache-Control", "public, max-age=3600") // Cache for 1 hour
+    res.setHeader("Cache-Control", "public, max-age=3600")
     res.send(script)
   } catch (error) {
     console.error("Generate script error:", error)
@@ -272,67 +254,49 @@ export const getPublicConfig = async (req, res) => {
   }
 }
 
-// Helper function to generate embed script
-function generateEmbedScript(customization) {
-  const baseUrl = process.env.FRONTEND_URL || "http://localhost:3000"
+// Generate script with EXACT AmbassadorCard UI from your original component
+function generateAmbassadorCardScript(customization) {
   const apiUrl = process.env.API_URL || "http://localhost:5000"
 
   return `
 (function() {
-  // LeadX Ambassador Widget - Configuration: ${customization.configId}
+  console.log('🚀 LeadX Ambassador Widget Loading with AmbassadorCard UI...');
   
-  const LEADX_CONFIG = {
+  // Configuration
+  const CONFIG = {
     configId: '${customization.configId}',
     apiUrl: '${apiUrl}',
-    baseUrl: '${baseUrl}',
-    webUrl: '${customization.webUrl}',
-    webName: '${customization.webName}',
-    policyUrl: '${customization.policyUrl || ""}',
-    termsUrl: '${customization.termsUrl || ""}',
-    tilesAndButtonColor: '${customization.tilesAndButtonColor}',
-    textColor: '${customization.textColor}',
-    borderColor: '${customization.borderColor}',
-    borderSize: '${customization.borderSize}',
     questions: ${JSON.stringify(customization.questions || [])},
-    isActive: ${customization.isActive}
+    colors: {
+      button: '${customization.tilesAndButtonColor}',
+      text: '${customization.textColor}',
+      border: '${customization.borderColor}',
+      borderSize: '${customization.borderSize}'
+    }
   };
 
-  // Check if widget already exists or is inactive
-  if (window.leadxWidgetLoaded) {
+  // Prevent multiple loads
+  if (window.leadxLoaded) {
     console.warn('LeadX Widget already loaded');
     return;
   }
-  
-  if (!LEADX_CONFIG.isActive) {
-    console.warn('LeadX Widget is inactive');
-    return;
-  }
-  
-  window.leadxWidgetLoaded = true;
+  window.leadxLoaded = true;
 
-  // Add comprehensive CSS styles
+  // Add CSS styles for AmbassadorCard UI
   const styles = \`
-    <style id="leadx-widget-styles">
-      .leadx-widget-container {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        line-height: 1.5;
-        color: #374151;
-        box-sizing: border-box;
-      }
-      .leadx-widget-container *, .leadx-widget-container *::before, .leadx-widget-container *::after {
-        box-sizing: border-box;
-      }
+    <style id="leadx-ambassador-styles">
       .leadx-ambassador-card {
         background: white;
-        border-radius: \${parseInt(LEADX_CONFIG.borderSize) * 4}px;
-        border: 2px solid \${LEADX_CONFIG.borderColor};
-        transition: all 0.3s ease;
+        border-radius: \${parseInt(CONFIG.colors.borderSize) * 4}px;
+        border: 2px solid \${CONFIG.colors.border};
+        transition: all 0.5s ease;
         overflow: hidden;
+        width: 100%;
+        max-width: 320px;
         height: 450px;
         display: flex;
         flex-direction: column;
         position: relative;
-        max-width: 320px;
         margin: 0 auto;
       }
       .leadx-ambassador-card:hover {
@@ -340,25 +304,47 @@ function generateEmbedScript(customization) {
         box-shadow: 0 8px 25px rgba(0,0,0,0.15);
         transform: translateY(-2px);
       }
-      .leadx-chat-button {
-        background: \${LEADX_CONFIG.tilesAndButtonColor};
-        color: \${LEADX_CONFIG.textColor};
+      .leadx-chat-btn {
+        background: \${CONFIG.colors.button};
+        color: \${CONFIG.colors.text};
         border: none;
-        border-radius: \${parseInt(LEADX_CONFIG.borderSize) * 4}px;
-        padding: 12px 20px;
+        border-radius: \${parseInt(CONFIG.colors.borderSize) * 4}px;
+        padding: 10px 20px;
         font-size: 14px;
-        font-weight: 600;
+        font-weight: 500;
         cursor: pointer;
         width: 100%;
-        transition: all 0.2s ease;
+        transition: all 0.3s ease;
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 8px;
       }
-      .leadx-chat-button:hover {
+      .leadx-chat-btn:hover {
         opacity: 0.9;
-        transform: translateY(-1px);
+        transform: scale(1.05);
+      }
+      .leadx-floating-button {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 60px;
+        height: 60px;
+        background: \${CONFIG.colors.button};
+        color: \${CONFIG.colors.text};
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 24px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        z-index: 9999;
+        transition: transform 0.2s;
+        border: none;
+      }
+      .leadx-floating-button:hover {
+        transform: scale(1.1);
       }
       .leadx-modal {
         position: fixed;
@@ -366,50 +352,27 @@ function generateEmbedScript(customization) {
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0,0,0,0.6);
+        background: rgba(0,0,0,0.7);
         z-index: 10000;
         display: none;
         align-items: center;
         justify-content: center;
-        backdrop-filter: blur(4px);
         padding: 20px;
       }
       .leadx-modal-content {
         background: white;
-        border-radius: 20px;
+        border-radius: 16px;
         width: 100%;
         max-width: 1200px;
         max-height: 90vh;
         overflow-y: auto;
         position: relative;
-        box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
       }
       .leadx-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
         gap: 24px;
         padding: 30px;
-      }
-      .leadx-floating-btn {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        width: 60px;
-        height: 60px;
-        background: \${LEADX_CONFIG.tilesAndButtonColor};
-        border-radius: 50%;
-        cursor: pointer;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 9999;
-        transition: all 0.3s ease;
-        border: none;
-      }
-      .leadx-floating-btn:hover {
-        transform: scale(1.1);
-        box-shadow: 0 6px 25px rgba(0,0,0,0.2);
       }
       @keyframes leadx-spin {
         0% { transform: rotate(0deg); }
@@ -418,11 +381,11 @@ function generateEmbedScript(customization) {
       .leadx-spinner {
         width: 40px;
         height: 40px;
-        border: 3px solid #e5e7eb;
-        border-top: 3px solid #3b82f6;
+        border: 3px solid #ddd;
+        border-top: 3px solid #007bff;
         border-radius: 50%;
         animation: leadx-spin 1s linear infinite;
-        margin: 0 auto 16px;
+        margin: 0 auto 20px;
       }
       @media (max-width: 768px) {
         .leadx-grid {
@@ -432,166 +395,92 @@ function generateEmbedScript(customization) {
         }
         .leadx-ambassador-card {
           height: 400px;
-          max-width: 100%;
-        }
-        .leadx-modal-content {
-          border-radius: 16px;
-          margin: 10px;
         }
       }
     </style>
   \`;
   
   // Add styles to head
-  if (!document.getElementById('leadx-widget-styles')) {
+  if (!document.getElementById('leadx-ambassador-styles')) {
     document.head.insertAdjacentHTML('beforeend', styles);
   }
 
-  // Create floating chat button
+  // Create floating button
   function createFloatingButton() {
-    const button = document.createElement('button');
-    button.id = 'leadx-floating-button';
-    button.className = 'leadx-floating-btn';
-    button.innerHTML = \`
-      <svg width="24" height="24" fill="\${LEADX_CONFIG.textColor}" viewBox="0 0 24 24">
-        <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
-      </svg>
-    \`;
-    
-    button.addEventListener('click', openAmbassadorModal);
-    document.body.appendChild(button);
+    const btn = document.createElement('button');
+    btn.className = 'leadx-floating-button';
+    btn.innerHTML = '💬';
+    btn.onclick = openModal;
+    document.body.appendChild(btn);
+    console.log('✅ Floating button created');
   }
 
-  // Create ambassador modal with complete AmbassadorCard UI
-  function createAmbassadorModal() {
+  // Create modal with AmbassadorList UI
+  function createModal() {
     const modal = document.createElement('div');
-    modal.id = 'leadx-ambassador-modal';
-    modal.className = 'leadx-modal leadx-widget-container';
+    modal.className = 'leadx-modal';
     modal.innerHTML = \`
       <div class="leadx-modal-content">
-        <!-- Header -->
         <div style="
           padding: 25px 30px;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
-          border-radius: 20px 20px 0 0;
-          position: relative;
+          background: \${CONFIG.colors.button};
+          color: \${CONFIG.colors.text};
+          border-radius: 16px 16px 0 0;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
         ">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div>
-              <h2 style="margin: 0; font-size: 28px; font-weight: 700; margin-bottom: 8px;">
-                Connect with our Ambassadors
-              </h2>
-              <p style="margin: 0; opacity: 0.9; font-size: 16px;">
-                Get personalized guidance from verified student ambassadors
-              </p>
-            </div>
-            <button id="leadx-close-modal" style="
-              background: rgba(255,255,255,0.2);
-              border: none;
-              border-radius: 50%;
-              width: 44px;
-              height: 44px;
-              font-size: 24px;
-              cursor: pointer;
-              color: white;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              transition: all 0.2s ease;
-            ">
-              ×
-            </button>
+          <div>
+            <h2 style="margin: 0; font-size: 24px; font-weight: 700;">
+              Chat with an Ambassador
+            </h2>
+            <p style="margin: 4px 0 0 0; opacity: 0.9; font-size: 14px;">
+              Connect with our verified student ambassadors
+            </p>
           </div>
+          <button onclick="closeModal()" style="
+            background: rgba(255,255,255,0.2);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            color: \${CONFIG.colors.text};
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          ">×</button>
         </div>
-        
-        <!-- Loading State -->
-        <div id="leadx-loading" style="
-          padding: 80px 30px;
-          text-align: center;
-          color: #6b7280;
-        ">
-          <div class="leadx-spinner"></div>
-          <p style="margin: 0; font-size: 16px;">Loading ambassadors...</p>
-        </div>
-        
-        <!-- Ambassadors Container -->
-        <div id="leadx-ambassadors-container" class="leadx-grid" style="display: none;">
-        </div>
-        
-        <!-- Error State -->
-        <div id="leadx-error" style="
-          padding: 80px 30px;
-          text-align: center;
-          color: #ef4444;
-          display: none;
-        ">
-          <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
-          <p style="margin: 0; font-size: 16px;">Unable to load ambassadors. Please try again later.</p>
+        <div id="ambassadors-container">
+          <div style="text-align: center; padding: 60px 30px;">
+            <div class="leadx-spinner"></div>
+            <p style="margin: 0; color: #666;">Loading ambassadors...</p>
+          </div>
         </div>
       </div>
     \`;
     
-    // Add event listeners
-    modal.addEventListener('click', function(e) {
-      if (e.target.id === 'leadx-ambassador-modal') {
-        closeAmbassadorModal();
-      }
-    });
-    
-    const closeBtn = modal.querySelector('#leadx-close-modal');
-    closeBtn.addEventListener('click', closeAmbassadorModal);
-    closeBtn.addEventListener('mouseenter', function() {
-      this.style.background = 'rgba(255,255,255,0.3)';
-    });
-    closeBtn.addEventListener('mouseleave', function() {
-      this.style.background = 'rgba(255,255,255,0.2)';
-    });
+    modal.onclick = (e) => {
+      if (e.target === modal) closeModal();
+    };
     
     document.body.appendChild(modal);
+    console.log('✅ Modal created');
   }
 
-  function openAmbassadorModal() {
-    const modal = document.getElementById('leadx-ambassador-modal');
-    if (!modal) {
-      createAmbassadorModal();
-    }
-    
-    document.getElementById('leadx-ambassador-modal').style.display = 'flex';
+  // Open modal and load ambassadors
+  function openModal() {
+    document.querySelector('.leadx-modal').style.display = 'flex';
     loadAmbassadors();
   }
 
-  function closeAmbassadorModal() {
-    document.getElementById('leadx-ambassador-modal').style.display = 'none';
-  }
+  // Close modal
+  window.closeModal = function() {
+    document.querySelector('.leadx-modal').style.display = 'none';
+  };
 
-  async function loadAmbassadors() {
-    const loadingEl = document.getElementById('leadx-loading');
-    const containerEl = document.getElementById('leadx-ambassadors-container');
-    const errorEl = document.getElementById('leadx-error');
-    
-    // Show loading state
-    loadingEl.style.display = 'block';
-    containerEl.style.display = 'none';
-    errorEl.style.display = 'none';
-    
-    try {
-      const response = await fetch(\`\${LEADX_CONFIG.apiUrl}/api/auth/ambassadors/public\`);
-      const result = await response.json();
-      
-      if (result.success && result.data) {
-        const ambassadors = result.data.filter(amb => amb.role === 'ambassador' && amb.isVerified);
-        renderAmbassadors(ambassadors);
-      } else {
-        throw new Error('No ambassadors found');
-      }
-    } catch (error) {
-      console.error('Error loading ambassadors:', error);
-      loadingEl.style.display = 'none';
-      errorEl.style.display = 'block';
-    }
-  }
-
+  // Get country flag
   function getCountryFlag(country) {
     const countryCodeMap = {
       'India': 'in', 'United States': 'us', 'USA': 'us', 'US': 'us',
@@ -602,36 +491,53 @@ function generateEmbedScript(customization) {
     return \`https://flagcdn.com/24x18/\${countryCode}.png\`;
   }
 
-  function renderAmbassadors(ambassadors) {
-    const loadingEl = document.getElementById('leadx-loading');
-    const containerEl = document.getElementById('leadx-ambassadors-container');
+  // Load ambassadors
+  async function loadAmbassadors() {
+    try {
+      console.log('📡 Loading ambassadors...');
+      const response = await fetch(\`\${CONFIG.apiUrl}/api/auth/ambassadors/public\`);
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        const ambassadors = result.data.filter(a => a.role === 'ambassador' && a.isVerified);
+        console.log(\`✅ Loaded \${ambassadors.length} ambassadors\`);
+        renderAmbassadorCards(ambassadors);
+      } else {
+        throw new Error('No ambassadors found');
+      }
+    } catch (error) {
+      console.error('❌ Error loading ambassadors:', error);
+      document.getElementById('ambassadors-container').innerHTML = \`
+        <div style="text-align: center; padding: 60px 30px; color: #666;">
+          <p>Unable to load ambassadors. Please try again later.</p>
+        </div>
+      \`;
+    }
+  }
+
+  // Render ambassadors with EXACT AmbassadorCard UI
+  function renderAmbassadorCards(ambassadors) {
+    const container = document.getElementById('ambassadors-container');
     
-    loadingEl.style.display = 'none';
-    containerEl.style.display = 'grid';
-    
-    if (!ambassadors || ambassadors.length === 0) {
-      containerEl.innerHTML = \`
-        <div style="
-          grid-column: 1 / -1;
-          text-align: center;
-          padding: 80px 30px;
-          color: #6b7280;
-        ">
-          <div style="font-size: 48px; margin-bottom: 16px;">👥</div>
-          <p style="margin: 0; font-size: 16px;">No ambassadors available at the moment.</p>
+    if (!ambassadors.length) {
+      container.innerHTML = \`
+        <div style="text-align: center; padding: 60px 30px; color: #666;">
+          <p>No ambassadors available at the moment.</p>
         </div>
       \`;
       return;
     }
 
-    const ambassadorCards = ambassadors.map(ambassador => \`
+    // Create EXACT AmbassadorCard UI
+    const cards = ambassadors.map(ambassador => \`
       <div class="leadx-ambassador-card">
-        <!-- Background Header with Gradient -->
+        <!-- Background Image Section -->
         <div style="
-          height: 80px;
-          background: \${LEADX_CONFIG.tilesAndButtonColor};
           position: relative;
-          background-image: url('\${ambassador.thumbnailImage ? LEADX_CONFIG.apiUrl + '/' + ambassador.thumbnailImage : ''}');
+          height: 80px;
+          width: 100%;
+          background: \${CONFIG.colors.button};
+          background-image: url('\${ambassador.thumbnailImage ? CONFIG.apiUrl + '/' + ambassador.thumbnailImage : ''}');
           background-size: cover;
           background-position: center;
         ">
@@ -644,11 +550,11 @@ function generateEmbedScript(customization) {
           <!-- Profile Image -->
           <div style="
             position: absolute;
-            bottom: -40px;
+            bottom: -30px;
             left: 50%;
             transform: translateX(-50%);
-            width: 80px;
-            height: 80px;
+            width: 72px;
+            height: 72px;
             border-radius: 50%;
             border: 4px solid white;
             overflow: hidden;
@@ -656,43 +562,37 @@ function generateEmbedScript(customization) {
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
           ">
             <img 
-              src="\${ambassador.profileImage ? LEADX_CONFIG.apiUrl + '/' + ambassador.profileImage : 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iNDAiIGN5PSI0MCIgcj0iNDAiIGZpbGw9IiNFNUU3RUIiLz4KPHN2ZyB4PSIyMCIgeT0iMTUiIHdpZHRoPSI0MCIgaGVpZ2h0PSI1MCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSIjOUI5QkEwIj4KPHA+dGggZD0iTTEyIDEyYzIuMjEgMCA0LTEuNzkgNC00cy0xLjc5LTQtNC00LTQgMS43OS00IDQgMS43OSA0IDQgNHptMCAyYy0yLjY3IDAtOCAxLjM0LTggNHYyaDE2di0yYzAtMi42Ni01LjMzLTQtOC00eiIvPgo8L3N2Zz4KPC9zdmc+'}" 
+              src="\${ambassador.profileImage ? CONFIG.apiUrl + '/' + ambassador.profileImage : 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNzIiIGhlaWdodD0iNzIiIHZpZXdCb3g9IjAgMCA3MiA3MiIgZmlsbD0ibm9uZSI+PGNpcmNsZSBjeD0iMzYiIGN5PSIzNiIgcj0iMzYiIGZpbGw9IiNlNWU3ZWIiLz48cGF0aCBkPSJNMzYgMzhjMy45IDAgNy0zLjEgNy03cy0zLjEtNy03LTctNyAzLjEtNyA3IDMuMSA3IDcgN3ptMCAyYy00LjcgMC0xNCAyLjMtMTQgN3YyaDI4di0yYzAtNC43LTkuMy03LTE0LTd6IiBmaWxsPSIjOWZhNmIyIi8+PC9zdmc+'}"
               alt="\${ambassador.name}"
-              style="
-                width: 100%;
-                height: 100%;
-                object-fit: cover;
-              "
+              style="width: 100%; height: 100%; object-fit: cover;"
             />
           </div>
           
           <!-- Online Status -->
           <div style="
             position: absolute;
-            bottom: -30px;
+            bottom: -25px;
             left: 50%;
-            transform: translateX(25px);
-            width: 20px;
-            height: 20px;
+            transform: translateX(20px);
+            width: 16px;
+            height: 16px;
             background: #10b981;
             border: 3px solid white;
             border-radius: 50%;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
           ">
             <div style="
-              width: 8px;
-              height: 8px;
+              width: 6px;
+              height: 6px;
               background: #059669;
               border-radius: 50%;
-              margin: 3px auto;
-              animation: pulse 2s infinite;
+              margin: 2px auto;
             "></div>
           </div>
         </div>
         
-        <!-- Content -->
+        <!-- Main Content -->
         <div style="
-          padding: 50px 20px 20px;
+          padding: 40px 16px 16px;
           flex: 1;
           display: flex;
           flex-direction: column;
@@ -701,121 +601,168 @@ function generateEmbedScript(customization) {
           <h3 style="
             margin: 0 0 8px 0;
             text-align: center;
-            font-size: 18px;
-            font-weight: 700;
+            font-size: 16px;
+            font-weight: 600;
             color: #1f2937;
             font-family: 'Inter', sans-serif;
           ">
             \${ambassador.name}
           </h3>
           
-          <!-- Course/Program -->
+          <!-- Course Card -->
           <div style="
-            background: linear-gradient(135deg, #ddd6fe 0%, #e0e7ff 100%);
-            border-radius: 12px;
-            padding: 12px;
-            margin-bottom: 16px;
+            background: rgba(255,255,255,0.3);
+            backdrop-filter: blur(4px);
+            border-radius: 8px;
+            padding: 8px 12px;
+            border: 1px solid rgba(203, 213, 225, 0.3);
+            margin-bottom: 12px;
             text-align: center;
-            border: 1px solid #c4b5fd;
           ">
             <p style="
               margin: 0;
-              font-size: 14px;
-              color: #5b21b6;
+              font-size: 12px;
               font-weight: 600;
+              color: #1f2937;
             ">
-              📚 \${ambassador.course || ambassador.program || 'Student Ambassador'}
+              \${ambassador.course || ambassador.program || 'BBA'}
             </p>
           </div>
           
-          <!-- Location -->
+          <!-- Location Card -->
           <div style="
-            background: linear-gradient(135deg, #bfdbfe 0%, #dbeafe 100%);
-            border-radius: 12px;
-            padding: 12px;
-            margin-bottom: 16px;
+            background: rgba(255,255,255,0.3);
+            backdrop-filter: blur(4px);
+            border-radius: 8px;
+            padding: 8px 12px;
+            border: 1px solid rgba(203, 213, 225, 0.3);
+            margin-bottom: 12px;
             text-align: center;
-            border: 1px solid #93c5fd;
           ">
-            <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+            <p style="
+              margin: 0 0 4px 0;
+              font-size: 12px;
+              font-weight: 600;
+              color: #1f2937;
+            ">
+              I'm from
+            </p>
+            <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
               <img
                 src="\${getCountryFlag(ambassador.country || 'India')}"
                 alt="Flag"
-                style="width: 20px; height: 15px; border-radius: 2px;"
+                style="width: 16px; height: 12px; border-radius: 2px;"
                 onerror="this.style.display='none'"
               />
               <p style="
                 margin: 0;
-                font-size: 14px;
-                color: #1e40af;
-                font-weight: 600;
+                font-size: 12px;
+                font-weight: 400;
+                color: #374151;
               ">
-                📍 \${ambassador.state || ambassador.country || 'India'}
+                \${ambassador.state || ambassador.country || 'India'}
               </p>
             </div>
           </div>
           
-          <!-- Languages -->
+          <!-- Languages Card -->
           <div style="
-            background: linear-gradient(135deg, #bbf7d0 0%, #dcfce7 100%);
-            border-radius: 12px;
-            padding: 12px;
-            margin-bottom: 16px;
+            background: rgba(255,255,255,0.3);
+            backdrop-filter: blur(4px);
+            border-radius: 8px;
+            padding: 8px 12px;
+            border: 1px solid rgba(203, 213, 225, 0.3);
+            margin-bottom: 12px;
             text-align: center;
-            border: 1px solid #86efac;
           ">
             <p style="
-              margin: 0;
-              font-size: 14px;
-              color: #166534;
+              margin: 0 0 4px 0;
+              font-size: 12px;
               font-weight: 600;
+              color: #1f2937;
             ">
-              🗣️ \${Array.isArray(ambassador.languages) ? ambassador.languages.join(', ') : (ambassador.languages || 'English')}
+              I Speak
+            </p>
+            <p style="
+              margin: 0;
+              font-size: 12px;
+              font-weight: 400;
+              color: #374151;
+            ">
+              \${Array.isArray(ambassador.languages) ? ambassador.languages.join(' | ') : (ambassador.languages || 'English')}
+            </p>
+          </div>
+          
+          <!-- About Card -->
+          <div style="
+            background: rgba(255,255,255,0.3);
+            backdrop-filter: blur(4px);
+            border-radius: 8px;
+            padding: 8px 12px;
+            border: 1px solid rgba(203, 213, 225, 0.3);
+            margin-bottom: 16px;
+            text-align: center;
+            flex: 1;
+          ">
+            <p style="
+              margin: 0 0 4px 0;
+              font-size: 12px;
+              font-weight: 600;
+              color: #1f2937;
+            ">
+              About me
+            </p>
+            <p style="
+              margin: 0;
+              font-size: 11px;
+              color: #6b7280;
+              line-height: 1.4;
+              font-weight: 400;
+            ">
+              \${(ambassador.description || ambassador.about || 'Student Ambassador ready to help!').length > 80 ? 
+                (ambassador.description || ambassador.about || 'Student Ambassador ready to help!').substring(0, 80) + '...' : 
+                (ambassador.description || ambassador.about || 'Student Ambassador ready to help!')}
             </p>
           </div>
           
           <!-- Questions Preview -->
-          \${LEADX_CONFIG.questions.length > 0 ? \`
+          \${CONFIG.questions.length > 0 ? \`
             <div style="
-              background: #f8fafc;
-              border-radius: 12px;
-              padding: 16px;
-              margin-bottom: 20px;
-              border: 2px solid \${LEADX_CONFIG.borderColor};
+              background: rgba(255,255,255,0.3);
+              backdrop-filter: blur(4px);
+              border-radius: 8px;
+              padding: 8px 12px;
+              border: 1px solid rgba(203, 213, 225, 0.3);
+              margin-bottom: 16px;
+              text-align: center;
             ">
               <p style="
-                margin: 0 0 12px 0;
-                font-size: 14px;
-                font-weight: 700;
-                color: #374151;
-                text-align: center;
+                margin: 0 0 8px 0;
+                font-size: 12px;
+                font-weight: 600;
+                color: #1f2937;
               ">
-                💬 Ask me about:
+                Ask me about
               </p>
-              \${LEADX_CONFIG.questions.slice(0, 3).map(question => \`
+              \${CONFIG.questions.slice(0, 2).map(q => \`
                 <div style="
-                  font-size: 12px;
+                  font-size: 10px;
                   color: #6b7280;
-                  margin-bottom: 8px;
-                  line-height: 1.4;
-                  padding: 8px 12px;
-                  background: white;
-                  border-radius: 8px;
-                  border-left: 3px solid \${LEADX_CONFIG.tilesAndButtonColor.includes('gradient') ? '#667eea' : LEADX_CONFIG.tilesAndButtonColor};
+                  margin-bottom: 4px;
+                  line-height: 1.3;
                 ">
-                  • \${question.length > 50 ? question.substring(0, 50) + '...' : question}
+                  • \${q.length > 40 ? q.substring(0, 40) + '...' : q}
                 </div>
               \`).join('')}
-              \${LEADX_CONFIG.questions.length > 3 ? \`
-                <div style="
-                  font-size: 11px;
+              \${CONFIG.questions.length > 2 ? \`
+                <p style="
+                  margin: 4px 0 0 0;
+                  font-size: 10px;
                   color: #9ca3af;
                   font-style: italic;
-                  text-align: center;
-                  margin-top: 8px;
                 ">
-                  +\${LEADX_CONFIG.questions.length - 3} more questions
-                </div>
+                  +\${CONFIG.questions.length - 2} more
+                </p>
               \` : ''}
             </div>
           \` : ''}
@@ -823,40 +770,46 @@ function generateEmbedScript(customization) {
           <!-- Chat Button -->
           <div style="margin-top: auto;">
             <button 
-              class="leadx-chat-button"
+              class="leadx-chat-btn"
               onclick="startChat('\${ambassador._id}', '\${ambassador.name}')"
             >
-              <svg width="18" height="18" fill="currentColor" viewBox="0 0 20 20">
+              <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd"/>
               </svg>
-              Chat with \${ambassador.name}
+              Chat
             </button>
           </div>
         </div>
       </div>
     \`).join('');
 
-    containerEl.innerHTML = ambassadorCards;
+    container.innerHTML = \`
+      <div class="leadx-grid">
+        \${cards}
+      </div>
+    \`;
   }
 
-  // Global function for chat
+  // Start chat function
   window.startChat = function(ambassadorId, ambassadorName) {
-    // Create chat modal or redirect to chat page
-    const chatUrl = \`\${LEADX_CONFIG.baseUrl}/embed/\${LEADX_CONFIG.configId}?ambassador=\${ambassadorId}&name=\${encodeURIComponent(ambassadorName)}\`;
-    window.open(chatUrl, '_blank', 'width=500,height=700,scrollbars=yes,resizable=yes,location=no,menubar=no,toolbar=no');
+    const chatUrl = \`\${CONFIG.apiUrl.replace('5000', '3000')}/embed/\${CONFIG.configId}?ambassador=\${ambassadorId}&name=\${encodeURIComponent(ambassadorName)}\`;
+    window.open(chatUrl, '_blank', 'width=500,height=700,scrollbars=yes,resizable=yes');
   };
 
-  // Initialize widget when DOM is ready
-  function initWidget() {
+  // Initialize
+  function init() {
     createFloatingButton();
-    createAmbassadorModal();
+    createModal();
+    console.log('✅ LeadX Ambassador Widget with AmbassadorCard UI initialized!');
   }
 
+  // Start when DOM is ready
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initWidget);
+    document.addEventListener('DOMContentLoaded', init);
   } else {
-    initWidget();
+    init();
   }
+
 })();
 `
 }
