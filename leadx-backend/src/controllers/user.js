@@ -679,7 +679,7 @@ export const getPublicAmbassadors = async (req, res, next) => {
       isVerified: true,
       status: "active", // ✅ Only active ambassadors will be shown
     }).select(
-      "name email course program profileImage thumbnailImage country state languages description about createdAt status"
+      "name email role course program profileImage thumbnailImage country state languages description about createdAt status isVerified"
     )
 
     console.log(
