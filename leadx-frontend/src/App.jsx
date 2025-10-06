@@ -20,7 +20,7 @@ import AmbassadorList from "./pages/user/AmbassadorList"
 import UserLayout from "./pages/user/Layout"
 import AmbassadorLoginTable from "./pages/auth/LoginHistory"
 import EmbedView from "./pages/embed/EmbedView"
-import CustomEmbedView from "./pages/embed/CustomEmbedView"
+// import CustomEmbedView from "./pages/embed/CustomEmbedView"
 
 // Admin imports
 import AdminLayout from "./pages/superadmin/AdminLayout"
@@ -82,7 +82,7 @@ function App() {
         </Route>
         <Route path="/ambassadors" element={<AmbassadorList />} />
         <Route path="/embed/view/:configKey" element={<EmbedView />} />
-        <Route path="/embed/:configId" element={<CustomEmbedView />} />
+        {/* <Route path="/embed/:configId" element={<CustomEmbedView />} /> */}
         <Route path="/user" element={<UserLayout />} />
 
         <Route path="/unauthorized" element={<Unauthorized />} />
