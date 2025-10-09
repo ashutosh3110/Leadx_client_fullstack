@@ -46,6 +46,8 @@ const Login = () => {
           navigate("/admin")
         } else if (role === "ambassador") {
           navigate("/ambassador")
+        } else if (role === "user") {
+          navigate("/user/dashboard")
         } else {
           navigate("/unauthorized")
         }

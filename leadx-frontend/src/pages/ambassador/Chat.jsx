@@ -41,11 +41,13 @@ const Chat = () => {
   // Get avatar background color based on name
   const getAvatarColor = (name) => {
     if (!name) return "bg-gray-500"
+    // Handle both string and object cases
+    const nameStr = typeof name === 'string' ? name : name?.name || 'U'
     const colors = [
       "bg-red-500", "bg-blue-500", "bg-green-500", "bg-yellow-500", 
       "bg-purple-500", "bg-pink-500", "bg-indigo-500", "bg-teal-500"
     ]
-    const index = name.charCodeAt(0) % colors.length
+    const index = nameStr.charCodeAt(0) % colors.length
     return colors[index]
   }
 

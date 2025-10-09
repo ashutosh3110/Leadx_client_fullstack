@@ -10,7 +10,7 @@ const Layout = () => {
     <div 
       className="h-screen flex overflow-hidden"
       style={{ 
-        background: `linear-gradient(135deg, ${userDashboardColor}15, ${userDashboardColor}10)`
+        background: `linear-gradient(135deg, #1098e815, #1098e810)`
       }}
     >
       <Sidebar />
@@ -19,7 +19,7 @@ const Layout = () => {
         <main 
           className="flex-1 overflow-y-auto p-6"
           style={{ 
-            background: `linear-gradient(135deg, ${userDashboardColor}15, ${userDashboardColor}10)`
+            background: `linear-gradient(135deg, #1098e815, #1098e810)`
           }}
         >
           <Outlet />

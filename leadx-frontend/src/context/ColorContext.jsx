@@ -13,11 +13,13 @@ export const useColorContext = () => {
 export const ColorProvider = ({ children }) => {
     const [adminDashboardColor, setAdminDashboardColor] = useState('#4682B4'); // Steel Blue (same as sidebar)
     const [ambassadorDashboardColor, setAmbassadorDashboardColor] = useState('#4682B4'); // Same as admin - Steel Blue
+    const [userDashboardColor, setUserDashboardColor] = useState('#4682B4'); // Steel Blue for users
 
     // Load colors from localStorage on mount
     useEffect(() => {
         const savedAdminColor = localStorage.getItem('adminDashboardColor');
         const savedAmbassadorColor = localStorage.getItem('ambassadorDashboardColor');
+        const savedUserColor = localStorage.getItem('userDashboardColor');
         
         if (savedAdminColor) {
             setAdminDashboardColor(savedAdminColor);
@@ -28,6 +30,13 @@ export const ColorProvider = ({ children }) => {
             // Set default Steel Blue color (same as admin) if no saved color
             setAmbassadorDashboardColor('#4682B4');
             localStorage.setItem('ambassadorDashboardColor', '#4682B4');
+        }
+        if (savedUserColor) {
+            setUserDashboardColor(savedUserColor);
+        } else {
+            // Set default Steel Blue color for users
+            setUserDashboardColor('#4682B4');
+            localStorage.setItem('userDashboardColor', '#4682B4');
         }
     }, []);
 
@@ -40,6 +49,10 @@ export const ColorProvider = ({ children }) => {
         localStorage.setItem('ambassadorDashboardColor', ambassadorDashboardColor);
     }, [ambassadorDashboardColor]);
 
+    useEffect(() => {
+        localStorage.setItem('userDashboardColor', userDashboardColor);
+    }, [userDashboardColor]);
+
     const updateAdminDashboardColor = (color) => {
         setAdminDashboardColor(color);
     };
@@ -51,6 +64,7 @@ export const ColorProvider = ({ children }) => {
     const value = {
         adminDashboardColor,
         ambassadorDashboardColor,
+        userDashboardColor,
         updateAdminDashboardColor,
         updateAmbassadorDashboardColor
     };

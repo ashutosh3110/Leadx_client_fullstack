@@ -29,6 +29,10 @@ import {
   getAllUsers,
   getAllUsersWithChatHistory,
   updateUserConversionStatus,
+  getUserDashboard,
+  getUserChatHistory,
+  getUserProfile,
+  updateUserProfile,
 } from "../controllers/user.js"
  
 const router = Router()
@@ -40,6 +44,14 @@ router.post("/register", registerUser)
 router.post("/login", loginUser)
 router.post("/logout", authenticate, logout)
 router.get("/me", authenticate, getMyProfile)
+
+/* ==========================
+   👤 USER DASHBOARD ROUTES
+========================== */
+router.get("/dashboard", authenticate, getUserDashboard)
+router.get("/chat-history/:ambassadorId", authenticate, getUserChatHistory)
+router.get("/profile", authenticate, getUserProfile)
+router.patch("/profile", authenticate, updateUserProfile)
  
 /* ==========================
    👤 USER PROFILE ROUTES
@@ -92,6 +104,23 @@ router.get(
 ========================== */
 router.get("/ambassadors/public", getPublicAmbassadors)
 router.post("/auto-register", autoRegisterUser)
+router.post("/debug-password", async (req, res) => {
+  const { email, password } = req.body
+  const user = await User.findOne({ email })
+  if (!user) {
+    return res.json({ found: false })
+  }
+  
+  const isMatch = await bcrypt.compare(password, user.password)
+  return res.json({
+    found: true,
+    hasPassword: !!user.password,
+    passwordMatch: isMatch,
+    passwordHash: user.password?.substring(0, 20) + "...",
+    role: user.role,
+    email: user.email
+  })
+})
 router.get("/ambassador-logins", getAmbassadorLogins) // ✅ moved above dynamic routes
 
 /* ==========================

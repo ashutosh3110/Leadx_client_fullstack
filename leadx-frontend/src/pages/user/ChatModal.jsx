@@ -53,6 +53,7 @@ const ChatModal = ({ isOpen, onClose, ambassador }) => {
       
       // Check if data is array
       if (!Array.isArray(data)) {
+        console.log('❌ API returned non-array data, using fallback');
         throw new Error('Invalid data format received from API');
       }
       
@@ -89,7 +90,8 @@ const ChatModal = ({ isOpen, onClose, ambassador }) => {
         { name: 'Finland', code: 'FI', callingCode: '+358' },
         { name: 'Switzerland', code: 'CH', callingCode: '+41' },
         { name: 'Austria', code: 'AT', callingCode: '+43' },
-        { name: 'Belgium', code: 'BE', callingCode: '+32' }
+        { name: 'Belgium', code: 'BE', callingCode: '+32' },
+        { name: 'India', code: 'IN', callingCode: '+91' }
       ];
       setCountries(fallbackCountries);
     } finally {
@@ -975,12 +977,14 @@ const getProfileImage=()=>{
         {/* Footer Buttons */}
         {currentStep < 4 && (
           <div className="flex items-center justify-between p-4 border-t">
-            <button
-              onClick={handleGoBack}
-              className="px-4 py-2 border border-red-500 text-red-500 rounded-lg hover:bg-red-50 transition-colors text-sm"
-            >
-              {currentStep === 1 ? 'Close' : '< Go Back'}
-            </button>
+            {currentStep !== 1 && (
+              <button
+                onClick={handleGoBack}
+                className="px-4 py-2 border border-red-500 text-red-500 rounded-lg hover:bg-red-50 transition-colors text-sm"
+              >
+                ← Go Back
+              </button>
+            )}
             <button
               onClick={handleContinue}
               disabled={isSubmitting}
@@ -1010,12 +1014,7 @@ const getProfileImage=()=>{
 
         {currentStep === 4 && (
           <div className="flex justify-end p-4 border-t">
-            <button
-              onClick={handleClose}
-              className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm"
-            >
-              Close
-            </button>
+            {/* Close button removed - use top X button to close modal */}
           </div>
         )}
       </div>

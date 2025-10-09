@@ -15,31 +15,48 @@ const AdminChat = () => {
     const fetchAmbassadorUsers = async (ambassadorId) => {
         try {
             setLoading(true);
-            console.log('Fetching users for ambassador:', ambassadorId);
+            console.log('🔍 Fetching users for ambassador:', ambassadorId);
             const response = await api.get(`/chat/admin/ambassador/${ambassadorId}/chats`);
-            console.log('Ambassador chats response:', response.data);
-            if (response.data.success) {
+            console.log('🔍 Ambassador chats response:', response.data);
+            
+            if (response.data.success && response.data.data) {
+                console.log('🔍 Raw chats data:', response.data.data);
+                
                 // Extract users from chats (participants excluding the ambassador)
                 const users = response.data.data.map(chat => {
+                    console.log('🔍 Processing chat:', chat);
+                    console.log('🔍 Chat participants:', chat.participants);
+                    
                     const user = chat.participants.find(p => p._id !== ambassadorId);
-                    return {
-                        id: user._id,
-                        name: user.name,
-                        email: user.email,
-                        profileImage: user.profileImage,
-                        chatId: chat._id,
-                        lastMessage: chat.lastMessage ? {
-                            content: chat.lastMessage.content,
-                            timestamp: chat.lastMessage.createdAt,
-                            sender: chat.lastMessage.sender
-                        } : null
-                    };
-                });
-                console.log('Processed users:', users);
+                    console.log('🔍 Found user:', user);
+                    
+                    if (user) {
+                        return {
+                            id: user._id,
+                            name: user.name,
+                            email: user.email,
+                            profileImage: user.profileImage,
+                            chatId: chat._id,
+                            lastMessage: chat.lastMessage ? {
+                                content: chat.lastMessage.content,
+                                timestamp: chat.lastMessage.createdAt,
+                                sender: chat.lastMessage.sender
+                            } : null
+                        };
+                    }
+                    return null;
+                }).filter(user => user !== null);
+                
+                console.log('✅ Processed users:', users);
                 setAmbassadorUsers(users);
+            } else {
+                console.log('❌ No chats found for ambassador');
+                setAmbassadorUsers([]);
             }
         } catch (error) {
-            console.error('Error fetching ambassador users:', error);
+            console.error('❌ Error fetching ambassador users:', error);
+            console.error('❌ Error response:', error.response?.data);
+            setAmbassadorUsers([]);
         } finally {
             setLoading(false);
         }

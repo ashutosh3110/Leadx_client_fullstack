@@ -18,6 +18,9 @@ import Chat from "./pages/ambassador/Chat"
 import Users from "./pages/ambassador/Users"
 import AmbassadorList from "./pages/user/AmbassadorList"
 import UserLayout from "./pages/user/Layout"
+import UserDashboard from "./pages/user/Dashboard"
+import UserProfile from "./pages/user/Profile"
+import UserChat from "./pages/user/UserChat"
 
 // Admin imports
 import AdminLayout from "./pages/superadmin/AdminLayout"
@@ -76,8 +79,19 @@ function App() {
             <Route path="chat" element={<Chat />} />
           </Route>
         </Route>
+
+        {/* User Protected Routes */}
+        <Route element={<ProtectedRoute allowedRoles={["user"]} />}>
+          <Route path="/user" element={<UserLayout />}>
+            <Route index element={<Navigate to="/user/dashboard" replace />} />
+            <Route path="dashboard" element={<UserDashboard />} />
+            <Route path="chats" element={<UserChat />} />
+            <Route path="profile" element={<UserProfile />} />
+          </Route>
+        </Route>
+
+        {/* Public Routes */}
         <Route path="/ambassadors" element={<AmbassadorList/>} />
-        <Route path="/user" element={<UserLayout/>} />
 
         
 

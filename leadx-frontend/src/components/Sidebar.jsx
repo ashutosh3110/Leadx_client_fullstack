@@ -91,16 +91,24 @@ const Sidebar = () => {
           open ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0 transition-transform duration-300 ease-in-out z-50 flex flex-col`}
         style={{ 
-          background: `linear-gradient(135deg, ${ambassadorDashboardColor}, ${ambassadorDashboardColor}dd)`
+          backgroundColor: '#1098e8'
         }}
       >
         <div 
           className="flex justify-between items-center p-4 border-b flex-shrink-0"
-          style={{ borderColor: `${ambassadorDashboardColor}80` }}
+          style={{ borderColor: 'rgba(16, 152, 232, 0.2)' }}
         >
-          <h2 className="text-xl font-extrabold tracking-tight">
-            Dashboard
-          </h2>
+          <div className="flex items-center space-x-3">
+            {/* Logo */}
+            <img
+              src="/logo-new.png"
+              alt="LeadX Logo"
+              className="h-6 w-6 object-contain"
+            />
+            <h2 className="text-xl font-extrabold tracking-tight">
+              Dashboard
+            </h2>
+          </div>
           <button
             onClick={() => setOpen(false)}
             className="text-2xl lg:hidden hover:opacity-70 transition-colors"
@@ -118,12 +126,9 @@ const Sidebar = () => {
               onClick={() => setOpen(false)}
               className={`flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
                 location.pathname === menu.path
-                  ? "bg-white font-semibold shadow-lg"
-                  : "hover:opacity-80 hover:shadow-md"
+                  ? "bg-white/30 text-white font-semibold shadow-xl scale-105 border border-white/30"
+                  : "text-white/90 hover:text-white hover:bg-white/10 hover:shadow-lg hover:scale-105"
               }`}
-              style={{
-                color: location.pathname === menu.path ? ambassadorDashboardColor : "white"
-              }}
             >
               <span className="text-lg">{menu.icon}</span>
               <span className="tracking-wide">{menu.name}</span>
