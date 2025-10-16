@@ -217,8 +217,10 @@ const AdminUsers = () => {
                                     <div className="text-sm font-semibold text-slate-900">{user.email || 'N/A'}</div>
                                     <div className="text-xs text-slate-500">{user.phone || 'No phone'}</div>
                                 </td>
-                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-sm text-slate-900 text-center">
-                                    <div className="truncate max-w-24">{user.country || 'Not specified'}</div>
+                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-sm text-slate-900">
+                                    <div className="flex justify-center items-center">
+                                        <span className="truncate max-w-24">{user.country || 'Not specified'}</span>
+                                    </div>
                                 </td>
                                 <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-center">
                                     <div className="flex flex-wrap gap-1 justify-center">
@@ -261,11 +263,12 @@ const AdminUsers = () => {
                                         value={user.status}
                                         onChange={(e) => handleStatusChange(user._id, e.target.value)}
                                         className={`text-xs font-semibold rounded-full px-2 py-1 border-0 focus:ring-2 focus:ring-blue-500 ${getStatusColor(user.status)}`}
+                                        style={{ backgroundColor: 'white' }}
                                         title="Change user status"
                                     >
-                                        <option value="pending">Pending</option>
-                                        <option value="converted">Converted</option>
-                                        <option value="enrolled">Enrolled</option>
+                                        <option value="pending" style={{ backgroundColor: 'white' }}>Pending</option>
+                                        <option value="converted" style={{ backgroundColor: 'white' }}>Converted</option>
+                                        <option value="enrolled" style={{ backgroundColor: 'white' }}>Enrolled</option>
                                     </select>
                                 </td>
                                 <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-sm text-slate-500 text-center">
@@ -455,10 +458,11 @@ const AdminUsers = () => {
                                         value={selectedUser.status}
                                         onChange={(e) => handleStatusChange(selectedUser._id, e.target.value)}
                                         className={`block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md ${getStatusColor(selectedUser.status)}`}
+                                        style={{ backgroundColor: 'white' }}
                                     >
-                                        <option value="pending">Pending</option>
-                                        <option value="enrolled">Enrolled</option>
-                                        <option value="converted">Converted</option>
+                                        <option value="pending" style={{ backgroundColor: 'white' }}>Pending</option>
+                                        <option value="enrolled" style={{ backgroundColor: 'white' }}>Enrolled</option>
+                                        <option value="converted" style={{ backgroundColor: 'white' }}>Converted</option>
                                     </select>
                                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
                                         <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">

@@ -125,8 +125,8 @@ const sidebarItems = [
   },
 
   {
-    id: "settings",
-    name: "Settings",
+    id: "customize",
+    name: "Ambassador page setting",
     icon: (
       <svg
         className="w-5 h-5"

@@ -1078,13 +1078,11 @@ const AdminDashboard = () => {
                             <div className="p-4">
                                 {/* Logo */}
                                 <div className="flex items-center justify-center mb-8">
-                                    <div className="p-2">
-                                        <img
-                                            src="/logo-new.png"
-                                            alt="LeadX Logo"
-                                            className="h-8 sm:h-10 object-contain"
-                                        />
-                                    </div>
+                                    <img
+                                        src="/logo-new.png"
+                                        alt="LeadX Logo"
+                                        className="h-8 sm:h-10 object-contain"
+                                    />
                                 </div>
 
                                 {/* Navigation */}

@@ -1,43 +1,106 @@
-import React from "react"
+import React, { useState, useEffect } from "react"
 import { useColorContext } from "../../context/ColorContext"
+import api from "../utils/Api"
+import { getUser } from "../utils/auth"
 
 const Dashboard = () => {
   const { ambassadorDashboardColor } = useColorContext()
+  const [dashboardData, setDashboardData] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true)
+      const user = getUser()
+      
+      console.log('🔍 Dashboard - User:', user)
+      console.log('🔍 Dashboard - User role:', user?.role)
+      
+      if (!user) {
+        console.log('❌ No user found, setting default data')
+        setDashboardData({
+          stats: {
+            totalUsers: 0,
+            totalChats: 0,
+            totalMessages: 0,
+            thisMonthChats: 0,
+            thisMonthMessages: 0,
+            lastActivity: null,
+          },
+          recentChats: [],
+        })
+        return
+      }
+
+      // Test the simple endpoint first (no auth required)
+      console.log('🔍 Testing simple endpoint first...')
+      try {
+        const simpleResponse = await api.get('/auth/test-simple')
+        console.log('🔍 Simple endpoint response:', simpleResponse.data)
+      } catch (simpleErr) {
+        console.error('❌ Simple endpoint failed:', simpleErr.response?.data)
+      }
+
+      // Test the test endpoint first
+      console.log('🔍 Testing test endpoint first...')
+      try {
+        const testResponse = await api.get('/auth/test-ambassador')
+        console.log('🔍 Test endpoint response:', testResponse.data)
+      } catch (testErr) {
+        console.error('❌ Test endpoint failed:', testErr.response?.data)
+      }
+
+      console.log('🔍 Making API call to /auth/ambassador-dashboard')
+      const response = await api.get('/auth/ambassador-dashboard')
+      console.log('🔍 API Response:', response.data)
+      setDashboardData(response.data.data)
+    } catch (err) {
+      console.error('❌ Error fetching ambassador dashboard:', err)
+      console.error('❌ Error response:', err.response?.data)
+      console.error('❌ Error status:', err.response?.status)
+      setError(`Failed to load dashboard data: ${err.response?.data?.message || err.message}`)
+      // Set default data on error
+      setDashboardData({
+        stats: {
+          totalUsers: 0,
+          totalChats: 0,
+          totalMessages: 0,
+          thisMonthChats: 0,
+          thisMonthMessages: 0,
+          lastActivity: null,
+        },
+        recentChats: [],
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchDashboardData()
+  }, [])
+
 
   return (
     <div className="space-y-6">
-      {/* Welcome Section */}
-      <div 
-        className="backdrop-blur-sm rounded-2xl p-6 border shadow-lg"
-        style={{ 
-          background: `linear-gradient(135deg, ${ambassadorDashboardColor}15, ${ambassadorDashboardColor}10)`,
-          borderColor: `${ambassadorDashboardColor}30`
-        }}
-      >
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-800 mb-2">
-              Welcome to Your Dashboard
-            </h1>
-            <p className="text-slate-600">
-              Manage your ambassador activities and track your progress
-            </p>
-          </div>
-          <div 
-            className="w-16 h-16 rounded-full flex items-center justify-center"
-            style={{ 
-              background: `linear-gradient(135deg, ${ambassadorDashboardColor}, ${ambassadorDashboardColor}dd)`
-            }}
-          >
-            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-          </div>
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-600 text-sm">
+            {error} - <button 
+              onClick={fetchDashboardData}
+              className="underline hover:no-underline"
+            >
+              Try again
+            </button>
+          </p>
         </div>
-      </div>
+      )}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Total Connected Users */}
         <div 
           className="bg-white rounded-xl p-4 border shadow-sm hover:shadow-md transition-shadow"
           style={{ 
@@ -46,8 +109,10 @@ const Dashboard = () => {
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-slate-600">Active Students</p>
-              <p className="text-2xl font-bold text-slate-800">12</p>
+              <p className="text-sm font-medium text-slate-600">Connected Users</p>
+              <p className="text-2xl font-bold text-slate-800">
+                {loading ? '...' : dashboardData?.stats?.totalUsers || 0}
+              </p>
             </div>
             <div 
               className="w-10 h-10 rounded-lg flex items-center justify-center"
@@ -60,6 +125,7 @@ const Dashboard = () => {
           </div>
         </div>
 
+        {/* Total Chats */}
         <div 
           className="bg-white rounded-xl p-4 border shadow-sm hover:shadow-md transition-shadow"
           style={{ 
@@ -68,20 +134,24 @@ const Dashboard = () => {
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-slate-600">This Month</p>
-              <p className="text-2xl font-bold text-slate-800">8</p>
+              <p className="text-sm font-medium text-slate-600">Total Chats</p>
+              <p className="text-2xl font-bold text-slate-800">
+                {loading ? '...' : dashboardData?.stats?.totalChats || 0}
+              </p>
             </div>
             <div 
               className="w-10 h-10 rounded-lg flex items-center justify-center"
               style={{ backgroundColor: `${ambassadorDashboardColor}20` }}
             >
               <svg className="w-5 h-5" style={{ color: ambassadorDashboardColor }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
               </svg>
             </div>
           </div>
         </div>
+
       </div>
+
 
     </div>
   )

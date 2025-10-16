@@ -99,9 +99,11 @@ const AmbassadorLoginTable = () => {
                     {new Date(log.loginTime).toLocaleTimeString()}
                   </div>
                 </td>
-                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-sm text-slate-900 text-center">
-                  <div className="truncate max-w-24">
-                    {log.ipAddress || "N/A"}
+                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-sm text-slate-900">
+                  <div className="flex justify-center items-center">
+                    <span className="truncate max-w-24">
+                      {log.ipAddress || "N/A"}
+                    </span>
                   </div>
                 </td>
                 <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-sm text-slate-900 text-center">
@@ -114,9 +116,11 @@ const AmbassadorLoginTable = () => {
                     </div>
                   </div>
                 </td>
-                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-sm text-slate-900 text-center">
-                  <div className="truncate max-w-32">
-                    {log.isp || "Unknown"}
+                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-sm text-slate-900">
+                  <div className="flex justify-center items-center">
+                    <span className="truncate max-w-32">
+                      {log.isp || "Unknown"}
+                    </span>
                   </div>
                 </td>
               </tr>

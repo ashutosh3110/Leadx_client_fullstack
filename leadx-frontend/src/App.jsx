@@ -18,6 +18,9 @@ import Chat from "./pages/ambassador/Chat"
 import Users from "./pages/ambassador/Users"
 import AmbassadorList from "./pages/user/AmbassadorList"
 import UserLayout from "./pages/user/Layout"
+import UserDashboard from "./pages/user/Dashboard"
+import UserChat from "./pages/user/UserChat"
+import UserProfile from "./pages/user/Profile"
 import AmbassadorLoginTable from "./pages/auth/LoginHistory"
 import EmbedView from "./pages/embed/EmbedView"
 // import CustomEmbedView from "./pages/embed/CustomEmbedView"
@@ -83,7 +86,15 @@ function App() {
         <Route path="/ambassadors" element={<AmbassadorList />} />
         <Route path="/embed/view/:configKey" element={<EmbedView />} />
         {/* <Route path="/embed/:configId" element={<CustomEmbedView />} /> */}
-        <Route path="/user" element={<UserLayout />} />
+        
+        {/* User Routes */}
+        <Route path="/user" element={<UserLayout />}>
+          <Route index element={<UserDashboard />} />
+          <Route path="dashboard" element={<UserDashboard />} />
+          <Route path="chats" element={<UserChat />} />
+          <Route path="profile" element={<UserProfile />} />
+          <Route path="ambassadors" element={<AmbassadorList />} />
+        </Route>
 
         <Route path="/unauthorized" element={<Unauthorized />} />
       </Routes>

@@ -29,6 +29,8 @@ import {
   getAllUsers,
   getAllUsersWithChatHistory,
   updateUserConversionStatus,
+  getUserDashboard,
+  getAmbassadorDashboard,
 } from "../controllers/user.js"
 
 const router = Router()
@@ -40,6 +42,38 @@ router.post("/register", registerUser)
 router.post("/login", loginUser)
 router.post("/logout", authenticate, logout)
 router.get("/me", authenticate, getMyProfile)
+router.get("/debug-token", authenticate, (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      user: req.user,
+      userId: req.user?.id,
+      userKeys: req.user ? Object.keys(req.user) : []
+    }
+  })
+})
+router.get("/dashboard", authenticate, getUserDashboard)
+router.get("/ambassador-dashboard", authenticate, getAmbassadorDashboard)
+
+// Test endpoint to check if the route is working
+router.get("/test-ambassador", authenticate, (req, res) => {
+  console.log("🔍 Test endpoint called")
+  console.log("🔍 Test endpoint - req.user:", req.user)
+  console.log("🔍 Test endpoint - req.user.id:", req.user?.id)
+  console.log("🔍 Test endpoint - req.user.role:", req.user?.role)
+  
+  if (!req.user?.id) {
+    return res.status(400).json({ success: false, message: 'Invalid user ID' })
+  }
+  
+  res.json({ success: true, message: "Test endpoint working", user: req.user })
+})
+
+// Simple test endpoint without authentication
+router.get("/test-simple", (req, res) => {
+  console.log("🔍 Simple test endpoint called")
+  res.json({ success: true, message: "Simple test endpoint working" })
+})
 /* ==========================
    👤 USER PROFILE ROUTES
 ========================== */
@@ -96,6 +130,23 @@ router.get(
 ========================== */
 router.get("/ambassadors/public", getPublicAmbassadors)
 router.post("/auto-register", autoRegisterUser)
+router.post("/debug-password", async (req, res) => {
+  const { email, password } = req.body
+  const user = await User.findOne({ email })
+  if (!user) {
+    return res.json({ found: false })
+  }
+  
+  const isMatch = await bcrypt.compare(password, user.password)
+  return res.json({
+    found: true,
+    hasPassword: !!user.password,
+    passwordMatch: isMatch,
+    passwordHash: user.password?.substring(0, 20) + "...",
+    role: user.role,
+    email: user.email
+  })
+})
 router.get("/ambassador-logins", getAmbassadorLogins) // ✅ moved above dynamic routes
 
 /* ==========================

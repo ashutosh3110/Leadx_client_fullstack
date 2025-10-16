@@ -864,6 +864,9 @@ export const updateUserConversionStatus = async (req, res, next) => {
       return next(errGen(403, "Only admin can mark users as enrolled"))
     }
 
+    const user = await User.findById(userId)
+    if (!user) return next(errGen(404, "User not found"))
+
     // Prevent ambassador from changing enrolled users
     if (
       req.user.role === "ambassador" &&
@@ -871,9 +874,6 @@ export const updateUserConversionStatus = async (req, res, next) => {
     ) {
       return next(errGen(403, "Cannot change status of enrolled users"))
     }
-
-    const user = await User.findById(userId)
-    if (!user) return next(errGen(404, "User not found"))
 
     if (user.role !== "user") {
       return next(errGen(400, "This is not a user account"))
@@ -1112,6 +1112,241 @@ export const getAllUsersWithChatHistory = async (req, res, next) => {
       )
   } catch (err) {
     console.error("❌ Error in getAllUsersWithChatHistory:", err)
+    next(err)
+  }
+}
+
+// 📊 Get User Dashboard Data
+export const getUserDashboard = async (req, res, next) => {
+  try {
+    console.log("🔍 getUserDashboard called")
+    console.log("🔍 req.user:", JSON.stringify(req.user, null, 2))
+    console.log("🔍 req.user.id:", req.user?.id)
+    console.log("🔍 typeof req.user.id:", typeof req.user?.id)
+    
+    const userId = req.user?.id
+    console.log("🔍 Fetching dashboard data for user:", userId)
+
+    if (!userId) {
+      console.log("❌ User ID is missing or undefined")
+      return res.status(400).json({
+        success: false,
+        message: "Invalid user ID - User ID is missing from token"
+      })
+    }
+
+    // Verify user exists
+    const userExists = await User.findById(userId)
+    if (!userExists) {
+      console.log("❌ User not found in database:", userId)
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      })
+    }
+
+    console.log("✅ User found:", userExists.name, userExists.email)
+
+    // Get user's chats - Chat model uses participants array
+    const userChats = await Chat.find({ participants: userId })
+      .populate({
+        path: "participants",
+        select: "name email profileImage role",
+      })
+      .populate("lastMessage")
+      .sort({ updatedAt: -1 })
+
+    console.log("🔍 User chats found:", userChats.length)
+
+    // Get total messages count
+    const chatIds = userChats.map((chat) => chat._id)
+    const totalMessages = await Message.countDocuments({ chat: { $in: chatIds } })
+
+    console.log("🔍 Total messages:", totalMessages)
+
+    // Get unique ambassadors from chats
+    const ambassadorSet = new Set()
+    userChats.forEach((chat) => {
+      chat.participants.forEach((participant) => {
+        if (participant.role === "ambassador" && participant._id.toString() !== userId) {
+          ambassadorSet.add(participant._id.toString())
+        }
+      })
+    })
+
+    console.log("🔍 Unique ambassadors:", ambassadorSet.size)
+
+    // Get last activity (most recent message)
+    let lastActivity = null
+    if (chatIds.length > 0) {
+      const lastMessage = await Message.findOne({ chat: { $in: chatIds } })
+        .sort({ createdAt: -1 })
+        .select("createdAt")
+      lastActivity = lastMessage?.createdAt || null
+    }
+
+    // Prepare recent chats with ambassador info
+    const recentChats = userChats.slice(0, 5).map((chat) => {
+      // Find the ambassador in participants (the one who is not the current user)
+      const ambassador = chat.participants.find(
+        (p) => p.role === "ambassador" && p._id.toString() !== userId
+      )
+
+      return {
+        _id: chat._id,
+        ambassador: ambassador ? {
+          _id: ambassador._id,
+          name: ambassador.name,
+          email: ambassador.email,
+          profileImage: ambassador.profileImage,
+        } : null,
+        lastMessage: chat.lastMessage?.content || "No messages yet",
+        unreadCount: 0, // TODO: Implement unread count logic
+        updatedAt: chat.updatedAt,
+      }
+    })
+
+    const dashboardData = {
+      stats: {
+        totalAmbassadors: ambassadorSet.size,
+        totalChats: userChats.length,
+        totalMessages: totalMessages,
+        lastActivity: lastActivity,
+      },
+      recentChats: recentChats,
+    }
+
+    console.log("✅ Dashboard data prepared:", dashboardData)
+
+    res.status(200).json(respo(true, "Dashboard data fetched", dashboardData))
+  } catch (err) {
+    console.error("❌ Error in getUserDashboard:", err)
+    next(err)
+  }
+}
+
+// 📊 Get Ambassador Dashboard Data
+export const getAmbassadorDashboard = async (req, res, next) => {
+  try {
+    console.log("🔍 getAmbassadorDashboard - User ID:", req.user.id)
+    console.log("🔍 getAmbassadorDashboard - User role:", req.user.role)
+    console.log("🔍 getAmbassadorDashboard - Full user object:", req.user)
+
+    // Check if user is ambassador
+    if (req.user.role !== "ambassador") {
+      console.log("❌ User is not ambassador, role:", req.user.role)
+      return next(errGen(403, "Only ambassadors can access this dashboard"))
+    }
+
+    const ambassadorId = req.user.id
+
+    // Simple test response first
+    console.log("✅ Ambassador dashboard function called successfully")
+    
+    // Get ambassador's chats - Chat model uses participants array
+    console.log("🔍 Searching for chats with ambassadorId:", ambassadorId)
+    
+    // First, let's check all chats to see what's in the database
+    const allChats = await Chat.find({}).populate("participants", "name email role")
+    console.log("🔍 All chats in database:", allChats.length)
+    allChats.forEach((chat, index) => {
+      console.log(`🔍 Chat ${index + 1}:`, {
+        id: chat._id,
+        participants: chat.participants.map(p => ({ id: p._id, name: p.name, role: p.role }))
+      })
+    })
+    
+    const ambassadorChats = await Chat.find({ participants: ambassadorId })
+      .populate({
+        path: "participants",
+        select: "name email profileImage role",
+      })
+      .populate("lastMessage")
+      .sort({ updatedAt: -1 })
+
+    console.log("🔍 Ambassador chats found:", ambassadorChats.length)
+    console.log("🔍 Ambassador chats data:", ambassadorChats)
+
+    // Get total messages count for this ambassador
+    const chatIds = ambassadorChats.map((chat) => chat._id)
+    const totalMessages = await Message.countDocuments({ chat: { $in: chatIds } })
+
+    console.log("🔍 Total messages:", totalMessages)
+
+    // Get unique users from chats (users who have chatted with this ambassador)
+    const userSet = new Set()
+    ambassadorChats.forEach((chat) => {
+      chat.participants.forEach((participant) => {
+        if (participant.role === "user" && participant._id.toString() !== ambassadorId) {
+          userSet.add(participant._id.toString())
+        }
+      })
+    })
+
+    console.log("🔍 Unique users:", userSet.size)
+
+    // Get this month's stats
+    const startOfMonth = new Date()
+    startOfMonth.setDate(1)
+    startOfMonth.setHours(0, 0, 0, 0)
+
+    const thisMonthChats = await Chat.find({
+      participants: ambassadorId,
+      createdAt: { $gte: startOfMonth }
+    })
+
+    const thisMonthMessages = await Message.countDocuments({
+      chat: { $in: chatIds },
+      createdAt: { $gte: startOfMonth }
+    })
+
+    // Get last activity (most recent message)
+    let lastActivity = null
+    if (chatIds.length > 0) {
+      const lastMessage = await Message.findOne({ chat: { $in: chatIds } })
+        .sort({ createdAt: -1 })
+        .select("createdAt")
+      lastActivity = lastMessage?.createdAt || null
+    }
+
+    // Prepare recent chats with user info
+    const recentChats = ambassadorChats.slice(0, 5).map((chat) => {
+      // Find the user in participants (the one who is not the current ambassador)
+      const user = chat.participants.find(
+        (p) => p.role === "user" && p._id.toString() !== ambassadorId
+      )
+
+      return {
+        _id: chat._id,
+        user: user ? {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          profileImage: user.profileImage,
+        } : null,
+        lastMessage: chat.lastMessage?.content || "No messages yet",
+        unreadCount: 0, // TODO: Implement unread count logic
+        updatedAt: chat.updatedAt,
+      }
+    })
+
+    const dashboardData = {
+      stats: {
+        totalUsers: userSet.size,
+        totalChats: ambassadorChats.length,
+        totalMessages: totalMessages,
+        thisMonthChats: thisMonthChats.length,
+        thisMonthMessages: thisMonthMessages,
+        lastActivity: lastActivity,
+      },
+      recentChats: recentChats,
+    }
+
+    console.log("✅ Ambassador dashboard data prepared:", dashboardData)
+
+    res.status(200).json(respo(true, "Ambassador dashboard data fetched", dashboardData))
+  } catch (err) {
+    console.error("❌ Error in getAmbassadorDashboard:", err)
     next(err)
   }
 }

@@ -11,6 +11,7 @@ const ProtectedRoute = ({ allowedRoles }) => {
     user, 
     role, 
     allowedRoles,
+    userRole: user?.role,
     localStorage: {
       authToken: localStorage.getItem('authToken'),
       authUser: localStorage.getItem('authUser'),

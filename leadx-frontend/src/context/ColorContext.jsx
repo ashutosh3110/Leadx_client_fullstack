@@ -11,27 +11,17 @@ export const useColorContext = () => {
 }
 
 export const ColorProvider = ({ children }) => {
-  const [adminDashboardColor, setAdminDashboardColor] = useState("#4682B4") // Steel Blue (same as sidebar)
+  const [adminDashboardColor, setAdminDashboardColor] = useState("#1098e8") // Same as sidebar
   const [ambassadorDashboardColor, setAmbassadorDashboardColor] =
-    useState("#4682B4") // Same as admin - Steel Blue
+    useState("#1098e8") // Same as sidebar
 
   // Load colors from localStorage on mount
   useEffect(() => {
-    const savedAdminColor = localStorage.getItem("adminDashboardColor")
-    const savedAmbassadorColor = localStorage.getItem(
-      "ambassadorDashboardColor"
-    )
-
-    if (savedAdminColor) {
-      setAdminDashboardColor(savedAdminColor)
-    }
-    if (savedAmbassadorColor) {
-      setAmbassadorDashboardColor(savedAmbassadorColor)
-    } else {
-      // Set default Steel Blue color (same as admin) if no saved color
-      setAmbassadorDashboardColor("#4682B4")
-      localStorage.setItem("ambassadorDashboardColor", "#4682B4")
-    }
+    // Force update to new color
+    setAdminDashboardColor("#1098e8")
+    setAmbassadorDashboardColor("#1098e8")
+    localStorage.setItem("adminDashboardColor", "#1098e8")
+    localStorage.setItem("ambassadorDashboardColor", "#1098e8")
   }, [])
 
   // Save colors to localStorage when they change

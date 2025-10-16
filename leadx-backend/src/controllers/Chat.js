@@ -43,7 +43,13 @@ export const startChat = async (req, res, next) => {
     if (!user) {
       console.log("🔍 Creating new user...")
       const plainPassword = generatePassword()
+      console.log("🔍 Generated plain password:", plainPassword)
       const hashedPassword = await bcrypt.hash(plainPassword, 10)
+      console.log("🔍 Hashed password:", hashedPassword.substring(0, 20) + "...")
+      
+      // Test the hash immediately
+      const testComparison = await bcrypt.compare(plainPassword, hashedPassword)
+      console.log("🔍 Password hash test result:", testComparison)
 
       user = await User.create({
         name,
@@ -58,6 +64,8 @@ export const startChat = async (req, res, next) => {
       })
 
       console.log("✅ New user created:", user._id, user.name)
+      console.log("🔍 User password field after creation:", user.password ? "Present" : "Missing")
+      console.log("🔍 User password hash:", user.password ? user.password.substring(0, 20) + "..." : "No password")
 
       // send password via email (optional - don't fail if email service is not configured)
       if (email) {
@@ -373,6 +381,9 @@ export const adminGetChatsByAmbassador = async (req, res, next) => {
   try {
     if (req.user.role !== "admin") return next(errGen(403, "Forbidden"))
     const { ambassadorId } = req.params
+    
+    console.log('🔍 Admin fetching chats for ambassador:', ambassadorId)
+    
     const chats = await Chat.find({ participants: ambassadorId })
       .populate("participants", "name email role profileImage")
       .populate({
@@ -381,8 +392,13 @@ export const adminGetChatsByAmbassador = async (req, res, next) => {
         populate: { path: "sender", select: "name email profileImage" },
       })
       .sort({ updatedAt: -1 })
+    
+    console.log('🔍 Found chats:', chats.length)
+    console.log('🔍 Chats data:', chats)
+    
     res.status(200).json(respo(true, "Chats fetched", chats))
   } catch (err) {
+    console.error('❌ Error fetching chats by ambassador:', err)
     next(err)
   }
 }

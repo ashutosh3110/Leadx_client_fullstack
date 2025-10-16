@@ -625,9 +625,7 @@ const ChatModal = ({ isOpen, onClose, ambassador }) => {
                             }
                             className="flex items-center space-x-2 p-2 border rounded-lg text-left hover:opacity-80 transition-colors"
                             style={{
-                              borderColor:
-                                customization.borderColor || "#ef4444",
-                              color: customization.textColor || "#374151",
+                              borderColor: "#e5e7eb",
                             }}
                           >
                             <svg
@@ -635,7 +633,7 @@ const ChatModal = ({ isOpen, onClose, ambassador }) => {
                               fill="currentColor"
                               viewBox="0 0 20 20"
                               style={{
-                                color: customization.borderColor || "#ef4444",
+                                color: "#6b7280",
                               }}
                             >
                               <path
@@ -645,10 +643,7 @@ const ChatModal = ({ isOpen, onClose, ambassador }) => {
                               />
                             </svg>
                             <span
-                              className="text-xs"
-                              style={{
-                                color: customization.textColor || "#374151",
-                              }}
+                              className="text-xs text-gray-700"
                             >
                               {question}
                             </span>
@@ -668,8 +663,7 @@ const ChatModal = ({ isOpen, onClose, ambassador }) => {
                       onClick={() => handleInputChange("message", question)}
                       className="flex items-center space-x-2 p-2 border rounded-lg text-left hover:opacity-80 transition-colors"
                       style={{
-                        borderColor: customization.borderColor || "#ef4444",
-                        color: customization.textColor || "#374151",
+                        borderColor: "#e5e7eb",
                       }}
                     >
                       <svg
@@ -677,7 +671,7 @@ const ChatModal = ({ isOpen, onClose, ambassador }) => {
                         fill="currentColor"
                         viewBox="0 0 20 20"
                         style={{
-                          color: customization.borderColor || "#ef4444",
+                          color: "#6b7280",
                         }}
                       >
                         <path
@@ -687,8 +681,7 @@ const ChatModal = ({ isOpen, onClose, ambassador }) => {
                         />
                       </svg>
                       <span
-                        className="text-xs"
-                        style={{ color: customization.textColor || "#374151" }}
+                        className="text-xs text-gray-700"
                       >
                         {question}
                       </span>
@@ -1212,12 +1205,7 @@ const ChatModal = ({ isOpen, onClose, ambassador }) => {
 
         {currentStep === 4 && (
           <div className="flex justify-end p-4 border-t">
-            <button
-              onClick={handleClose}
-              className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm"
-            >
-              Close
-            </button>
+            {/* Close button removed - use top X button to close modal */}
           </div>
         )}
       </div>

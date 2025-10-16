@@ -31,7 +31,6 @@ const Login = () => {
       try {
         setLoading(true)
         const res = await axios.post(`${API_URL}/api/auth/login`, values)
-        console.log("🔍 Login response:", res.data)
         const token = res.data.data.token
         const user = res.data.data.user
         const role = user.role
@@ -42,6 +41,8 @@ const Login = () => {
           navigate("/admin")
         } else if (role === "ambassador") {
           navigate("/ambassador")
+        } else if (role === "user") {
+          navigate("/user/dashboard")
         } else {
           navigate("/unauthorized")
         }

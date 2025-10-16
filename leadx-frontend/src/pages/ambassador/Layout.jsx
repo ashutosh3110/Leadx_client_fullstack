@@ -1,5 +1,5 @@
 import Sidebar from "../../components/Sidebar"
-import Navbar from "../../components/Navbar"
+import Navbar from "./Navbar"
 import { Outlet } from "react-router-dom"
 import { useColorContext } from "../../context/ColorContext"
 
@@ -8,13 +8,16 @@ const Layout = () => {
   
   return (
     <div 
-      className="h-screen flex overflow-hidden"
+      className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100"
       style={{ 
         background: `linear-gradient(135deg, ${ambassadorDashboardColor}15, ${ambassadorDashboardColor}10)`
       }}
     >
       <Sidebar />
-      <div className="flex flex-col flex-1 min-w-0">
+        <div 
+          className="flex flex-col min-h-screen relative z-20"
+          style={{ marginLeft: '256px' }}
+        >
         <Navbar />
         <main 
           className="flex-1 overflow-y-auto p-6"
