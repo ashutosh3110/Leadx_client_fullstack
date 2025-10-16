@@ -1,53 +1,63 @@
 import React, { useState, useEffect } from "react"
 import { useColorContext } from "../../context/ColorContext"
-import { getUser } from "../utils/auth"
 import api from "../utils/Api"
-import { useNavigate } from "react-router-dom"
+import { getUser } from "../utils/auth"
 
 const Dashboard = () => {
   const { userDashboardColor } = useColorContext()
-  const navigate = useNavigate()
-  const [user, setUser] = useState(null)
   const [dashboardData, setDashboardData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  useEffect(() => {
-    const currentUser = getUser()
-    setUser(currentUser)
-    fetchDashboardData()
-  }, [])
-
   const fetchDashboardData = async () => {
     try {
       setLoading(true)
-      console.log('🔍 Fetching user dashboard data...')
+      const user = getUser()
       
-      const response = await api.get('/auth/dashboard')
-      
-      if (response.data.success) {
-        setDashboardData(response.data.data)
-        console.log('✅ Dashboard data loaded:', response.data.data)
-      } else {
-        console.error('❌ API response not successful:', response.data)
-        setError('Failed to load dashboard data')
+      if (!user) {
+        setDashboardData({
+          stats: {
+            totalAmbassadors: 0,
+            totalChats: 0,
+            totalMessages: 0,
+            thisMonthChats: 0,
+            thisMonthMessages: 0,
+            lastActivity: null,
+          },
+          recentChats: [],
+        })
+        return
       }
+
+      const response = await api.get('/auth/dashboard')
+      setDashboardData(response.data.data)
     } catch (err) {
-      console.error('❌ Error fetching dashboard data:', err)
-      console.error('❌ Error details:', err.response?.data || err.message)
-      setError('Failed to load dashboard data')
+      setError(`Failed to load dashboard data: ${err.response?.data?.message || err.message}`)
+      // Set default data on error
+      setDashboardData({
+        stats: {
+          totalAmbassadors: 0,
+          totalChats: 0,
+          totalMessages: 0,
+          thisMonthChats: 0,
+          thisMonthMessages: 0,
+          lastActivity: null,
+        },
+        recentChats: [],
+      })
     } finally {
       setLoading(false)
     }
   }
 
-  const handleChatClick = (chatId, ambassadorId) => {
-    console.log('🔍 Opening chat with ambassador:', ambassadorId)
-    navigate(`/user/chats`)
-  }
+  useEffect(() => {
+    fetchDashboardData()
+  }, [])
+
 
   const getImageUrl = (path) => {
-    if (!path) return "/default-avatar.png"
+    if (!path) return null
+    if (path.startsWith("http")) return path
     const normalized = String(path).replace(/^\.\/+/, "").replace(/^\/+/, "")
     return `http://localhost:5000/${normalized}`
   }
@@ -84,55 +94,25 @@ const Dashboard = () => {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <p className="text-red-500 text-lg">{error}</p>
-          <button
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <p className="text-red-600 text-sm">
+          {error} - <button 
             onClick={fetchDashboardData}
-            className="mt-4 px-4 py-2 rounded-lg text-white"
-            style={{ backgroundColor: userDashboardColor }}
+            className="ml-2 px-3 py-1 rounded text-white text-sm font-medium hover:opacity-90 transition-opacity"
+            style={{ backgroundColor: '#1098e8' }}
           >
-            Retry
+            Try again
           </button>
-        </div>
+        </p>
       </div>
     )
   }
 
   return (
     <div className="space-y-6">
-      {/* Welcome Section */}
-      <div 
-        className="backdrop-blur-sm rounded-2xl p-6 border shadow-lg"
-        style={{ 
-          background: `linear-gradient(135deg, ${userDashboardColor}15, ${userDashboardColor}10)`,
-          borderColor: `${userDashboardColor}30`
-        }}
-      >
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-800 mb-2">
-              Welcome back, {user?.name || 'User'}!
-            </h1>
-            <p className="text-slate-600">
-              Connect with ambassadors and get guidance for your academic journey
-            </p>
-          </div>
-          <div 
-            className="w-16 h-16 rounded-full flex items-center justify-center"
-            style={{ 
-              background: `linear-gradient(135deg, ${userDashboardColor}, ${userDashboardColor}dd)`
-            }}
-          >
-            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-            </svg>
-          </div>
-        </div>
-      </div>
-
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Connected Ambassadors */}
         <div 
           className="bg-white rounded-xl p-4 border shadow-sm hover:shadow-md transition-shadow"
           style={{ 
@@ -143,7 +123,7 @@ const Dashboard = () => {
             <div>
               <p className="text-sm font-medium text-slate-600">Connected Ambassadors</p>
               <p className="text-2xl font-bold text-slate-800">
-                {dashboardData?.stats?.totalAmbassadors || 0}
+                {loading ? '...' : dashboardData?.stats?.totalAmbassadors || 0}
               </p>
             </div>
             <div 
@@ -157,6 +137,7 @@ const Dashboard = () => {
           </div>
         </div>
 
+        {/* Total Chats */}
         <div 
           className="bg-white rounded-xl p-4 border shadow-sm hover:shadow-md transition-shadow"
           style={{ 
@@ -167,7 +148,7 @@ const Dashboard = () => {
             <div>
               <p className="text-sm font-medium text-slate-600">Total Chats</p>
               <p className="text-2xl font-bold text-slate-800">
-                {dashboardData?.stats?.totalChats || 0}
+                {loading ? '...' : dashboardData?.stats?.totalChats || 0}
               </p>
             </div>
             <div 
@@ -180,62 +161,7 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
-
-        <div 
-          className="bg-white rounded-xl p-4 border shadow-sm hover:shadow-md transition-shadow"
-          style={{ 
-            borderColor: `${userDashboardColor}20`
-          }}
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-slate-600">Total Messages</p>
-              <p className="text-2xl font-bold text-slate-800">
-                {dashboardData?.stats?.totalMessages || 0}
-              </p>
-            </div>
-            <div 
-              className="w-10 h-10 rounded-lg flex items-center justify-center"
-              style={{ backgroundColor: `${userDashboardColor}20` }}
-            >
-              <svg className="w-5 h-5" style={{ color: userDashboardColor }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        <div 
-          className="bg-white rounded-xl p-4 border shadow-sm hover:shadow-md transition-shadow"
-          style={{ 
-            borderColor: `${userDashboardColor}20`
-          }}
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-slate-600">Last Activity</p>
-              <p className="text-lg font-bold text-slate-800">
-                {dashboardData?.stats?.lastActivity 
-                  ? new Date(dashboardData.stats.lastActivity).toLocaleDateString()
-                  : 'No activity'
-                }
-              </p>
-            </div>
-            <div 
-              className="w-10 h-10 rounded-lg flex items-center justify-center"
-              style={{ backgroundColor: `${userDashboardColor}20` }}
-            >
-              <svg className="w-5 h-5" style={{ color: userDashboardColor }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-              </svg>
-            </div>
-          </div>
-        </div>
       </div>
-
-
-
     </div>
   )
 }

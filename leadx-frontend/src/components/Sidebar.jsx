@@ -19,7 +19,6 @@ const Sidebar = () => {
   const sidebarRef = useRef(null)
   const { ambassadorDashboardColor } = useColorContext()
 
-  // ✅ Correct way to read role
   const authUser = JSON.parse(localStorage.getItem("authUser"))
   const role = authUser?.user?.role || ""
 
@@ -67,8 +66,15 @@ const Sidebar = () => {
 
   return (
     <>
+      {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white shadow-lg flex justify-between items-center p-4">
-        <h2 className="text-2xl font-bold text-red-700">Dashboard</h2>
+        <div className="p-2">
+          <img
+            src="/logo-new.png"
+            alt="LeadX Logo"
+            className="h-8 sm:h-10 object-contain"
+          />
+        </div>
         <button
           onClick={() => setOpen(true)}
           className="text-2xl text-gray-700 hover:text-red-700 transition-colors"
@@ -78,60 +84,51 @@ const Sidebar = () => {
         </button>
       </div>
 
+      {/* Mobile overlay */}
       {open && (
         <div
-          className="fixed inset-0 border-e-indigo-50 bg-opacity-60 z-40 lg:hidden transition-opacity duration-300"
+          className="fixed inset-0 bg-black bg-opacity-30 z-40 lg:hidden"
           onClick={() => setOpen(false)}
         />
       )}
 
+      {/* Sidebar */}
       <div
         ref={sidebarRef}
-        className={`fixed lg:static top-0 left-0 h-screen w-64 text-white shadow-2xl transform ${
+        className={`fixed top-0 left-0 bottom-0 w-64 text-white shadow-2xl transform ${
           open ? "translate-x-0" : "-translate-x-full"
-        } lg:translate-x-0 transition-transform duration-300 ease-in-out z-50 flex flex-col`}
-        style={{ 
-          backgroundColor: '#1098e8'
+        } lg:translate-x-0 transition-transform duration-300 ease-in-out z-50 flex flex-col overflow-hidden`}
+        style={{
+          backgroundColor: '#1098e8',
+          boxShadow: '0 0 20px rgba(0, 0, 0, 0.1)'
         }}
       >
-        <div 
-          className="flex justify-between items-center p-4 border-b flex-shrink-0"
-          style={{ borderColor: 'rgba(16, 152, 232, 0.2)' }}
-        >
-          <div className="flex items-center space-x-3">
-            {/* Logo */}
+        {/* Logo */}
+        <div className="p-4 lg:p-6 flex-shrink-0">
+          <div className="flex items-center justify-center">
             <img
               src="/logo-new.png"
               alt="LeadX Logo"
-              className="h-6 w-6 object-contain"
+              className="h-8 sm:h-10 object-contain"
             />
-            <h2 className="text-xl font-extrabold tracking-tight">
-              Dashboard
-            </h2>
           </div>
-          <button
-            onClick={() => setOpen(false)}
-            className="text-2xl lg:hidden hover:opacity-70 transition-colors"
-            aria-label="Close sidebar"
-          >
-            <FaTimes />
-          </button>
         </div>
 
-        <nav className="flex flex-col gap-2 p-4 flex-1 overflow-y-auto">
+        {/* Navigation */}
+        <nav className="flex-1 overflow-y-auto px-4 lg:px-6 pb-6 space-y-2">
           {menus.map((menu, i) => (
             <Link
               key={i}
               to={menu.path}
               onClick={() => setOpen(false)}
-              className={`flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-300 text-left group ${
                 location.pathname === menu.path
-                  ? "bg-white/30 text-white font-semibold shadow-xl scale-105 border border-white/30"
-                  : "text-white/90 hover:text-white hover:bg-white/10 hover:shadow-lg hover:scale-105"
+                  ? "bg-white/30 text-white shadow-xl scale-105 border border-white/30"
+                  : "text-white/90 hover:text-white hover:bg-white/10 hover:shadow-lg hover:scale-105 active:scale-95"
               }`}
             >
               <span className="text-lg">{menu.icon}</span>
-              <span className="tracking-wide">{menu.name}</span>
+              <span className="font-medium tracking-wide">{menu.name}</span>
             </Link>
           ))}
         </nav>

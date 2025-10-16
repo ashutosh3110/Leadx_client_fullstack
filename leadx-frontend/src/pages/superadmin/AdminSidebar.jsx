@@ -13,9 +13,9 @@ const AdminSidebar = ({
     const navigate = useNavigate();
     
     return (
-        <div 
-            className="w-64 h-screen shadow-2xl flex flex-col fixed left-0 top-0 z-40 hidden lg:flex backdrop-blur-sm"
-            style={{ 
+        <div
+            className="w-64 h-screen shadow-2xl flex flex-col fixed left-0 top-0 z-40 hidden lg:flex backdrop-blur-sm bg-blue-600"
+            style={{
                 backgroundColor: '#1098e8',
                 borderRight: `1px solid rgba(16, 152, 232, 0.2)`,
                 boxShadow: '0 0 20px rgba(0, 0, 0, 0.1)'

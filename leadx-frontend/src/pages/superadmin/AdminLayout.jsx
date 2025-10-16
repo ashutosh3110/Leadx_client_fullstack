@@ -8,6 +8,7 @@ import ProfileDropdown from './ProfileDropdown';
 import SimpleSettingsForm from './SimpleSettingsForm';
 import StatCard from './StatCard';
 import AdminSidebar from './AdminSidebar';
+import MobileSidebar from '../../components/MobileSidebar';
 import PendingApplicationsTable from './PendingApplicationsTable';
 import ApprovedAmbassadorsTable from './ApprovedAmbassadorsTable';
 import AmbassadorDetailModal from './AmbassadorDetailModal';
@@ -70,7 +71,6 @@ const AdminLayout = () => {
     const [isEditAmbassadorModalOpen, setIsEditAmbassadorModalOpen] = useState(false);
     const [selectedReward, setSelectedReward] = useState(null);
 
-    const [isSettingsDropdownOpen, setIsSettingsDropdownOpen] = useState(false);
     const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('overview');
@@ -107,9 +107,6 @@ const AdminLayout = () => {
     // Close dropdown when clicking outside
     useEffect(() => {
         const handleClickOutside = (event) => {
-            if (isSettingsDropdownOpen && !event.target.closest('.sidebar-settings')) {
-                setIsSettingsDropdownOpen(false);
-            }
             if (isProfileDropdownOpen && !event.target.closest('.profile-dropdown')) {
                 setIsProfileDropdownOpen(false);
             }
@@ -119,7 +116,7 @@ const AdminLayout = () => {
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [isSettingsDropdownOpen, isProfileDropdownOpen]);
+    }, [isProfileDropdownOpen]);
 
     // Approve/Reject functionality
     const handleApproveApplication = async (userId) => {
@@ -350,16 +347,6 @@ const AdminLayout = () => {
         }
     };
 
-    // Settings dropdown handlers
-    const handleSettingsClick = () => {
-        setIsSettingsDropdownOpen(!isSettingsDropdownOpen);
-    };
-
-    const handleCustomizeClick = () => {
-        navigate('/admin/customize');
-        setIsSettingsDropdownOpen(false);
-    };
-
     // Profile dropdown handlers
     const handleProfileClick = () => {
         setIsProfileDropdownOpen(!isProfileDropdownOpen);
@@ -372,10 +359,28 @@ const AdminLayout = () => {
     // Mobile menu handlers
     const handleMobileMenuToggle = () => {
         setIsMobileMenuOpen(!isMobileMenuOpen);
+        // Toggle body blur effect
+        if (!isMobileMenuOpen) {
+            document.body.style.overflow = 'hidden';
+            document.body.style.backdropFilter = 'blur(4px)';
+            document.body.style.webkitBackdropFilter = 'blur(4px)';
+            // Ensure background is visible
+            document.body.style.backgroundColor = '#f8fafc';
+        } else {
+            document.body.style.overflow = 'auto';
+            document.body.style.backdropFilter = 'none';
+            document.body.style.webkitBackdropFilter = 'none';
+            document.body.style.backgroundColor = '';
+        }
     };
 
     const handleCloseMobileMenu = () => {
         setIsMobileMenuOpen(false);
+        // Remove body blur effect
+        document.body.style.overflow = 'auto';
+        document.body.style.backdropFilter = 'none';
+        document.body.style.webkitBackdropFilter = 'none';
+        document.body.style.backgroundColor = '';
     };
 
     // Edit and Delete functionality for approved ambassadors
@@ -545,166 +550,59 @@ const AdminLayout = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex flex-col lg:flex-row">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex flex-col lg:flex-row relative overflow-hidden" style={{ backgroundColor: '#f8fafc' }}>
             {/* Fixed Desktop Sidebar */}
             <AdminSidebar
                 activeTab={activeTab}
                 setActiveTab={setActiveTab}
                 adminDashboardColor={adminDashboardColor}
                 adminTextColor={adminTextColor}
-                isSettingsDropdownOpen={isSettingsDropdownOpen}
-                handleSettingsClick={handleSettingsClick}
-                handleCustomizeClick={handleCustomizeClick}
                 sidebarItems={sidebarItems}
             />
 
-            {/* Mobile Sidebar */}
+            {/* Mobile Background Overlay */}
             {isMobileMenuOpen && (
-                <>
-                    <div 
-                        className="fixed inset-0 bg-black bg-opacity-10 z-30 lg:hidden"
-                        onClick={handleCloseMobileMenu}
-                        style={{ left: '256px' }}
-                    />
-                    <div className="fixed inset-y-0 left-0 z-50 w-64 lg:hidden">
-                        <div 
-                            className="w-64 h-screen shadow-lg flex flex-col"
-                            style={{ 
-                                backgroundColor: '#4682B4',
-                                borderRight: `1px solid #4682B480`
-                            }}
-                        >
-                            <div className="flex justify-end p-4">
-                                <button
-                                    onClick={handleCloseMobileMenu}
-                                    className="p-2 rounded-lg hover:bg-white/10 transition-colors duration-200"
-                                >
-                                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </button>
-                            </div>
-                            <div className="flex-1 flex flex-col overflow-y-auto">
-                                <div className="p-4">
-                                    <div className="flex items-center justify-center mb-8">
-                                        <div className="bg-gradient-to-br from-purple-900 via-blue-900 to-purple-800 p-4 rounded-xl shadow-lg">
-                                            <div className="flex items-center space-x-3">
-                                                <div className="relative">
-                                                    <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center relative">
-                                                        <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
-                                                            <div className="w-4 h-2 bg-blue-600 rounded-sm relative">
-                                                                <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-2 h-1 bg-orange-400 rounded-sm"></div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div className="text-white">
-                                                    <div className="text-sm font-bold leading-tight">
-                                                        <div className="text-blue-400">LEAD</div>
-                                                        <div className="text-orange-400">EXAMINE</div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <nav className="space-y-2">
-                                        {sidebarItems && sidebarItems.length > 0 ? sidebarItems.map((item) => (
-                                            <div key={item.id} className={`relative ${item.id === 'settings' ? 'sidebar-settings' : ''}`}>
-                                                <button
-                                                    onClick={() => {
-                                                        if (item.id === 'settings') {
-                                                            handleSettingsClick();
-                                                        } else {
-                                                            navigate(`/admin/${item.id}`);
-                                                            handleCloseMobileMenu();
-                                                        }
-                                                    }}
-                                                    className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 text-left text-white/80 hover:text-white"
-                                                >
-                                                    {item.icon}
-                                                    <span className="font-medium">{item.name}</span>
-                                                </button>
-
-                                                {item.id === 'settings' && isSettingsDropdownOpen && (
-                                                    <div className="sidebar-settings absolute top-full left-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-50">
-                                                        <button
-                                                            onClick={() => {
-                                                                handleCustomizeClick();
-                                                                handleCloseMobileMenu();
-                                                            }}
-                                                            className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 flex items-center space-x-2"
-                                                        >
-                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5a2 2 0 00-2-2h-4a2 2 0 00-2 2v12a4 4 0 004 4h4a2 2 0 002-2V5z" />
-                                                            </svg>
-                                                            <span>Ambassador Card customize</span>
-                                                        </button>
-                                                        <button
-                                                            onClick={() => {
-                                                                navigate('/admin/settings');
-                                                                setIsSettingsDropdownOpen(false);
-                                                                handleCloseMobileMenu();
-                                                            }}
-                                                            className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 flex items-center space-x-2"
-                                                        >
-                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                            </svg>
-                                                            <span>Dashboard Customize</span>
-                                                        </button>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )) : (
-                                            <div className="text-white text-center py-4">
-                                                <p>Loading navigation...</p>
-                                            </div>
-                                        )}
-                                    </nav>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </>
+                <div className="fixed inset-0 z-30 lg:hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100" style={{ backgroundColor: '#f8fafc' }}>
+                    <div className="absolute inset-0 bg-white bg-opacity-20"></div>
+                </div>
             )}
+
+            {/* Mobile Sidebar */}
+            <MobileSidebar
+                isOpen={isMobileMenuOpen}
+                onClose={handleCloseMobileMenu}
+                activeTab={activeTab}
+                sidebarItems={sidebarItems}
+            />
 
             {/* Main Content Area */}
             <div
-                className="flex-1 flex flex-col lg:ml-64 min-h-screen relative z-20 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100"
+                className="flex-1 flex flex-col lg:ml-72 min-h-screen relative z-10 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100"
                 style={{
-                    background: `linear-gradient(135deg, ${adminDashboardColor}15, ${adminDashboardColor}10)`
+                    background: `linear-gradient(135deg, ${adminDashboardColor}15, ${adminDashboardColor}10)`,
+                    minHeight: '100vh',
+                    backgroundColor: '#f8fafc'
                 }}
             >
                 {/* Header */}
                 <div
-                    className="backdrop-blur-sm border-b sticky top-0 z-30"
-                    style={{
-                        background: `linear-gradient(135deg, ${adminDashboardColor}25, ${adminDashboardColor}15)`,
-                        borderColor: `${adminDashboardColor}40`
-                    }}
+                    className="bg-white border-b sticky top-0 z-20 shadow-sm"
                 >
-                    <div className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4">
+                    <div className="px-4 sm:px-6 py-3">
                         <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2 sm:gap-4">
+                            <div className="flex items-center gap-3">
                                 <button
                                     onClick={handleMobileMenuToggle}
                                     className="lg:hidden p-2 rounded-lg hover:bg-slate-100 transition-colors duration-200"
                                 >
-                                    <svg className="w-5 h-5 sm:w-6 sm:h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                                     </svg>
                                 </button>
 
-                                <div className="min-w-0 flex-1">
-                                    <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-slate-800 capitalize truncate">
-                                        {getPageTitle()}
-                                    </h1>
-                                    <p className="text-xs sm:text-sm text-slate-500 mt-1 hidden sm:block">
-                                        {getPageDescription()}
-                                    </p>
-                                </div>
+                                <h1 className="text-base sm:text-lg font-semibold text-gray-700">
+                                    {getPageTitle()}
+                                </h1>
                             </div>
 
                             <div className="relative profile-dropdown">
@@ -736,7 +634,7 @@ const AdminLayout = () => {
                 </div>
 
                 {/* Content Area */}
-                <div className="flex-1 p-2 sm:p-4 lg:p-6 overflow-y-auto">
+                <div className="flex-1 p-2 sm:p-4 lg:p-6 overflow-y-auto bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100" style={{ backgroundColor: '#f8fafc' }}>
                     <Outlet context={{
                         stats,
                         ambassadors,

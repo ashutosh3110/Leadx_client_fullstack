@@ -117,11 +117,15 @@ const PendingApplicationsTable = ({
                                         </div>
                                     </div>
                                 </td>
-                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-sm text-slate-900 text-center">
-                                    <div className="truncate max-w-32">{application.course || 'Not specified'}</div>
+                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-sm text-slate-900">
+                                    <div className="flex justify-center items-center">
+                                        <span className="truncate max-w-32">{application.course || 'Not specified'}</span>
+                                    </div>
                                 </td>
-                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-sm text-slate-900 text-center">
-                                    <div className="truncate max-w-24">{application.country || 'Not specified'}</div>
+                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-sm text-slate-900">
+                                    <div className="flex justify-center items-center">
+                                        <span className="truncate max-w-24">{application.country || 'Not specified'}</span>
+                                    </div>
                                 </td>
                                 <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-sm text-slate-500 text-center">
                                     {new Date(application.createdAt).toLocaleDateString()}

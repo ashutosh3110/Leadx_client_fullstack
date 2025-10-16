@@ -19,7 +19,7 @@ const rewardSchema = new Schema(
     },
     status: {
       type: String,
-      enum: ["pending", "approved", "paid"],
+      enum: ["added", "notAdded", "paid"],
       default: "pending",
     },
     remarks: { type: String },

@@ -194,16 +194,7 @@ const Overview = ({ stats }) => {
         </div>
         
         {/* Time Filter Dropdown */}
-        <div className="flex justify-end">
-          <select
-            value={studentTimeFilter}
-            onChange={(e) => setStudentTimeFilter(e.target.value)}
-            className="px-2 sm:px-3 py-1 border border-gray-300 rounded-md text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="12">Last 12 Hours</option>
-            <option value="24">Last 24 Hours</option>
-          </select>
-        </div>
+       
       </div>
     </div>
   );

@@ -19,8 +19,11 @@ import Users from "./pages/ambassador/Users"
 import AmbassadorList from "./pages/user/AmbassadorList"
 import UserLayout from "./pages/user/Layout"
 import UserDashboard from "./pages/user/Dashboard"
-import UserProfile from "./pages/user/Profile"
 import UserChat from "./pages/user/UserChat"
+import UserProfile from "./pages/user/Profile"
+import AmbassadorLoginTable from "./pages/auth/LoginHistory"
+import EmbedView from "./pages/embed/EmbedView"
+// import CustomEmbedView from "./pages/embed/CustomEmbedView"
 
 // Admin imports
 import AdminLayout from "./pages/superadmin/AdminLayout"
@@ -37,10 +40,10 @@ import AdminUsers from "./pages/superadmin/AdminUsers"
 function App() {
   return (
     <Router>
-      <ToastContainer 
-        position="top-right" 
-        autoClose={3000} 
-        newestOnTop 
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        newestOnTop
         closeOnClick
         rtl={false}
         pauseOnFocusLoss
@@ -53,6 +56,7 @@ function App() {
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/test" element={<AmbassadorLoginTable />} />
 
         {/* Admin Protected Routes */}
         <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
@@ -79,21 +83,18 @@ function App() {
             <Route path="chat" element={<Chat />} />
           </Route>
         </Route>
-
-        {/* User Protected Routes */}
-        <Route element={<ProtectedRoute allowedRoles={["user"]} />}>
-          <Route path="/user" element={<UserLayout />}>
-            <Route index element={<Navigate to="/user/dashboard" replace />} />
-            <Route path="dashboard" element={<UserDashboard />} />
-            <Route path="chats" element={<UserChat />} />
-            <Route path="profile" element={<UserProfile />} />
-          </Route>
-        </Route>
-
-        {/* Public Routes */}
-        <Route path="/ambassadors" element={<AmbassadorList/>} />
-
+        <Route path="/ambassadors" element={<AmbassadorList />} />
+        <Route path="/embed/view/:configKey" element={<EmbedView />} />
+        {/* <Route path="/embed/:configId" element={<CustomEmbedView />} /> */}
         
+        {/* User Routes */}
+        <Route path="/user" element={<UserLayout />}>
+          <Route index element={<UserDashboard />} />
+          <Route path="dashboard" element={<UserDashboard />} />
+          <Route path="chats" element={<UserChat />} />
+          <Route path="profile" element={<UserProfile />} />
+          <Route path="ambassadors" element={<AmbassadorList />} />
+        </Route>
 
         <Route path="/unauthorized" element={<Unauthorized />} />
       </Routes>

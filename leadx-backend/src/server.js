@@ -11,7 +11,6 @@ import ROUTER from "./routes/index.js"
 import errorHandler from "./middlewares/error-handler.js"
 import { initChatSocket } from "./sockets/chatSocket.js"
 
-
 dotenv.config()
 
 const app = express()
@@ -24,7 +23,7 @@ app.use(cors())
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 app.use("/public", express.static(path.join(__dirname, "../public")))
-app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
+app.use("/uploads", express.static(path.join(__dirname, "public/uploads")))
 
 // ROUTES
 app.use("/api", ROUTER)
@@ -49,8 +48,6 @@ app.use((req, res, next) => {
   req.io = io
   next()
 })
-console.log("MAIL_USER:", process.env.MAIL_USER)
-console.log("MAIL_PASS:", process.env.MAIL_PASS ? "✅ Loaded" : "❌ Missing")
 
 // DB Connection + Server Start
 const startServer = async () => {

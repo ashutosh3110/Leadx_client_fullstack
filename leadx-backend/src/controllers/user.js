@@ -7,162 +7,140 @@ import errGen from "../utils/errGen.js"
 import respo from "../utils/respo.js"
 import { sendEmail } from "../utils/mailer.js" // helper for email
 import { LoginHistory } from "../models/LoginHistory.js"
- 
+
 import { createRequire } from "module"
 const require = createRequire(import.meta.url)
 const useragent = require("useragent")
- 
+
 // 🔑 Register Ambassador
 export const registerUser = async (req, res, next) => {
   try {
     console.log("🔍 Register request body:", req.body)
- 
+
     const { error, value } = userValidationSchema.validate(req.body, {
       stripUnknown: true,
     })
- 
+
     if (error) {
       console.log("❌ Validation error:", error.details[0].message)
       return next(errGen(400, error.details[0].message))
     }
- 
+
     console.log("✅ Validated data:", value)
- 
+
     const existingUser = await User.findOne({ email: value.email })
     if (existingUser) {
       console.log("❌ User already exists:", value.email)
       return next(errGen(400, "User already exists"))
     }
- 
+
     // Hash password
     value.password = await bcrypt.hash(value.password, 10)
     console.log("✅ Password hashed successfully")
- 
+
     // Force default role = ambassador
     const newUser = await User.create({ ...value, role: "ambassador" })
     console.log("✅ User created successfully:", newUser._id)
- 
+
     const safeUser = {
       id: newUser._id,
       name: newUser.name,
       email: newUser.email,
       role: newUser.role,
     }
- 
+
     res.status(201).json(respo(true, "Registered successfully", safeUser))
   } catch (err) {
     console.error("❌ Register error:", err)
     next(err)
   }
 }
- 
+
 // 🔑 Login
 export const loginUser = async (req, res, next) => {
   try {
     const { email, password } = req.body
-    console.log('🔍 Login attempt for email:', email)
-    console.log('🔍 Login password provided:', password ? 'Yes' : 'No')
-    console.log('🔍 Login password value:', password)
-    
+    console.log("🔍 Login attempt for email:", email)
+    console.log("🔍 Login password provided:", password ? "Yes" : "No")
+
     if (!email || !password)
       return next(errGen(400, "Email and password are required"))
 
     const user = await User.findOne({ email })
     if (!user) {
-      console.log('❌ User not found for email:', email)
+      console.log("❌ User not found for email:", email)
       return next(errGen(404, "User not found"))
     }
-    
-    console.log('🔍 User found:', user._id, 'Role:', user.role)
-    console.log('🔍 User password hash:', user.password ? user.password.substring(0, 20) + '...' : 'No password stored')
-    console.log('🔍 User has password field:', !!user.password)
-    console.log('🔍 Password hash length:', user.password ? user.password.length : 0)
 
-    // Test bcrypt comparison with detailed logging
-    console.log('🔍 Testing password comparison...')
-    console.log('🔍 Input password:', JSON.stringify(password))
-    console.log('🔍 Stored hash starts with:', user.password ? user.password.substring(0, 10) : 'null')
-    console.log('🔍 Stored hash length:', user.password ? user.password.length : 0)
-    console.log('🔍 Stored hash type:', typeof user.password)
-    
+    console.log("🔍 User found:", user._id, "Role:", user.role)
+    console.log(
+      "🔍 User password hash:",
+      user.password
+        ? user.password.substring(0, 20) + "..."
+        : "No password stored"
+    )
+    console.log("🔍 Login attempt password:", password)
+    console.log("🔍 User has password field:", !!user.password)
+
     const isMatch = await bcrypt.compare(password, user.password)
-    console.log('🔍 Password match result:', isMatch)
-    
-    // Additional debug: test with known password
+    console.log("🔍 Password match result:", isMatch)
+
     if (!isMatch) {
-      console.log('🔍 Testing with hardcoded "123456"...')
-      const testMatch = await bcrypt.compare("123456", user.password)
-      console.log('🔍 Hardcoded test result:', testMatch)
-      
-      // Test with trimmed password
-      const trimmedMatch = await bcrypt.compare(password.trim(), user.password)
-      console.log('🔍 Trimmed password test result:', trimmedMatch)
-    }
-    
-    // Additional debug: test with known password
-    if (!isMatch && password === "123456") {
-      console.log('🔍 Testing with hardcoded 123456...')
-      const testMatch = await bcrypt.compare("123456", user.password)
-      console.log('🔍 Hardcoded test result:', testMatch)
-    }
-    
-    if (!isMatch) {
-      console.log('❌ Invalid credentials for email:', email)
-      console.log('❌ Password comparison failed - debugging info above')
+      console.log("❌ Invalid credentials for email:", email)
       return next(errGen(400, "Invalid credentials"))
     }
-    
-    console.log('✅ Login successful for:', email)
- 
+
+    console.log("✅ Login successful for:", email)
+
     const token = JWT.sign(
       { id: user._id, role: user.role },
       process.env.JWT_ACCESS_SECRET,
       { expiresIn: "7d" }
     )
- 
+
     // Extract IP
     const rawIp =
       req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
       req.socket?.remoteAddress ||
       ""
- 
+
     const ip = rawIp.startsWith("::ffff:")
       ? rawIp.replace("::ffff:", "")
       : rawIp
     console.log("🛰️ Detected IP:", ip)
- 
+
     const isLocalIp = ip === "::1" || ip === "127.0.0.1"
- 
+
     let region = ""
     let city = ""
     let isp = ""
     let device = ""
     let os = ""
     let browser = ""
- 
+
     // ✅ Parse user-agent properly
     const agent = useragent.parse(req.headers["user-agent"])
     device = agent.device.toString()
     os = agent.os.toString()
     browser = agent.toAgent()
- 
+
     // 🌐 Fetch IP geo info if ambassador and not localhost
     if (user.role === "ambassador" && !isLocalIp && ip) {
       try {
         const apiKey =
           process.env.IPDATA_API_KEY ||
           "a15111aa6cea99eb45b31303978093a58b64d26b1dfb90b7077e9d69"
- 
+
         console.log(`🌐 Fetching ipdata for IP: ${ip}`)
- 
+
         const response = await fetch(
           `https://api.ipdata.co/${ip}?api-key=${apiKey}`
         )
- 
+
         if (response.ok) {
           const data = await response.json()
           console.log("📍 ipdata response:", data)
- 
+
           region = data.region || ""
           city = data.city || ""
           isp = data.asn?.name || data.carrier?.name || ""
@@ -173,7 +151,7 @@ export const loginUser = async (req, res, next) => {
         console.error("⚠️ ipdata fetch failed:", err)
       }
     }
- 
+
     // 📦 Save login history
     await LoginHistory.create({
       userId: user._id,
@@ -186,16 +164,16 @@ export const loginUser = async (req, res, next) => {
       os,
       device,
     })
- 
+
     console.log("✅ Login history saved")
- 
+
     const safeUser = {
       id: user._id,
       name: user.name,
       email: user.email,
       role: user.role,
     }
- 
+
     res
       .status(200)
       .json(respo(true, "Login successful", { token, user: safeUser }))
@@ -204,19 +182,19 @@ export const loginUser = async (req, res, next) => {
     next(err)
   }
 }
- 
+
 // 👤 Get Own Profile
 export const getMyProfile = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id).select("-password")
     if (!user) return next(errGen(404, "User not found"))
- 
+
     res.status(200).json(respo(true, "Profile fetched successfully", user))
   } catch (err) {
     next(err)
   }
 }
- 
+
 // 👥 Get All Ambassadors (Admin only)
 export const getAllAmbassadors = async (req, res, next) => {
   try {
@@ -230,14 +208,14 @@ export const getAllAmbassadors = async (req, res, next) => {
       ],
     }
     if (!search) delete query.$or
- 
+
     const ambassadors = await User.find(query).select("-password")
     res.status(200).json(respo(true, "All Ambassadors fetched", ambassadors))
   } catch (err) {
     next(err)
   }
 }
- 
+
 // 👥 Get Verified Ambassadors (Admin only)
 export const getVerifiedAmbassadors = async (req, res, next) => {
   try {
@@ -252,18 +230,24 @@ export const getVerifiedAmbassadors = async (req, res, next) => {
       ],
     }
     if (!search) delete query.$or
- 
-    console.log('🔍 getVerifiedAmbassadors query:', JSON.stringify(query, null, 2))
-    
+
+    console.log(
+      "🔍 getVerifiedAmbassadors query:",
+      JSON.stringify(query, null, 2)
+    )
+
     const ambassadors = await User.find(query).select("-password")
-    console.log('🔍 Found ambassadors count:', ambassadors.length)
-    console.log('🔍 Ambassadors details:', ambassadors.map(a => ({
-      id: a._id,
-      name: a.name,
-      email: a.email,
-      isVerified: a.isVerified,
-      role: a.role
-    })))
+    console.log("🔍 Found ambassadors count:", ambassadors.length)
+    console.log(
+      "🔍 Ambassadors details:",
+      ambassadors.map((a) => ({
+        id: a._id,
+        name: a.name,
+        email: a.email,
+        isVerified: a.isVerified,
+        role: a.role,
+      }))
+    )
 
     // Use hasReward field from database (no need to calculate)
     const ambassadorsWithRewards = ambassadors.map((ambassador) => ({
@@ -276,10 +260,10 @@ export const getVerifiedAmbassadors = async (req, res, next) => {
       ambassadorsWithRewards.map((a) => ({
         name: a.name,
         hasReward: a.hasReward,
-        isVerified: a.isVerified
+        isVerified: a.isVerified,
       }))
     )
- 
+
     res
       .status(200)
       .json(respo(true, "Verified Ambassadors fetched", ambassadorsWithRewards))
@@ -287,7 +271,7 @@ export const getVerifiedAmbassadors = async (req, res, next) => {
     next(err)
   }
 }
- 
+
 // 👤 Get User by ID
 export const getUserById = async (req, res, next) => {
   try {
@@ -298,104 +282,119 @@ export const getUserById = async (req, res, next) => {
     next(err)
   }
 }
- 
+
 // ✏️ Update User (Admin)
 export const updateUser = async (req, res, next) => {
   try {
     const { id } = req.params
-    console.log('🔍 updateUser called with id:', id)
-    console.log('🔍 Request body:', req.body)
- 
+    console.log("🔍 updateUser called with id:", id)
+    console.log("🔍 Request body:", req.body)
+
     // Create a custom validation schema for updates that doesn't apply defaults
     const updateValidationSchema = userValidationSchema
-      .fork(["password", "email", "name", "phone"], (schema) => schema.optional())
+      .fork(["password", "email", "name", "phone"], (schema) =>
+        schema.optional()
+      )
       .fork(["password"], (schema) => schema.min(6).optional())
-      .fork(["isVerified", "hasReward", "status"], (schema) => schema.optional())
-      .options({ stripUnknown: true, abortEarly: false });
+      .fork(["isVerified", "hasReward", "status"], (schema) =>
+        schema.optional()
+      )
+      .options({ stripUnknown: true, abortEarly: false })
 
     const { error, value } = updateValidationSchema.validate(req.body)
 
     if (error) return next(errGen(400, error.details[0].message))
-    
-    console.log('🔍 Validated value:', value)
-    console.log('🔍 Password in value:', value.password)
-    console.log('🔍 Status in value:', value.status)
-    console.log('🔍 Raw request body status:', req.body.status)
+
+    console.log("🔍 Validated value:", value)
+    console.log("🔍 Password in value:", value.password)
+    console.log("🔍 Status in value:", value.status)
+    console.log("🔍 Raw request body status:", req.body.status)
 
     // Handle password field properly
-    if (value.password && value.password.trim() !== '') {
-      console.log('🔍 Hashing password...')
+    if (value.password && value.password.trim() !== "") {
+      console.log("🔍 Hashing password...")
       const oldPassword = value.password
       value.password = await bcrypt.hash(value.password, 10)
-      console.log('🔍 Password hashed successfully')
-      console.log('🔍 Original password:', oldPassword)
-      console.log('🔍 Hashed password:', value.password.substring(0, 20) + '...')
+      console.log("🔍 Password hashed successfully")
+      console.log("🔍 Original password:", oldPassword)
+      console.log(
+        "🔍 Hashed password:",
+        value.password.substring(0, 20) + "..."
+      )
     } else {
-      console.log('🔍 No password provided or empty, removing from update')
+      console.log("🔍 No password provided or empty, removing from update")
       // Remove password from value if it's empty or undefined
       delete value.password
     }
-    
-    console.log('🔍 Final value to update:', value)
+
+    console.log("🔍 Final value to update:", value)
 
     // 🔒 Preserve critical fields that shouldn't be changed during admin update
     // Note: status is now editable by admin to activate/deactivate ambassadors
-    const fieldsToPreserve = ['isVerified', 'hasReward', 'role']
+    const fieldsToPreserve = ["isVerified", "hasReward", "role"]
     const currentUser = await User.findById(id)
     if (!currentUser) return next(errGen(404, "User not found"))
-    
-    console.log('🔍 Current user before update:', {
+
+    console.log("🔍 Current user before update:", {
       id: currentUser._id,
       name: currentUser.name,
       role: currentUser.role,
       isVerified: currentUser.isVerified,
       hasReward: currentUser.hasReward,
-      status: currentUser.status
+      status: currentUser.status,
     })
-    
+
     // Preserve critical fields - ONLY preserve these, NOT status
-    fieldsToPreserve.forEach(field => {
+    fieldsToPreserve.forEach((field) => {
       // Only preserve isVerified, hasReward, and role
       value[field] = currentUser[field]
       console.log(`🔒 Preserved ${field}:`, currentUser[field])
     })
-    
+
     // If status is not provided in the request, keep the current status
     if (value.status === undefined) {
       value.status = currentUser.status
-      console.log('🔍 Status not provided, keeping current status:', currentUser.status)
+      console.log(
+        "🔍 Status not provided, keeping current status:",
+        currentUser.status
+      )
     } else {
-      console.log('🔍 Status provided, updating from', currentUser.status, 'to', value.status)
+      console.log(
+        "🔍 Status provided, updating from",
+        currentUser.status,
+        "to",
+        value.status
+      )
     }
-    
-    console.log('🔍 Final value before update:', value)
-    console.log('🔍 Status in final value:', value.status)
+
+    console.log("🔍 Final value before update:", value)
+    console.log("🔍 Status in final value:", value.status)
 
     const user = await User.findByIdAndUpdate(id, value, { new: true }).select(
       "-password"
     )
     if (!user) return next(errGen(404, "User not found"))
-    
-    console.log('🔍 User updated successfully:', {
+
+    console.log("🔍 User updated successfully:", {
       id: user._id,
       name: user.name,
       email: user.email,
       role: user.role,
       isVerified: user.isVerified,
       hasReward: user.hasReward,
-      status: user.status
+      status: user.status,
     })
-    
-    console.log('🔍 Sending response with status:', user.status)
-    console.log('🔍 Full user object:', user)
+
+    console.log("🔍 Sending response with status:", user.status)
+    console.log("🔍 Full user object:", user)
 
     res.status(200).json(respo(true, "User updated", user))
   } catch (err) {
-    console.error('❌ Error in updateUser:', err)
+    console.error("❌ Error in updateUser:", err)
     next(err)
   }
 }
- 
+
 // ❌ Delete User
 export const deleteUser = async (req, res, next) => {
   try {
@@ -417,12 +416,12 @@ export const logout = async (req, res, next) => {
     next(err)
   }
 }
- 
+
 // 🔹 Update Profile (Self)
 export const updateProfile = async (req, res, next) => {
   try {
     const updates = req.body
- 
+
     // 🔐 Hash password if provided (and not empty)
     if (updates.password && updates.password.trim() !== "") {
       updates.password = await bcrypt.hash(updates.password, 10)
@@ -430,7 +429,7 @@ export const updateProfile = async (req, res, next) => {
       // Remove password field if empty or undefined
       delete updates.password
     }
- 
+
     // 🏠 Handle state field (ensure it's a string, not array)
     if (updates.state) {
       if (Array.isArray(updates.state)) {
@@ -444,7 +443,7 @@ export const updateProfile = async (req, res, next) => {
     } else {
       updates.state = ""
     }
- 
+
     // 🖼️ Handle uploaded files
     if (req.files?.profileImage) {
       updates.profileImage = req.files.profileImage[0].path.replace(/\\/g, "/")
@@ -455,31 +454,31 @@ export const updateProfile = async (req, res, next) => {
         "/"
       )
     }
- 
+
     const user = await User.findByIdAndUpdate(req.user.id, updates, {
       new: true,
     }).select("-password")
- 
+
     if (!user) return next(errGen(404, "User not found"))
- 
+
     res.status(200).json(respo(true, "Profile updated", user))
   } catch (err) {
     next(err)
   }
 }
- 
+
 // 🔹 Forgot Password (Send Reset Code)
 export const forgotPassword = async (req, res, next) => {
   try {
     const { email } = req.body
     const user = await User.findOne({ email })
     if (!user) return next(errGen(404, "User not found"))
- 
+
     const code = Math.floor(100000 + Math.random() * 900000).toString()
     user.resetCode = code
     user.resetCodeExpires = new Date(Date.now() + 15 * 60 * 1000)
     await user.save()
- 
+
     await sendEmail(email, "Password Reset Code", `Your code: ${code}`)
     res.status(200).json(respo(true, "Reset code sent to email"))
   } catch (err) {
@@ -500,84 +499,84 @@ export const getAmbassadors = async (req, res, next) => {
     }
     // If no search, remove $or to return all ambassadors
     if (!search) delete query.$or
- 
+
     const users = await User.find(query).select("-password")
     res.status(200).json(respo(true, "Ambassadors fetched", users))
   } catch (err) {
     next(err)
   }
 }
- 
+
 // 🔹 Resend Reset Code
 export const resendResetCode = async (req, res, next) => {
   try {
     const { email } = req.body
     const user = await User.findOne({ email })
     if (!user) return next(errGen(404, "User not found"))
- 
+
     const code = generateOtpCode()
     user.resetCode = code
     user.resetCodeExpires = generateExpiry(5) // pass minutes (5 min)
     await user.save()
- 
+
     await sendEmail(email, "Password Reset Code", `Your reset code is: ${code}`)
     return res.status(200).json(respo(true, "Reset code resent"))
   } catch (err) {
     next(err)
   }
 }
- 
+
 // 🔹 Verify Reset Code
 export const verifyResetCode = async (req, res, next) => {
   try {
     const { email, code } = req.body
     const user = await User.findOne({ email })
     if (!user) return next(errGen(404, "User not found"))
- 
+
     if (user.resetCode !== code || new Date() > user.resetCodeExpires) {
       return next(errGen(400, "Invalid or expired reset code"))
     }
- 
+
     res.status(200).json(respo(true, "Code verified"))
   } catch (err) {
     next(err)
   }
 }
- 
+
 // 🔹 Reset Password
 export const resetPassword = async (req, res, next) => {
   try {
     const { email, code, newPassword } = req.body
     const user = await User.findOne({ email })
     if (!user) return next(errGen(404, "User not found"))
- 
+
     if (user.resetCode !== code || new Date() > user.resetCodeExpires) {
       return next(errGen(400, "Invalid or expired reset code"))
     }
- 
+
     user.password = await bcrypt.hash(newPassword, 10)
     user.resetCode = undefined
     user.resetCodeExpires = undefined
     await user.save()
- 
+
     res.status(200).json(respo(true, "Password reset successfully"))
   } catch (err) {
     next(err)
   }
 }
- 
+
 // 🔹 Delete Own Account
 export const deleteAccount = async (req, res, next) => {
   try {
     const user = await User.findByIdAndDelete(req.user.id)
     if (!user) return next(errGen(404, "User not found"))
- 
+
     res.status(200).json(respo(true, "Account deleted successfully"))
   } catch (err) {
     next(err)
   }
 }
- 
+
 // create admin
 export const createAdmin = async (req, res, next) => {
   try {
@@ -585,55 +584,55 @@ export const createAdmin = async (req, res, next) => {
     if (req.user.role !== "admin") {
       return next(errGen(403, "Only admins can create new admins"))
     }
- 
+
     const { error, value } = userValidationSchema.validate(req.body, {
       stripUnknown: true,
     })
     if (error) return next(errGen(400, error.details[0].message))
- 
+
     const existingUser = await User.findOne({ email: value.email })
     if (existingUser) return next(errGen(400, "User already exists"))
- 
+
     value.password = await bcrypt.hash(value.password, 10)
- 
+
     const newAdmin = await User.create({
       ...value,
       role: "admin", // forced to admin
     })
- 
+
     const safeUser = {
       id: newAdmin._id,
       name: newAdmin.name,
       email: newAdmin.email,
       role: newAdmin.role,
     }
- 
+
     res.status(201).json(respo(true, "Admin created successfully", safeUser))
   } catch (err) {
     next(err)
   }
 }
- 
+
 // 👉 Approve Ambassador
 export const approveAmbassador = async (req, res, next) => {
   try {
     const { id } = req.params
- 
+
     // only admin can approve
     if (req.user.role !== "admin") {
       return next(errGen(403, "Only admins can approve ambassadors"))
     }
- 
+
     const user = await User.findById(id)
     if (!user) return next(errGen(404, "User not found"))
- 
+
     if (user.role !== "ambassador") {
       return next(errGen(400, "User is not an ambassador"))
     }
- 
+
     user.isVerified = true
     await user.save()
- 
+
     return res
       .status(200)
       .json(respo(true, "Ambassador approved successfully", user))
@@ -641,26 +640,26 @@ export const approveAmbassador = async (req, res, next) => {
     next(err)
   }
 }
- 
+
 // 👉 Reject Ambassador
 export const rejectAmbassador = async (req, res, next) => {
   try {
     const { id } = req.params
- 
+
     if (req.user.role !== "admin") {
       return next(errGen(403, "Only admins can reject ambassadors"))
     }
- 
+
     const user = await User.findById(id)
     if (!user) return next(errGen(404, "User not found"))
- 
+
     if (user.role !== "ambassador") {
       return next(errGen(400, "User is not an ambassador"))
     }
- 
+
     user.isVerified = false
     await user.save()
- 
+
     return res
       .status(200)
       .json(respo(true, "Ambassador rejected successfully", user))
@@ -668,26 +667,32 @@ export const rejectAmbassador = async (req, res, next) => {
     next(err)
   }
 }
- 
+
 //  Get Public Ambassadors (for embeddable script)
 export const getPublicAmbassadors = async (req, res, next) => {
   try {
     console.log("🔍 Fetching public ambassadors...")
 
-    // Get only verified and active ambassadors with basic info
-    // Only ambassadors with status: "active" will appear in public cards
+    // Get only verified and active ambassadors with all necessary fields for AmbassadorCard UI
     const ambassadors = await User.find({
       role: "ambassador",
       isVerified: true,
       status: "active", // ✅ Only active ambassadors will be shown
-    }).select("name email course profileImage createdAt status")
+    }).select(
+      "name email role course program profileImage thumbnailImage country state languages description about createdAt status isVerified"
+    )
 
-    console.log(`✅ Found ${ambassadors.length} public ambassadors (active only)`)
-    console.log('🔍 Public ambassadors status:', ambassadors.map(a => ({ 
-      name: a.name, 
-      status: a.status,
-      isVerified: a.isVerified 
-    })))
+    console.log(
+      `✅ Found ${ambassadors.length} public ambassadors (active only)`
+    )
+    console.log(
+      "🔍 Public ambassadors status:",
+      ambassadors.map((a) => ({
+        name: a.name,
+        status: a.status,
+        isVerified: a.isVerified,
+      }))
+    )
 
     res
       .status(200)
@@ -697,213 +702,12 @@ export const getPublicAmbassadors = async (req, res, next) => {
     next(err)
   }
 }
- 
+
 //  Auto Register User (for embeddable script)
-// 📊 Get User Dashboard Data
-export const getUserDashboard = async (req, res, next) => {
-  try {
-    const userId = req.user.id
-    
-    console.log('🔍 Getting dashboard data for user:', userId)
-    
-    // Get user's chat history
-    const userChats = await Chat.find({
-      participants: userId
-    }).populate('participants', 'name email role profileImage')
-    
-    console.log('🔍 User chats found:', userChats.length)
-    
-    // Get user's messages count
-    const messageCount = await Message.countDocuments({
-      $or: [
-        { sender: userId },
-        { receiver: userId }
-      ]
-    })
-    
-    // Get unique ambassadors the user has chatted with
-    const ambassadorIds = new Set()
-    userChats.forEach(chat => {
-      chat.participants.forEach(participant => {
-        if (participant.role === 'ambassador') {
-          ambassadorIds.add(participant._id.toString())
-        }
-      })
-    })
-    
-    const uniqueAmbassadors = Array.from(ambassadorIds).length
-    
-    // Get recent chats with ambassador details
-    const recentChats = await Chat.find({
-      participants: userId
-    })
-    .populate('participants', 'name email role profileImage')
-    .populate('lastMessage')
-    .sort({ updatedAt: -1 })
-    .limit(5)
-    
-    const dashboardData = {
-      stats: {
-        totalAmbassadors: uniqueAmbassadors,
-        totalChats: userChats.length,
-        totalMessages: messageCount,
-        lastActivity: userChats.length > 0 ? userChats[0].updatedAt : null
-      },
-      recentChats: recentChats.map(chat => {
-        const ambassador = chat.participants.find(p => p.role === 'ambassador')
-        const user = chat.participants.find(p => p._id.toString() === userId)
-        
-        return {
-          chatId: chat._id,
-          ambassador: {
-            id: ambassador._id,
-            name: ambassador.name,
-            email: ambassador.email,
-            profileImage: ambassador.profileImage
-          },
-          lastMessage: chat.lastMessage ? {
-            content: chat.lastMessage.content,
-            timestamp: chat.lastMessage.createdAt,
-            sender: chat.lastMessage.sender.toString() === userId ? 'You' : ambassador.name
-          } : null,
-          unreadCount: 0, // TODO: Calculate unread messages
-          updatedAt: chat.updatedAt
-        }
-      })
-    }
-    
-    console.log('✅ Dashboard data prepared:', dashboardData.stats)
-    
-    res.status(200).json(respo(true, "Dashboard data retrieved", dashboardData))
-    
-  } catch (err) {
-    console.error('❌ Error getting dashboard data:', err)
-    next(err)
-  }
-}
-
-// 💬 Get User Chat History with Specific Ambassador
-export const getUserChatHistory = async (req, res, next) => {
-  try {
-    const userId = req.user.id
-    const { ambassadorId } = req.params
-    
-    console.log('🔍 Getting chat history for user:', userId, 'with ambassador:', ambassadorId)
-    
-    // Find chat between user and ambassador
-    const chat = await Chat.findOne({
-      participants: { $all: [userId, ambassadorId] }
-    }).populate('participants', 'name email role profileImage')
-    
-    if (!chat) {
-      return res.status(404).json(respo(false, "Chat not found"))
-    }
-    
-    // Get messages in this chat
-    const messages = await Message.find({
-      chatId: chat._id
-    })
-    .populate('sender', 'name email role')
-    .populate('receiver', 'name email role')
-    .sort({ createdAt: 1 })
-    
-    const ambassador = chat.participants.find(p => p.role === 'ambassador')
-    
-    const chatHistory = {
-      chatId: chat._id,
-      ambassador: {
-        id: ambassador._id,
-        name: ambassador.name,
-        email: ambassador.email,
-        profileImage: ambassador.profileImage
-      },
-      messages: messages.map(msg => ({
-        id: msg._id,
-        content: msg.content,
-        sender: {
-          id: msg.sender._id,
-          name: msg.sender.name,
-          role: msg.sender.role
-        },
-        receiver: {
-          id: msg.receiver._id,
-          name: msg.receiver.name,
-          role: msg.receiver.role
-        },
-        timestamp: msg.createdAt,
-        isRead: msg.isRead,
-        isFromUser: msg.sender._id.toString() === userId
-      }))
-    }
-    
-    console.log('✅ Chat history retrieved:', chatHistory.messages.length, 'messages')
-    
-    res.status(200).json(respo(true, "Chat history retrieved", chatHistory))
-    
-  } catch (err) {
-    console.error('❌ Error getting chat history:', err)
-    next(err)
-  }
-}
-
-// 👤 Get User Profile
-export const getUserProfile = async (req, res, next) => {
-  try {
-    const userId = req.user.id
-    
-    const user = await User.findById(userId).select('-password')
-    
-    if (!user) {
-      return res.status(404).json(respo(false, "User not found"))
-    }
-    
-    console.log('✅ User profile retrieved for:', user.email)
-    
-    res.status(200).json(respo(true, "Profile retrieved", user))
-    
-  } catch (err) {
-    console.error('❌ Error getting user profile:', err)
-    next(err)
-  }
-}
-
-// ✏️ Update User Profile
-export const updateUserProfile = async (req, res, next) => {
-  try {
-    const userId = req.user.id
-    const updates = req.body
-    
-    console.log('🔍 Updating user profile for:', userId)
-    
-    // Remove sensitive fields
-    delete updates.password
-    delete updates.role
-    delete updates.isVerified
-    
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      updates,
-      { new: true, runValidators: true }
-    ).select('-password')
-    
-    if (!updatedUser) {
-      return res.status(404).json(respo(false, "User not found"))
-    }
-    
-    console.log('✅ User profile updated for:', updatedUser.email)
-    
-    res.status(200).json(respo(true, "Profile updated successfully", updatedUser))
-    
-  } catch (err) {
-    console.error('❌ Error updating user profile:', err)
-    next(err)
-  }
-}
-
 export const autoRegisterUser = async (req, res, next) => {
   try {
     // console.log("🔍 Auto-register request body:", req.body)
- 
+
     const {
       name,
       email,
@@ -914,11 +718,11 @@ export const autoRegisterUser = async (req, res, next) => {
       state,
       alternatePhone,
     } = req.body
- 
+
     if (!name || !email || !phone) {
       return next(errGen(400, "Name, email, and phone are required"))
     }
- 
+
     const existingUser = await User.findOne({ email })
     if (existingUser) {
       console.log("✅ User already exists, returning existing user")
@@ -934,12 +738,11 @@ export const autoRegisterUser = async (req, res, next) => {
       }
       return res.status(200).json(respo(true, "User already exists", safeUser))
     }
- 
+
     const hashedPassword = await bcrypt.hash(password, 10)
     console.log("✅ Password hashed successfully")
     console.log("🔍 Original password:", password)
     console.log("🔍 Hashed password:", hashedPassword.substring(0, 20) + "...")
-    console.log("🔍 Password comparison test:", await bcrypt.compare(password, hashedPassword))
 
     const newUser = await User.create({
       name,
@@ -952,13 +755,20 @@ export const autoRegisterUser = async (req, res, next) => {
       alternatePhone,
       isVerified: true, // Optional: mark as verified
     })
-    
-    console.log("🔍 User created with password:", newUser.password ? "Yes" : "No")
-    console.log("🔍 User password hash:", newUser.password ? newUser.password.substring(0, 20) + "..." : "No password")
-    console.log("🔍 Password verification test:", await bcrypt.compare(password, newUser.password))
- 
+
+    console.log(
+      "🔍 User created with password:",
+      newUser.password ? "Yes" : "No"
+    )
+    console.log(
+      "🔍 User password hash:",
+      newUser.password
+        ? newUser.password.substring(0, 20) + "..."
+        : "No password"
+    )
+
     console.log("✅ User auto-registered successfully:", newUser._id)
- 
+
     const safeUser = {
       id: newUser._id,
       name: newUser.name,
@@ -969,7 +779,7 @@ export const autoRegisterUser = async (req, res, next) => {
       phone: newUser.phone,
       alternatePhone: newUser.alternatePhone,
     }
- 
+
     // ✅ Send welcome email with credentials
     const subject = "🎉 Welcome to LeadX!"
     const text = `Hi ${name},
@@ -985,9 +795,9 @@ We recommend updating your password after logging in for the first time.
  
 Thanks,  
 The LeadX Team`
- 
+
     await sendEmail(email, subject, text)
- 
+
     res
       .status(201)
       .json(respo(true, "User auto-registered successfully", safeUser))
@@ -996,7 +806,7 @@ The LeadX Team`
     next(err)
   }
 }
- 
+
 // get ambassador login history
 export const getAmbassadorLogins = async (req, res, next) => {
   try {
@@ -1028,7 +838,9 @@ export const getAllUsers = async (req, res, next) => {
     }
     if (!search) delete query.$or
 
-    const users = await User.find(query).select("-password").sort({ createdAt: -1 })
+    const users = await User.find(query)
+      .select("-password")
+      .sort({ createdAt: -1 })
     res.status(200).json(respo(true, "All Users fetched", users))
   } catch (err) {
     next(err)
@@ -1040,44 +852,49 @@ export const updateUserConversionStatus = async (req, res, next) => {
   try {
     const { userId } = req.params
     const { conversionStatus } = req.body // 'pending', 'converted', 'enrolled'
-    
-    console.log('🔍 Ambassador updating user status:', userId, conversionStatus)
-    
-    if (!['pending', 'converted', 'enrolled'].includes(conversionStatus)) {
-      return next(errGen(400, 'Invalid conversion status'))
+
+    console.log("🔍 Ambassador updating user status:", userId, conversionStatus)
+
+    if (!["pending", "converted", "enrolled"].includes(conversionStatus)) {
+      return next(errGen(400, "Invalid conversion status"))
     }
-    
+
     // Only allow ambassador to mark as 'converted', and admin to mark as 'enrolled'
-    if (req.user.role === 'ambassador' && conversionStatus === 'enrolled') {
-      return next(errGen(403, 'Only admin can mark users as enrolled'))
+    if (req.user.role === "ambassador" && conversionStatus === "enrolled") {
+      return next(errGen(403, "Only admin can mark users as enrolled"))
     }
-    
-    // Prevent ambassador from changing enrolled users
-    if (req.user.role === 'ambassador' && user.conversionStatus === 'enrolled') {
-      return next(errGen(403, 'Cannot change status of enrolled users'))
-    }
-    
+
     const user = await User.findById(userId)
-    if (!user) return next(errGen(404, 'User not found'))
-    
-    if (user.role !== 'user') {
-      return next(errGen(400, 'This is not a user account'))
+    if (!user) return next(errGen(404, "User not found"))
+
+    // Prevent ambassador from changing enrolled users
+    if (
+      req.user.role === "ambassador" &&
+      user.conversionStatus === "enrolled"
+    ) {
+      return next(errGen(403, "Cannot change status of enrolled users"))
     }
-    
+
+    if (user.role !== "user") {
+      return next(errGen(400, "This is not a user account"))
+    }
+
     // Update conversionStatus field (we'll add this to schema)
     user.conversionStatus = conversionStatus
     await user.save()
-    
+
     console.log(`✅ User ${user.name} status updated to: ${conversionStatus}`)
-    
-    res.status(200).json(respo(true, 'User status updated successfully', {
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      conversionStatus: user.conversionStatus
-    }))
+
+    res.status(200).json(
+      respo(true, "User status updated successfully", {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        conversionStatus: user.conversionStatus,
+      })
+    )
   } catch (err) {
-    console.error('❌ Error updating user status:', err)
+    console.error("❌ Error updating user status:", err)
     next(err)
   }
 }
@@ -1088,7 +905,7 @@ export const getAllUsersWithChatHistory = async (req, res, next) => {
     console.log("🔍 getAllUsersWithChatHistory called")
     const { search = "" } = req.query
     console.log("🔍 Search query:", search)
-    
+
     const query = {
       role: "user",
       $or: [
@@ -1108,114 +925,133 @@ export const getAllUsersWithChatHistory = async (req, res, next) => {
       .sort({ createdAt: -1 })
 
     console.log("📊 Found users:", users.length)
-    console.log("📊 Users details:", users.map(u => ({ 
-      id: u._id, 
-      name: u.name, 
-      email: u.email, 
-      role: u.role,
-      createdAt: u.createdAt 
-    })))
+    console.log(
+      "📊 Users details:",
+      users.map((u) => ({
+        id: u._id,
+        name: u.name,
+        email: u.email,
+        role: u.role,
+        createdAt: u.createdAt,
+      }))
+    )
 
     // For each user, get their chat history and ambassador details
     const usersWithChatHistory = await Promise.all(
       users.map(async (user) => {
         try {
           console.log(`🔍 Processing user: ${user.name} (${user._id})`)
-          
+
           // Get all chats for this user
           const chats = await Chat.find({ participants: user._id })
             .populate({
               path: "participants",
               select: "name email role profileImage",
-              match: { role: "ambassador" }
+              match: { role: "ambassador" },
             })
             .populate({
               path: "lastMessage",
               select: "content sender createdAt",
               populate: {
                 path: "sender",
-                select: "name email role profileImage"
-              }
+                select: "name email role profileImage",
+              },
             })
             .sort({ updatedAt: -1 })
 
           console.log(`📊 User ${user.name} has ${chats.length} chats`)
-          console.log(`📊 Chats for ${user.name}:`, chats.map(c => ({ 
-            id: c._id, 
-            participants: c.participants?.length,
-            lastMessage: c.lastMessage?.content 
-          })))
+          console.log(
+            `📊 Chats for ${user.name}:`,
+            chats.map((c) => ({
+              id: c._id,
+              participants: c.participants?.length,
+              lastMessage: c.lastMessage?.content,
+            }))
+          )
 
           // Extract unique ambassadors from chats
           const ambassadors = []
           const ambassadorIds = new Set()
 
-          console.log(`🔍 Processing ${chats.length} chats for user ${user.name}`)
-          
+          console.log(
+            `🔍 Processing ${chats.length} chats for user ${user.name}`
+          )
+
           chats.forEach((chat, chatIndex) => {
             console.log(`🔍 Chat ${chatIndex + 1}:`, {
               id: chat._id,
               participants: chat.participants?.length || 0,
-              participantDetails: chat.participants?.map(p => ({
+              participantDetails: chat.participants?.map((p) => ({
                 id: p._id,
                 name: p.name,
-                role: p.role
-              }))
+                role: p.role,
+              })),
             })
-            
+
             chat.participants.forEach((participant, partIndex) => {
               console.log(`🔍 Participant ${partIndex + 1}:`, {
                 id: participant._id,
                 name: participant.name,
                 role: participant.role,
                 isAmbassador: participant.role === "ambassador",
-                alreadyAdded: ambassadorIds.has(participant._id.toString())
+                alreadyAdded: ambassadorIds.has(participant._id.toString()),
               })
-              
-              if (participant && participant.role === "ambassador" && !ambassadorIds.has(participant._id.toString())) {
+
+              if (
+                participant &&
+                participant.role === "ambassador" &&
+                !ambassadorIds.has(participant._id.toString())
+              ) {
                 console.log(`✅ Adding ambassador: ${participant.name}`)
                 ambassadors.push({
                   _id: participant._id,
                   name: participant.name,
                   email: participant.email,
-                  profileImage: participant.profileImage
+                  profileImage: participant.profileImage,
                 })
                 ambassadorIds.add(participant._id.toString())
               }
             })
           })
 
-          console.log(`📊 Final ambassadors for ${user.name}:`, ambassadors.map(a => a.name))
+          console.log(
+            `📊 Final ambassadors for ${user.name}:`,
+            ambassadors.map((a) => a.name)
+          )
 
           // Get total messages count for this user
           const totalMessages = await Message.countDocuments({
-            $or: [
-              { sender: user._id },
-              { receiver: user._id }
-            ]
+            $or: [{ sender: user._id }, { receiver: user._id }],
           })
 
-          console.log(`📊 User ${user.name} has ${totalMessages} total messages`)
+          console.log(
+            `📊 User ${user.name} has ${totalMessages} total messages`
+          )
 
           // Get last activity (last message time)
           const lastMessage = await Message.findOne({
-            $or: [
-              { sender: user._id },
-              { receiver: user._id }
-            ]
+            $or: [{ sender: user._id }, { receiver: user._id }],
           }).sort({ createdAt: -1 })
 
-          console.log(`📊 User ${user.name} last message:`, lastMessage ? {
-            content: lastMessage.content,
-            createdAt: lastMessage.createdAt,
-            sender: lastMessage.sender
-          } : 'No messages')
+          console.log(
+            `📊 User ${user.name} last message:`,
+            lastMessage
+              ? {
+                  content: lastMessage.content,
+                  createdAt: lastMessage.createdAt,
+                  sender: lastMessage.sender,
+                }
+              : "No messages"
+          )
 
           // Also check last activity from user's updatedAt field
           const userLastActivity = user.updatedAt || user.createdAt
           const finalLastActivity = lastMessage?.createdAt || userLastActivity
-          
-          console.log(`📊 User ${user.name} final last activity:`, finalLastActivity)
+
+          console.log(
+            `📊 User ${user.name} final last activity:`,
+            finalLastActivity
+          )
 
           const result = {
             ...user.toObject(),
@@ -1224,20 +1060,23 @@ export const getAllUsersWithChatHistory = async (req, res, next) => {
               totalMessages,
               lastActivity: finalLastActivity,
               ambassadors: ambassadors,
-              recentChats: chats.slice(0, 3) // Last 3 chats
-            }
+              recentChats: chats.slice(0, 3), // Last 3 chats
+            },
           }
 
           console.log(`✅ Final result for ${user.name}:`, {
             totalChats: result.chatHistory.totalChats,
             totalMessages: result.chatHistory.totalMessages,
             ambassadors: result.chatHistory.ambassadors.length,
-            lastActivity: result.chatHistory.lastActivity
+            lastActivity: result.chatHistory.lastActivity,
           })
 
           return result
         } catch (error) {
-          console.error(`Error fetching chat history for user ${user._id}:`, error)
+          console.error(
+            `Error fetching chat history for user ${user._id}:`,
+            error
+          )
           return {
             ...user.toObject(),
             chatHistory: {
@@ -1245,27 +1084,269 @@ export const getAllUsersWithChatHistory = async (req, res, next) => {
               totalMessages: 0,
               lastActivity: null,
               ambassadors: [],
-              recentChats: []
-            }
+              recentChats: [],
+            },
           }
         }
       })
     )
 
-    console.log("🎯 Final response - Total users with chat history:", usersWithChatHistory.length)
-    console.log("🎯 Users summary:", usersWithChatHistory.map(u => ({
-      name: u.name,
-      totalChats: u.chatHistory.totalChats,
-      totalMessages: u.chatHistory.totalMessages,
-      ambassadors: u.chatHistory.ambassadors.length
-    })))
+    console.log(
+      "🎯 Final response - Total users with chat history:",
+      usersWithChatHistory.length
+    )
+    console.log(
+      "🎯 Users summary:",
+      usersWithChatHistory.map((u) => ({
+        name: u.name,
+        totalChats: u.chatHistory.totalChats,
+        totalMessages: u.chatHistory.totalMessages,
+        ambassadors: u.chatHistory.ambassadors.length,
+      }))
+    )
 
-    res.status(200).json(respo(true, "Users with chat history fetched", usersWithChatHistory))
+    res
+      .status(200)
+      .json(
+        respo(true, "Users with chat history fetched", usersWithChatHistory)
+      )
   } catch (err) {
     console.error("❌ Error in getAllUsersWithChatHistory:", err)
     next(err)
   }
 }
 
- 
- 
+// 📊 Get User Dashboard Data
+export const getUserDashboard = async (req, res, next) => {
+  try {
+    console.log("🔍 getUserDashboard called")
+    console.log("🔍 req.user:", JSON.stringify(req.user, null, 2))
+    console.log("🔍 req.user.id:", req.user?.id)
+    console.log("🔍 typeof req.user.id:", typeof req.user?.id)
+    
+    const userId = req.user?.id
+    console.log("🔍 Fetching dashboard data for user:", userId)
+
+    if (!userId) {
+      console.log("❌ User ID is missing or undefined")
+      return res.status(400).json({
+        success: false,
+        message: "Invalid user ID - User ID is missing from token"
+      })
+    }
+
+    // Verify user exists
+    const userExists = await User.findById(userId)
+    if (!userExists) {
+      console.log("❌ User not found in database:", userId)
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      })
+    }
+
+    console.log("✅ User found:", userExists.name, userExists.email)
+
+    // Get user's chats - Chat model uses participants array
+    const userChats = await Chat.find({ participants: userId })
+      .populate({
+        path: "participants",
+        select: "name email profileImage role",
+      })
+      .populate("lastMessage")
+      .sort({ updatedAt: -1 })
+
+    console.log("🔍 User chats found:", userChats.length)
+
+    // Get total messages count
+    const chatIds = userChats.map((chat) => chat._id)
+    const totalMessages = await Message.countDocuments({ chat: { $in: chatIds } })
+
+    console.log("🔍 Total messages:", totalMessages)
+
+    // Get unique ambassadors from chats
+    const ambassadorSet = new Set()
+    userChats.forEach((chat) => {
+      chat.participants.forEach((participant) => {
+        if (participant.role === "ambassador" && participant._id.toString() !== userId) {
+          ambassadorSet.add(participant._id.toString())
+        }
+      })
+    })
+
+    console.log("🔍 Unique ambassadors:", ambassadorSet.size)
+
+    // Get last activity (most recent message)
+    let lastActivity = null
+    if (chatIds.length > 0) {
+      const lastMessage = await Message.findOne({ chat: { $in: chatIds } })
+        .sort({ createdAt: -1 })
+        .select("createdAt")
+      lastActivity = lastMessage?.createdAt || null
+    }
+
+    // Prepare recent chats with ambassador info
+    const recentChats = userChats.slice(0, 5).map((chat) => {
+      // Find the ambassador in participants (the one who is not the current user)
+      const ambassador = chat.participants.find(
+        (p) => p.role === "ambassador" && p._id.toString() !== userId
+      )
+
+      return {
+        _id: chat._id,
+        ambassador: ambassador ? {
+          _id: ambassador._id,
+          name: ambassador.name,
+          email: ambassador.email,
+          profileImage: ambassador.profileImage,
+        } : null,
+        lastMessage: chat.lastMessage?.content || "No messages yet",
+        unreadCount: 0, // TODO: Implement unread count logic
+        updatedAt: chat.updatedAt,
+      }
+    })
+
+    const dashboardData = {
+      stats: {
+        totalAmbassadors: ambassadorSet.size,
+        totalChats: userChats.length,
+        totalMessages: totalMessages,
+        lastActivity: lastActivity,
+      },
+      recentChats: recentChats,
+    }
+
+    console.log("✅ Dashboard data prepared:", dashboardData)
+
+    res.status(200).json(respo(true, "Dashboard data fetched", dashboardData))
+  } catch (err) {
+    console.error("❌ Error in getUserDashboard:", err)
+    next(err)
+  }
+}
+
+// 📊 Get Ambassador Dashboard Data
+export const getAmbassadorDashboard = async (req, res, next) => {
+  try {
+    console.log("🔍 getAmbassadorDashboard - User ID:", req.user.id)
+    console.log("🔍 getAmbassadorDashboard - User role:", req.user.role)
+    console.log("🔍 getAmbassadorDashboard - Full user object:", req.user)
+
+    // Check if user is ambassador
+    if (req.user.role !== "ambassador") {
+      console.log("❌ User is not ambassador, role:", req.user.role)
+      return next(errGen(403, "Only ambassadors can access this dashboard"))
+    }
+
+    const ambassadorId = req.user.id
+
+    // Simple test response first
+    console.log("✅ Ambassador dashboard function called successfully")
+    
+    // Get ambassador's chats - Chat model uses participants array
+    console.log("🔍 Searching for chats with ambassadorId:", ambassadorId)
+    
+    // First, let's check all chats to see what's in the database
+    const allChats = await Chat.find({}).populate("participants", "name email role")
+    console.log("🔍 All chats in database:", allChats.length)
+    allChats.forEach((chat, index) => {
+      console.log(`🔍 Chat ${index + 1}:`, {
+        id: chat._id,
+        participants: chat.participants.map(p => ({ id: p._id, name: p.name, role: p.role }))
+      })
+    })
+    
+    const ambassadorChats = await Chat.find({ participants: ambassadorId })
+      .populate({
+        path: "participants",
+        select: "name email profileImage role",
+      })
+      .populate("lastMessage")
+      .sort({ updatedAt: -1 })
+
+    console.log("🔍 Ambassador chats found:", ambassadorChats.length)
+    console.log("🔍 Ambassador chats data:", ambassadorChats)
+
+    // Get total messages count for this ambassador
+    const chatIds = ambassadorChats.map((chat) => chat._id)
+    const totalMessages = await Message.countDocuments({ chat: { $in: chatIds } })
+
+    console.log("🔍 Total messages:", totalMessages)
+
+    // Get unique users from chats (users who have chatted with this ambassador)
+    const userSet = new Set()
+    ambassadorChats.forEach((chat) => {
+      chat.participants.forEach((participant) => {
+        if (participant.role === "user" && participant._id.toString() !== ambassadorId) {
+          userSet.add(participant._id.toString())
+        }
+      })
+    })
+
+    console.log("🔍 Unique users:", userSet.size)
+
+    // Get this month's stats
+    const startOfMonth = new Date()
+    startOfMonth.setDate(1)
+    startOfMonth.setHours(0, 0, 0, 0)
+
+    const thisMonthChats = await Chat.find({
+      participants: ambassadorId,
+      createdAt: { $gte: startOfMonth }
+    })
+
+    const thisMonthMessages = await Message.countDocuments({
+      chat: { $in: chatIds },
+      createdAt: { $gte: startOfMonth }
+    })
+
+    // Get last activity (most recent message)
+    let lastActivity = null
+    if (chatIds.length > 0) {
+      const lastMessage = await Message.findOne({ chat: { $in: chatIds } })
+        .sort({ createdAt: -1 })
+        .select("createdAt")
+      lastActivity = lastMessage?.createdAt || null
+    }
+
+    // Prepare recent chats with user info
+    const recentChats = ambassadorChats.slice(0, 5).map((chat) => {
+      // Find the user in participants (the one who is not the current ambassador)
+      const user = chat.participants.find(
+        (p) => p.role === "user" && p._id.toString() !== ambassadorId
+      )
+
+      return {
+        _id: chat._id,
+        user: user ? {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          profileImage: user.profileImage,
+        } : null,
+        lastMessage: chat.lastMessage?.content || "No messages yet",
+        unreadCount: 0, // TODO: Implement unread count logic
+        updatedAt: chat.updatedAt,
+      }
+    })
+
+    const dashboardData = {
+      stats: {
+        totalUsers: userSet.size,
+        totalChats: ambassadorChats.length,
+        totalMessages: totalMessages,
+        thisMonthChats: thisMonthChats.length,
+        thisMonthMessages: thisMonthMessages,
+        lastActivity: lastActivity,
+      },
+      recentChats: recentChats,
+    }
+
+    console.log("✅ Ambassador dashboard data prepared:", dashboardData)
+
+    res.status(200).json(respo(true, "Ambassador dashboard data fetched", dashboardData))
+  } catch (err) {
+    console.error("❌ Error in getAmbassadorDashboard:", err)
+    next(err)
+  }
+}

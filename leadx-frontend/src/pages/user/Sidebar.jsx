@@ -38,7 +38,7 @@ const Sidebar = () => {
 
       {/* Sidebar */}
       <div
-        className={`w-64 h-screen text-white shadow-2xl flex flex-col ${
+        className={`fixed lg:sticky top-0 left-0 w-64 h-screen text-white shadow-2xl flex flex-col ${
           open ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0 transition-transform duration-300 z-50`}
         style={{ backgroundColor: '#1098e8' }}

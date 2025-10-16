@@ -7,7 +7,7 @@ import axios from "axios"
 import api from "../utils/Api"
 import { setAuth } from "../utils/auth" // ✅ import setAuth
 
-const API_URL = "http://localhost:5000"
+const API_URL = import.meta.env.VITE_API_URL
 
 const Login = () => {
   const navigate = useNavigate()
@@ -31,17 +31,12 @@ const Login = () => {
       try {
         setLoading(true)
         const res = await axios.post(`${API_URL}/api/auth/login`, values)
-        console.log('🔍 Login response:', res.data)
         const token = res.data.data.token
         const user = res.data.data.user
         const role = user.role
-        
-        console.log('🔍 Login user:', user)
-        console.log('🔍 Login role:', role)
-        
         // Use setAuth function to properly store auth data
         setAuth(token, user)
-        
+
         if (role === "admin") {
           navigate("/admin")
         } else if (role === "ambassador") {

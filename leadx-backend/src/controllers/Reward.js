@@ -17,8 +17,8 @@ const rewardValidationSchema = Joi.object({
 export const createReward = async (req, res, next) => {
   try {
     // ✅ Check if user is admin or ambassador
-    if (req.user.role !== "admin" && req.user.role !== "ambassador") {
-      return next(errGen(403, "Only admins and ambassadors can create rewards"))
+    if (req.user.role !== "admin") {
+      return next(errGen(403, "Only admins can create rewards"))
     }
 
     const { error, value } = rewardValidationSchema.validate(req.body, {
@@ -28,28 +28,33 @@ export const createReward = async (req, res, next) => {
 
     // ✅ Check if ambassador exists
     const ambassador = await User.findById(value.ambassador)
+    value.currency = ambassador.country === "India" ? "INR" : "USD"
     if (!ambassador) return next(errGen(404, "Ambassador not found"))
-    
+
     if (ambassador.role !== "ambassador") {
       return next(errGen(400, "User is not an ambassador"))
     }
 
-    console.log('createReward - Creating reward with data:', value)
-    
+    console.log("createReward - Creating reward with data:", value)
+
     const newReward = await Reward.create(value)
-    console.log('createReward - Created reward:', newReward)
-    
+    console.log("createReward - Created reward:", newReward)
+
     // Populate ambassador details
-    const populatedReward = await Reward.findById(newReward._id)
-      .populate("ambassador", "name email role profileImage course program country state")
-    
-    console.log('createReward - Populated reward:', populatedReward)
+    const populatedReward = await Reward.findById(newReward._id).populate(
+      "ambassador",
+      "name email role profileImage course program country state"
+    )
+
+    console.log("createReward - Populated reward:", populatedReward)
 
     // Update ambassador's hasReward field to true
     await User.findByIdAndUpdate(value.ambassador, { hasReward: true })
-    console.log('createReward - Updated ambassador hasReward to true')
+    console.log("createReward - Updated ambassador hasReward to true")
 
-    res.status(201).json(respo(true, "Reward created successfully", populatedReward))
+    res
+      .status(201)
+      .json(respo(true, "Reward created successfully", populatedReward))
   } catch (err) {
     next(err)
   }
@@ -63,23 +68,26 @@ export const getAllRewards = async (req, res, next) => {
     }
 
     const { search = "", status = "", ambassador = "" } = req.query
-    
+
     // Build query
     const query = {}
-    
+
     if (status) query.status = status
     if (ambassador) query.ambassador = ambassador
-    
+
     // Search functionality
     if (search) {
       query.$or = [
         { remarks: { $regex: search, $options: "i" } },
-        { amount: isNaN(search) ? null : Number(search) }
+        { amount: isNaN(search) ? null : Number(search) },
       ]
     }
 
     const rewards = await Reward.find(query)
-      .populate("ambassador", "name email role profileImage phone course program country state")
+      .populate(
+        "ambassador",
+        "name email role profileImage phone course program country state"
+      )
       .sort({ createdAt: -1 })
 
     res.status(200).json(respo(true, "All rewards fetched", rewards))
@@ -91,39 +99,52 @@ export const getAllRewards = async (req, res, next) => {
 // 🎁 Get My Rewards (Ambassador and Admin)
 export const getMyRewards = async (req, res, next) => {
   try {
-    console.log('getMyRewards - Full user object:', req.user)
-    console.log('getMyRewards - User role:', req.user.role)
-    console.log('getMyRewards - User ID:', req.user.id)
-    
+    console.log("getMyRewards - Full user object:", req.user)
+    console.log("getMyRewards - User role:", req.user.role)
+    console.log("getMyRewards - User ID:", req.user.id)
+
     // Temporarily allow all authenticated users for debugging
     if (!req.user.role) {
-      console.log('getMyRewards - No role found in user object')
+      console.log("getMyRewards - No role found in user object")
       return next(errGen(403, "No role found in user object"))
     }
-    
-    console.log('getMyRewards - Role check passed. User role:', req.user.role)
+
+    console.log("getMyRewards - Role check passed. User role:", req.user.role)
 
     const { status = "" } = req.query
-    
+
     // For admins, show all rewards. For ambassadors, show only their rewards
     const query = req.user.role === "admin" ? {} : { ambassador: req.user.id }
     if (status) query.status = status
 
-    console.log('getMyRewards - User ID:', req.user.id)
-    console.log('getMyRewards - User Role:', req.user.role)
-    console.log('getMyRewards - Query:', query)
+    console.log("getMyRewards - User ID:", req.user.id)
+    console.log("getMyRewards - User Role:", req.user.role)
+    console.log("getMyRewards - Query:", query)
 
     // Debug: Check all rewards in database
-    const allRewards = await Reward.find({}).populate("ambassador", "name email role")
-    console.log('getMyRewards - All rewards in DB:', allRewards.length)
-    console.log('getMyRewards - All rewards:', allRewards.map(r => ({ id: r._id, ambassador: r.ambassador, ambassadorId: r.ambassador._id })))
+    const allRewards = await Reward.find({}).populate(
+      "ambassador",
+      "name email role"
+    )
+    console.log("getMyRewards - All rewards in DB:", allRewards.length)
+    console.log(
+      "getMyRewards - All rewards:",
+      allRewards.map((r) => ({
+        id: r._id,
+        ambassador: r.ambassador,
+        ambassadorId: r.ambassador._id,
+      }))
+    )
 
     const rewards = await Reward.find(query)
-      .populate("ambassador", "name email role profileImage course program country state")
+      .populate(
+        "ambassador",
+        "name email role profileImage course program country state"
+      )
       .sort({ createdAt: -1 })
 
-    console.log('getMyRewards - Found rewards:', rewards.length)
-    console.log('getMyRewards - Rewards:', rewards)
+    console.log("getMyRewards - Found rewards:", rewards.length)
+    console.log("getMyRewards - Rewards:", rewards)
 
     res.status(200).json(respo(true, "Your rewards fetched", rewards))
   } catch (err) {
@@ -143,14 +164,14 @@ export const getRewardStats = async (req, res, next) => {
         $group: {
           _id: "$status",
           count: { $sum: 1 },
-          totalAmount: { $sum: "$amount" }
-        }
-      }
+          totalAmount: { $sum: "$amount" },
+        },
+      },
     ])
 
     const totalRewards = await Reward.countDocuments()
     const totalAmount = await Reward.aggregate([
-      { $group: { _id: null, total: { $sum: "$amount" } } }
+      { $group: { _id: null, total: { $sum: "$amount" } } },
     ])
 
     const ambassadorStats = await Reward.aggregate([
@@ -158,38 +179,40 @@ export const getRewardStats = async (req, res, next) => {
         $group: {
           _id: "$ambassador",
           totalRewards: { $sum: 1 },
-          totalAmount: { $sum: "$amount" }
-        }
+          totalAmount: { $sum: "$amount" },
+        },
       },
       {
         $lookup: {
           from: "users",
           localField: "_id",
           foreignField: "_id",
-          as: "ambassador"
-        }
+          as: "ambassador",
+        },
       },
       {
-        $unwind: "$ambassador"
+        $unwind: "$ambassador",
       },
       {
         $project: {
           ambassadorName: "$ambassador.name",
           ambassadorEmail: "$ambassador.email",
           totalRewards: 1,
-          totalAmount: 1
-        }
+          totalAmount: 1,
+        },
       },
       { $sort: { totalAmount: -1 } },
-      { $limit: 10 }
+      { $limit: 10 },
     ])
 
-    res.status(200).json(respo(true, "Reward statistics fetched", {
-      statusBreakdown: stats,
-      totalRewards,
-      totalAmount: totalAmount[0]?.total || 0,
-      topAmbassadors: ambassadorStats
-    }))
+    res.status(200).json(
+      respo(true, "Reward statistics fetched", {
+        statusBreakdown: stats,
+        totalRewards,
+        totalAmount: totalAmount[0]?.total || 0,
+        topAmbassadors: ambassadorStats,
+      })
+    )
   } catch (err) {
     next(err)
   }
@@ -212,8 +235,9 @@ export const updateRewardStatus = async (req, res, next) => {
     const updateData = { status }
     if (remarks !== undefined) updateData.remarks = remarks
 
-    const reward = await Reward.findByIdAndUpdate(id, updateData, { new: true })
-      .populate("ambassador", "name email role profileImage")
+    const reward = await Reward.findByIdAndUpdate(id, updateData, {
+      new: true,
+    }).populate("ambassador", "name email role profileImage")
 
     if (!reward) return next(errGen(404, "Reward not found"))
 
@@ -234,11 +258,19 @@ export const deleteReward = async (req, res, next) => {
     if (!reward) return next(errGen(404, "Reward not found"))
 
     // Check if ambassador has any other rewards
-    const remainingRewards = await Reward.countDocuments({ ambassador: reward.ambassador })
-    
+    const remainingRewards = await Reward.countDocuments({
+      ambassador: reward.ambassador,
+    })
+
     // Update ambassador's hasReward field based on remaining rewards
-    await User.findByIdAndUpdate(reward.ambassador, { hasReward: remainingRewards > 0 })
-    console.log(`deleteReward - Updated ambassador hasReward to ${remainingRewards > 0} (${remainingRewards} remaining rewards)`)
+    await User.findByIdAndUpdate(reward.ambassador, {
+      hasReward: remainingRewards > 0,
+    })
+    console.log(
+      `deleteReward - Updated ambassador hasReward to ${
+        remainingRewards > 0
+      } (${remainingRewards} remaining rewards)`
+    )
 
     res.status(200).json(respo(true, "Reward deleted successfully"))
   } catch (err) {
@@ -253,8 +285,10 @@ export const getRewardById = async (req, res, next) => {
       return next(errGen(403, "Only admins can view reward details"))
     }
 
-    const reward = await Reward.findById(req.params.id)
-      .populate("ambassador", "name email role profileImage phone")
+    const reward = await Reward.findById(req.params.id).populate(
+      "ambassador",
+      "name email role profileImage phone"
+    )
 
     if (!reward) return next(errGen(404, "Reward not found"))
 
@@ -285,15 +319,17 @@ export const getRewardsByAmbassador = async (req, res, next) => {
       .populate("ambassador", "name email role profileImage")
       .sort({ createdAt: -1 })
 
-    res.status(200).json(respo(true, "Ambassador rewards fetched", {
-      ambassador: {
-        id: ambassador._id,
-        name: ambassador.name,
-        email: ambassador.email,
-        profileImage: ambassador.profileImage
-      },
-      rewards
-    }))
+    res.status(200).json(
+      respo(true, "Ambassador rewards fetched", {
+        ambassador: {
+          id: ambassador._id,
+          name: ambassador.name,
+          email: ambassador.email,
+          profileImage: ambassador.profileImage,
+        },
+        rewards,
+      })
+    )
   } catch (err) {
     next(err)
   }

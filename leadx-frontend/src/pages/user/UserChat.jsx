@@ -53,11 +53,22 @@ const UserChat = () => {
       setLoading(true)
       console.log('🔍 Fetching user chats...')
       
+      // Check if user is logged in
+      const currentUser = getUser()
+      if (!currentUser) {
+        console.log('⚠️ User not logged in')
+        setChats([])
+        setError('Please chat with an ambassador first to see your conversations here.')
+        setLoading(false)
+        return
+      }
+      
       const response = await api.get('/auth/dashboard')
       
       if (response.data.success) {
-        setChats(response.data.data.recentChats || [])
-        console.log('✅ User chats loaded:', response.data.data.recentChats)
+        const allChats = response.data.data.recentChats || []
+        setChats(allChats)
+        console.log('✅ User chats loaded:', allChats)
       } else {
         console.error('❌ API response not successful:', response.data)
         setError('Failed to load chats')
@@ -65,49 +76,46 @@ const UserChat = () => {
     } catch (err) {
       console.error('❌ Error fetching chats:', err)
       console.error('❌ Error details:', err.response?.data || err.message)
-      setError('Failed to load chats')
+      setChats([])
+      setError('Please chat with an ambassador first to see your conversations here.')
     } finally {
       setLoading(false)
     }
   }
 
-  const fetchMessages = async (ambassadorId) => {
+  const fetchMessages = async (chatId) => {
     try {
-      console.log('🔍 Fetching messages for ambassador:', ambassadorId)
+      console.log('🔍 Fetching messages for chat:', chatId)
       
-      const response = await api.get(`/auth/chat-history/${ambassadorId}`)
+      const response = await api.get(`/chat/${chatId}`)
       
       console.log('🔍 Raw API response:', response.data)
       
       if (response.data.success) {
-        const chatData = response.data.data
-        console.log('✅ Chat data received:', chatData)
+        const messages = response.data.data
+        console.log('✅ Messages received:', messages)
         
-        // Handle different response structures
-        if (chatData.messages) {
-          console.log('🔍 Messages from backend:', chatData.messages)
-          console.log('🔍 First message structure:', chatData.messages[0])
+        // Transform messages to match UI expectations
+        const currentUserId = user?.id || user?._id
+        console.log('🔍 Current user ID for comparison:', currentUserId)
+        
+        const transformedMessages = messages.map(msg => {
+          const senderId = msg.sender?._id?.toString() || msg.sender?.id?.toString()
+          const isFromCurrentUser = senderId === currentUserId?.toString()
           
-          // Debug each message
-          chatData.messages.forEach((msg, index) => {
-            console.log(`🔍 Message ${index}:`, {
-              id: msg.id,
-              content: msg.content,
-              isFromUser: msg.isFromUser,
-              sender: msg.sender,
-              senderRole: msg.sender?.role
-            })
-          })
+          console.log('🔍 Message sender ID:', senderId, 'Current user ID:', currentUserId, 'Match:', isFromCurrentUser)
           
-          setMessages(chatData.messages)
-          console.log('✅ Messages loaded from chatData.messages:', chatData.messages)
-        } else if (Array.isArray(chatData)) {
-          setMessages(chatData)
-          console.log('✅ Messages loaded from array:', chatData)
-        } else {
-          console.log('❌ Unexpected data structure:', chatData)
-          setMessages([])
-        }
+          return {
+            _id: msg._id,
+            content: msg.content,
+            sender: msg.sender,
+            createdAt: msg.createdAt,
+            isFromUser: isFromCurrentUser
+          }
+        })
+        
+        console.log('🔍 Transformed messages:', transformedMessages)
+        setMessages(transformedMessages)
       } else {
         console.error('❌ API response not successful:', response.data)
         setMessages([])
@@ -121,10 +129,11 @@ const UserChat = () => {
 
   const handleSelectChat = (chat) => {
     console.log('🔍 Selecting chat:', chat)
-    console.log('🔍 Chat ambassador ID:', chat.ambassador.id)
+    console.log('🔍 Chat ID:', chat._id)
+    console.log('🔍 Chat ambassador:', chat.ambassador)
     setSelectedChat(chat)
     setMessages([]) // Clear previous messages
-    fetchMessages(chat.ambassador.id)
+    fetchMessages(chat._id)
   }
 
   const sendMessage = async (e) => {
@@ -139,9 +148,9 @@ const UserChat = () => {
       console.log('🔍 Selected chat:', selectedChat)
       
       const response = await api.post('/chat/send', {
-        chatId: selectedChat.chatId,
+        chatId: selectedChat._id,
         content: newMessage,
-        receiver: selectedChat.ambassador.id
+        receiver: selectedChat.ambassador?._id
       })
       
       if (response.data.success) {
@@ -187,7 +196,8 @@ const UserChat = () => {
   }
 
   const getImageUrl = (path) => {
-    if (!path) return "/default-avatar.png"
+    if (!path) return null
+    if (path.startsWith("http")) return path
     const normalized = String(path).replace(/^\.\/+/, "").replace(/^\/+/, "")
     return `http://localhost:5000/${normalized}`
   }
@@ -236,8 +246,8 @@ const UserChat = () => {
           <p className="text-red-500 text-lg">{error}</p>
           <button
             onClick={fetchChats}
-            className="mt-4 px-4 py-2 rounded-lg text-white"
-            style={{ backgroundColor: userDashboardColor }}
+            className="mt-4 px-4 py-2 rounded-lg text-white font-medium hover:opacity-90 transition-opacity"
+            style={{ backgroundColor: '#1098e8' }}
           >
             Retry
           </button>
@@ -247,19 +257,22 @@ const UserChat = () => {
   }
 
   return (
-    <div className="flex h-screen">
+    <div className="flex flex-col lg:flex-row h-full max-h-full overflow-hidden bg-white">
       {/* Sidebar */}
-      <div className="w-1/3 border-r bg-white hidden md:flex flex-col">
+      <div className="w-full lg:w-1/3 border-r bg-white flex flex-col max-h-full">
         <div className="p-4 font-bold text-lg border-b">My Chats</div>
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto bg-white">
           {chats.length > 0 ? (
             chats.map((chat) => {
               console.log('🔍 Rendering chat in sidebar:', chat)
+              console.log('🔍 Chat lastMessage:', chat.lastMessage)
+              console.log('🔍 Chat lastMessage type:', typeof chat.lastMessage)
+              console.log('🔍 Chat lastMessage content:', chat.lastMessage?.content)
               return (
                 <div
                   key={chat.chatId}
-                  className={`flex items-center justify-between p-3 cursor-pointer hover:bg-gray-100 ${
-                    selectedChat?.chatId === chat.chatId ? "bg-gray-200" : ""
+                  className={`flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50 bg-white ${
+                    selectedChat?.chatId === chat.chatId ? "bg-gray-100" : ""
                   }`}
                   onClick={() => handleSelectChat(chat)}
                 >
@@ -270,18 +283,35 @@ const UserChat = () => {
                           src={getImageUrl(chat.ambassador.profileImage)}
                           alt={chat.ambassador.name}
                           className="w-10 h-10 rounded-full object-cover"
+                          onError={(e) => {
+                            e.target.style.display = 'none'
+                            e.target.nextSibling.style.display = 'flex'
+                          }}
                         />
-                      ) : (
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold ${getAvatarColor(chat.ambassador.name)}`}>
-                          {getUserAvatar(chat.ambassador.name)}
-                        </div>
-                      )}
-                      <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
+                      ) : null}
+                      <div 
+                        className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold ${getAvatarColor(chat.ambassador.name)}`}
+                        style={{ display: chat.ambassador.profileImage ? 'none' : 'flex' }}
+                      >
+                        {getUserAvatar(chat.ambassador.name)}
+                      </div>
                     </div>
                     <div className="flex flex-col">
                       <p className="font-medium">{chat.ambassador.name}</p>
                       <p className="text-xs text-gray-500 truncate w-40">
-                        {chat.lastMessage?.content || "No messages yet"}
+                        {(() => {
+                          // Try different ways to get the last message content
+                          if (chat.lastMessage?.content) {
+                            return chat.lastMessage.content
+                          }
+                          if (chat.lastMessage && typeof chat.lastMessage === 'object' && chat.lastMessage.content) {
+                            return chat.lastMessage.content
+                          }
+                          if (chat.lastMessage && typeof chat.lastMessage === 'string') {
+                            return chat.lastMessage
+                          }
+                          return "No messages yet"
+                        })()}
                       </p>
                     </div>
                   </div>
@@ -306,24 +336,29 @@ const UserChat = () => {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 flex flex-col">
+      <div className={`flex-1 flex flex-col max-h-full ${selectedChat ? '' : 'hidden lg:flex'}`}>
         {selectedChat ? (
           <>
             {/* Chat header */}
-            <div className="p-4 border-b flex items-center gap-3 bg-white">
+            <div className="p-3 sm:p-4 border-b flex items-center gap-3 bg-white">
               <div className="relative">
                 {selectedChat.ambassador.profileImage ? (
                   <img
                     src={getImageUrl(selectedChat.ambassador.profileImage)}
                     alt={selectedChat.ambassador.name}
                     className="w-10 h-10 rounded-full object-cover"
+                    onError={(e) => {
+                      e.target.style.display = 'none'
+                      e.target.nextSibling.style.display = 'flex'
+                    }}
                   />
-                ) : (
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold ${getAvatarColor(selectedChat.ambassador.name)}`}>
-                    {getUserAvatar(selectedChat.ambassador.name)}
-                  </div>
-                )}
-                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
+                ) : null}
+                <div 
+                  className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold ${getAvatarColor(selectedChat.ambassador.name)}`}
+                  style={{ display: selectedChat.ambassador.profileImage ? 'none' : 'flex' }}
+                >
+                  {getUserAvatar(selectedChat.ambassador.name)}
+                </div>
               </div>
               <div>
                 <p className="font-semibold">{selectedChat.ambassador.name}</p>
@@ -383,13 +418,13 @@ const UserChat = () => {
                         )}
                         
                         <div
-                          className={`max-w-xs px-3 py-2 rounded-lg break-words ${
+                          className={`max-w-xs px-4 py-3 rounded-2xl break-words shadow-sm ${
                             isFromUser
-                              ? "text-white"
-                              : "bg-gray-200 text-gray-800"
+                              ? "text-white font-medium"
+                              : "bg-gray-100 text-gray-800"
                           }`}
                           style={{
-                            backgroundColor: isFromUser ? userDashboardColor : undefined
+                            backgroundColor: isFromUser ? (userDashboardColor || '#1098e8') : undefined
                           }}
                         >
                           {msg.content}
@@ -432,18 +467,25 @@ const UserChat = () => {
               <button
                 onClick={sendMessage}
                 disabled={sending || !newMessage.trim()}
-                className={`px-4 py-2 text-white rounded-lg transition-opacity ${
-                  sending || !newMessage.trim() ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'
+                className={`px-4 py-2 text-white rounded-lg font-medium transition-all ${
+                  sending || !newMessage.trim() 
+                    ? 'opacity-50 cursor-not-allowed' 
+                    : 'hover:opacity-90 hover:shadow-lg'
                 }`}
-                style={{ backgroundColor: userDashboardColor }}
+                style={{ backgroundColor: '#1098e8' }}
               >
                 {sending ? (
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Sending...
+                    <span>Sending...</span>
                   </div>
                 ) : (
-                  "Send"
+                  <div className="flex items-center gap-2">
+                    <span>Send</span>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
+                  </div>
                 )}
               </button>
             </div>

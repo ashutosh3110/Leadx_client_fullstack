@@ -1,13 +1,12 @@
-import React from 'react';
-import CustomizationForm from './CustomizationForm';
+import React from "react"
+import SimpleScriptForm from "./SimpleScriptForm"
 
 const AdminCustomize = () => {
-    return (
-        <div className="space-y-4 sm:space-y-6">
-            <CustomizationForm />
-        </div>
-    );
-};
+  return (
+    <div className="space-y-4 sm:space-y-6">
+      <SimpleScriptForm />
+    </div>
+  )
+}
 
-export default AdminCustomize;
-
+export default AdminCustomize

@@ -15,19 +15,31 @@ export const startChat = async (req, res, next) => {
   try {
     console.log("🔍 startChat called with:", req.body)
     console.log("🔍 User authenticated:", !!req.user)
-    const { ambassadorId, name, email, phone, alternativeMobile, country, state, city } = req.body
+    const {
+      ambassadorId,
+      name,
+      email,
+      phone,
+      alternativeMobile,
+      country,
+      state,
+      city,
+    } = req.body
 
     // Validate required fields
     if (!ambassadorId || !name || !email) {
       return res.status(400).json({
         success: false,
-        message: "ambassadorId, name, and email are required"
+        message: "ambassadorId, name, and email are required",
       })
     }
 
     let user = await User.findOne({ email })
-    console.log("🔍 Existing user found:", user ? user.name : "No existing user")
-    
+    console.log(
+      "🔍 Existing user found:",
+      user ? user.name : "No existing user"
+    )
+
     if (!user) {
       console.log("🔍 Creating new user...")
       const plainPassword = generatePassword()
@@ -50,7 +62,7 @@ export const startChat = async (req, res, next) => {
         role: "user",
         password: hashedPassword,
       })
-      
+
       console.log("✅ New user created:", user._id, user.name)
       console.log("🔍 User password field after creation:", user.password ? "Present" : "Missing")
       console.log("🔍 User password hash:", user.password ? user.password.substring(0, 20) + "..." : "No password")
@@ -65,7 +77,10 @@ export const startChat = async (req, res, next) => {
           )
           console.log("✅ Welcome email sent successfully")
         } catch (emailError) {
-          console.log("⚠️ Email service not configured or failed:", emailError.message)
+          console.log(
+            "⚠️ Email service not configured or failed:",
+            emailError.message
+          )
         }
       }
 
@@ -78,12 +93,20 @@ export const startChat = async (req, res, next) => {
           )
           console.log("✅ Welcome WhatsApp sent successfully")
         } catch (whatsappError) {
-          console.log("⚠️ WhatsApp service not configured or failed:", whatsappError.message)
+          console.log(
+            "⚠️ WhatsApp service not configured or failed:",
+            whatsappError.message
+          )
         }
       }
     }
 
-    console.log("🔍 Looking for existing chat between user:", user._id, "and ambassador:", ambassadorId)
+    console.log(
+      "🔍 Looking for existing chat between user:",
+      user._id,
+      "and ambassador:",
+      ambassadorId
+    )
     let chat = await Chat.findOne({
       participants: { $all: [user._id, ambassadorId] },
     })
@@ -103,8 +126,10 @@ export const startChat = async (req, res, next) => {
     console.log("✅ Chat started successfully:", {
       chatId: populatedChat._id,
       participants: populatedChat.participants.length,
-      user: populatedChat.participants.find(p => p.role === 'user')?.name,
-      ambassador: populatedChat.participants.find(p => p.role === 'ambassador')?.name
+      user: populatedChat.participants.find((p) => p.role === "user")?.name,
+      ambassador: populatedChat.participants.find(
+        (p) => p.role === "ambassador"
+      )?.name,
     })
 
     res.status(200).json(respo(true, "Chat started", populatedChat))
@@ -113,7 +138,7 @@ export const startChat = async (req, res, next) => {
     console.error("❌ Error details:", {
       message: err.message,
       stack: err.stack,
-      name: err.name
+      name: err.name,
     })
     next(err)
   }
@@ -130,7 +155,7 @@ export const sendMessage = async (req, res) => {
       chatId,
       sender,
       receiver,
-      content: content.substring(0, 50) + "..."
+      content: content.substring(0, 50) + "...",
     })
 
     if (!chatId || !receiver || !content) {
@@ -147,7 +172,7 @@ export const sendMessage = async (req, res) => {
       receiver,
       content,
     })
-    
+
     console.log("✅ New message created:", newMessage._id)
 
     const populatedMessage = await Message.findById(newMessage._id).populate(
@@ -181,7 +206,10 @@ export const sendMessage = async (req, res) => {
             console.log("⚠️ Email notification failed, but continuing...")
           }
         } catch (emailError) {
-          console.log("⚠️ Email service not configured or failed:", emailError.message)
+          console.log(
+            "⚠️ Email service not configured or failed:",
+            emailError.message
+          )
         }
       }
 
@@ -194,7 +222,10 @@ export const sendMessage = async (req, res) => {
           )
           console.log("✅ WhatsApp notification sent successfully")
         } catch (whatsappError) {
-          console.log("⚠️ WhatsApp service not configured or failed:", whatsappError.message)
+          console.log(
+            "⚠️ WhatsApp service not configured or failed:",
+            whatsappError.message
+          )
         }
       }
     }
@@ -229,15 +260,15 @@ export const editMessage = async (req, res) => {
     }
 
     // Check if message is within 5-minute edit window
-    const messageTime = new Date(msg.createdAt);
-    const currentTime = new Date();
-    const timeDifference = currentTime - messageTime;
-    const fiveMinutesInMs = 5 * 60 * 1000; // 5 minutes in milliseconds
+    const messageTime = new Date(msg.createdAt)
+    const currentTime = new Date()
+    const timeDifference = currentTime - messageTime
+    const fiveMinutesInMs = 5 * 60 * 1000 // 5 minutes in milliseconds
 
     if (timeDifference > fiveMinutesInMs) {
-      return res.status(403).json({ 
-        success: false, 
-        message: "Message can only be edited within 5 minutes of sending" 
+      return res.status(403).json({
+        success: false,
+        message: "Message can only be edited within 5 minutes of sending",
       })
     }
 
@@ -431,23 +462,26 @@ export const adminSendAsAmbassador = async (req, res, next) => {
 export const getMyUsers = async (req, res, next) => {
   try {
     const ambassadorId = req.user.id
-    console.log('🔍 Getting users for ambassador:', ambassadorId)
+    console.log("🔍 Getting users for ambassador:", ambassadorId)
 
     // Get all chats where this ambassador is a participant
     const chats = await Chat.find({ participants: ambassadorId })
-      .populate('participants', 'name email phone country state profileImage role conversionStatus')
-      .populate('lastMessage', 'content createdAt')
+      .populate(
+        "participants",
+        "name email phone country state profileImage role conversionStatus"
+      )
+      .populate("lastMessage", "content createdAt")
       .sort({ updatedAt: -1 })
 
     console.log(`📊 Found ${chats.length} chats for ambassador`)
 
     // Extract unique users
     const usersMap = new Map()
-    
+
     for (const chat of chats) {
       // Filter participants to get only users (not the ambassador himself)
       const users = chat.participants.filter(
-        p => p && p.role === 'user' && p._id.toString() !== ambassadorId
+        (p) => p && p.role === "user" && p._id.toString() !== ambassadorId
       )
 
       for (const user of users) {
@@ -455,15 +489,12 @@ export const getMyUsers = async (req, res, next) => {
           // Get message count for this user in this chat
           const messageCount = await Message.countDocuments({
             chatId: chat._id,
-            $or: [
-              { sender: user._id },
-              { receiver: user._id }
-            ]
+            $or: [{ sender: user._id }, { receiver: user._id }],
           })
 
           // Get last message time for this chat
           const lastMessage = await Message.findOne({
-            chatId: chat._id
+            chatId: chat._id,
           }).sort({ createdAt: -1 })
 
           usersMap.set(user._id.toString(), {
@@ -474,19 +505,16 @@ export const getMyUsers = async (req, res, next) => {
             country: user.country,
             state: user.state,
             profileImage: user.profileImage,
-            conversionStatus: user.conversionStatus || 'pending',
+            conversionStatus: user.conversionStatus || "pending",
             messageCount: messageCount,
-            lastActivity: lastMessage?.createdAt || chat.updatedAt
+            lastActivity: lastMessage?.createdAt || chat.updatedAt,
           })
         } else {
           // Update message count if user already exists
           const existingUser = usersMap.get(user._id.toString())
           const additionalMessages = await Message.countDocuments({
             chatId: chat._id,
-            $or: [
-              { sender: user._id },
-              { receiver: user._id }
-            ]
+            $or: [{ sender: user._id }, { receiver: user._id }],
           })
           existingUser.messageCount += additionalMessages
         }
@@ -495,12 +523,15 @@ export const getMyUsers = async (req, res, next) => {
 
     const usersList = Array.from(usersMap.values())
     console.log(`✅ Found ${usersList.length} unique users for ambassador`)
-    console.log('👥 Users:', usersList.map(u => ({ name: u.name, messages: u.messageCount })))
+    console.log(
+      "👥 Users:",
+      usersList.map((u) => ({ name: u.name, messages: u.messageCount }))
+    )
 
-    res.status(200).json(respo(true, 'Users fetched successfully', usersList))
+    res.status(200).json(respo(true, "Users fetched successfully", usersList))
   } catch (err) {
-    console.error('❌ Error getting ambassador users:', err)
-    console.error('❌ Error stack:', err.stack)
+    console.error("❌ Error getting ambassador users:", err)
+    console.error("❌ Error stack:", err.stack)
     next(err)
   }
 }
@@ -510,63 +541,78 @@ export const adminGetChatStats = async (req, res, next) => {
   try {
     if (req.user.role !== "admin") return next(errGen(403, "Forbidden"))
 
-    const { hours = 24, type = 'all' } = req.query
+    const { hours = 24, type = "all" } = req.query
     const hoursAgo = new Date(Date.now() - hours * 60 * 60 * 1000)
 
     // Build query based on time filter
     const timeQuery = { createdAt: { $gte: hoursAgo } }
 
     // Get all messages in the time period
-    const allMessages = await Message.find(timeQuery)
-      .populate("sender", "name email role")
+    const allMessages = await Message.find(timeQuery).populate(
+      "sender",
+      "name email role"
+    )
 
     // Separate messages by type (ambassador vs student)
     let filteredMessages = allMessages
 
-    if (type === 'ambassador') {
+    if (type === "ambassador") {
       // Messages where sender is ambassador or receiver is ambassador
-      filteredMessages = allMessages.filter(msg => 
-        msg.sender?.role === 'ambassador' || 
-        (typeof msg.receiver === 'object' && msg.receiver?.role === 'ambassador')
+      filteredMessages = allMessages.filter(
+        (msg) =>
+          msg.sender?.role === "ambassador" ||
+          (typeof msg.receiver === "object" &&
+            msg.receiver?.role === "ambassador")
       )
-    } else if (type === 'student') {
+    } else if (type === "student") {
       // Messages where sender is not ambassador (student/user)
-      filteredMessages = allMessages.filter(msg => 
-        msg.sender?.role !== 'ambassador' && 
-        (typeof msg.receiver === 'object' ? msg.receiver?.role !== 'ambassador' : true)
+      filteredMessages = allMessages.filter(
+        (msg) =>
+          msg.sender?.role !== "ambassador" &&
+          (typeof msg.receiver === "object"
+            ? msg.receiver?.role !== "ambassador"
+            : true)
       )
     }
 
     // Group messages by chatId to get conversations
     const conversations = {}
-    filteredMessages.forEach(message => {
+    filteredMessages.forEach((message) => {
       const chatId = message.chatId.toString()
       if (!conversations[chatId]) {
         conversations[chatId] = {
           messages: [],
           hasReply: false,
-          isFormSubmission: message.isFormSubmission || false
+          isFormSubmission: message.isFormSubmission || false,
         }
       }
       conversations[chatId].messages.push(message)
-      
+
       // Check if conversation has a reply (message from ambassador or admin)
-      if (message.sender?.role === 'ambassador' || message.sender?.role === 'admin' || message.isAdminReply) {
+      if (
+        message.sender?.role === "ambassador" ||
+        message.sender?.role === "admin" ||
+        message.isAdminReply
+      ) {
         conversations[chatId].hasReply = true
       }
     })
 
     const totalChats = Object.keys(conversations).length
-    const unrepliedChats = Object.values(conversations).filter(conv => !conv.hasReply).length
+    const unrepliedChats = Object.values(conversations).filter(
+      (conv) => !conv.hasReply
+    ).length
     const repliedChats = totalChats - unrepliedChats
 
-    res.status(200).json(respo(true, "Chat statistics fetched", {
-      totalChats,
-      unrepliedChats,
-      repliedChats,
-      timeFilter: `${hours} hours`,
-      type: type
-    }))
+    res.status(200).json(
+      respo(true, "Chat statistics fetched", {
+        totalChats,
+        unrepliedChats,
+        repliedChats,
+        timeFilter: `${hours} hours`,
+        type: type,
+      })
+    )
   } catch (err) {
     next(err)
   }

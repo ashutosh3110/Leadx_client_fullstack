@@ -94,8 +94,8 @@ const Profile = () => {
     
     if (!formData.about?.trim()) {
       newErrors.about = "About section is required"
-    } else if (formData.about.trim().length < 50) {
-      newErrors.about = "About section must be at least 50 characters"
+    } else if (formData.about.trim().length < 10) {
+      newErrors.about = "About section must be at least 10 characters"
     }
     
     // Languages validation
@@ -638,7 +638,11 @@ const Profile = () => {
                           value="within-india"
                           checked={locationType === 'within-india'}
                           onChange={(e) => setLocationType(e.target.value)}
-                          className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                          className="w-4 h-4 focus:ring-2"
+                          style={{ 
+                            color: ambassadorDashboardColor,
+                            focusRingColor: ambassadorDashboardColor
+                          }}
                         />
                         <span className="text-sm font-medium text-slate-700">Within India</span>
                       </label>
@@ -649,7 +653,11 @@ const Profile = () => {
                           value="outside-india"
                           checked={locationType === 'outside-india'}
                           onChange={(e) => setLocationType(e.target.value)}
-                          className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                          className="w-4 h-4 focus:ring-2"
+                          style={{ 
+                            color: ambassadorDashboardColor,
+                            focusRingColor: ambassadorDashboardColor
+                          }}
                         />
                         <span className="text-sm font-medium text-slate-700">Outside India</span>
                       </label>
@@ -802,7 +810,11 @@ const Profile = () => {
               <button
                 type="button"
                 onClick={() => handleAddField(setLanguages, languages)}
-                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors hover:opacity-80"
+                    style={{ 
+                      color: ambassadorDashboardColor,
+                      backgroundColor: `${ambassadorDashboardColor}10`
+                    }}
               >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -862,7 +874,11 @@ const Profile = () => {
               <button
                 type="button"
                     onClick={() => handleAddField(setExtracurriculars, extracurriculars)}
-                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors hover:opacity-80"
+                    style={{ 
+                      color: ambassadorDashboardColor,
+                      backgroundColor: `${ambassadorDashboardColor}10`
+                    }}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />

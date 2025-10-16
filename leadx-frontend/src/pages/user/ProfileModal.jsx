@@ -51,10 +51,6 @@ const ProfileModal = ({ isOpen, onClose, ambassador }) => {
             setLoading(false);
         }
     };
-    const getProfileImage = ()=>{
-        const url= `http://localhost:5000/${profileData.profileImage}`;
-        return url;
-    }
 
     const getLanguages = () => {
         // Handle languages from backend - it should be an array
@@ -105,19 +101,6 @@ const ProfileModal = ({ isOpen, onClose, ambassador }) => {
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-slate-200/30 bg-white/50 backdrop-blur-sm">
                     <div className="flex items-center space-x-4">
-                        <div className="relative">
-                            <div className="w-16 h-16 rounded-full overflow-hidden border-3 border-white shadow-lg">
-                                <img
-                                    src={getProfileImage()}
-                                    alt={profileData?.name || ambassador?.name || 'Ambassador'}
-                                    className="w-full h-full object-cover"
-                                />
-                            </div>
-                            {/* Online Status */}
-                            <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-400 border-2 border-white rounded-full flex items-center justify-center">
-                                <div className="w-2 h-2 bg-green-600 rounded-full animate-pulse"></div>
-                            </div>
-                        </div>
                         <div>
                             <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                                 {ambassador.name}

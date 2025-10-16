@@ -167,13 +167,17 @@ const Users = () => {
                         value={user.conversionStatus || 'pending'}
                         onChange={(e) => handleConversionStatusChange(user._id, e.target.value)}
                         disabled={user.conversionStatus === 'enrolled'}
-                        className={`px-3 py-1.5 text-xs font-medium rounded-full border focus:outline-none focus:ring-2 focus:ring-blue-500 ${getStatusColor(user.conversionStatus || 'pending')} ${
+                        className={`px-3 py-1.5 text-xs font-medium rounded-full border focus:outline-none focus:ring-2 ${getStatusColor(user.conversionStatus || 'pending')} ${
                           user.conversionStatus === 'enrolled' ? 'cursor-not-allowed opacity-75' : 'cursor-pointer'
                         }`}
+                        style={{
+                          focusRingColor: ambassadorDashboardColor,
+                          backgroundColor: 'white'
+                        }}
                       >
-                        <option value="pending">Pending</option>
-                        <option value="converted">Converted</option>
-                        <option value="enrolled" disabled={user.conversionStatus !== 'enrolled'}>
+                        <option value="pending" style={{ backgroundColor: 'white' }}>Pending</option>
+                        <option value="converted" style={{ backgroundColor: 'white' }}>Converted</option>
+                        <option value="enrolled" disabled={user.conversionStatus !== 'enrolled'} style={{ backgroundColor: 'white' }}>
                           Enrolled
                         </option>
                       </select>
@@ -218,7 +222,8 @@ const Users = () => {
           {searchTerm && (
             <button
               onClick={() => setSearchTerm('')}
-              className="mt-3 text-blue-600 hover:text-blue-800 text-sm underline"
+              className="mt-3 text-sm underline hover:opacity-80 transition-opacity"
+              style={{ color: ambassadorDashboardColor }}
             >
               Clear search
             </button>

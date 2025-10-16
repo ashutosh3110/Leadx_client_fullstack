@@ -1,77 +1,52 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from "react"
 
-const ColorContext = createContext();
+const ColorContext = createContext()
 
 export const useColorContext = () => {
-    const context = useContext(ColorContext);
-    if (!context) {
-        throw new Error('useColorContext must be used within a ColorProvider');
-    }
-    return context;
-};
+  const context = useContext(ColorContext)
+  if (!context) {
+    throw new Error("useColorContext must be used within a ColorProvider")
+  }
+  return context
+}
 
 export const ColorProvider = ({ children }) => {
-    const [adminDashboardColor, setAdminDashboardColor] = useState('#4682B4'); // Steel Blue (same as sidebar)
-    const [ambassadorDashboardColor, setAmbassadorDashboardColor] = useState('#4682B4'); // Same as admin - Steel Blue
-    const [userDashboardColor, setUserDashboardColor] = useState('#4682B4'); // Steel Blue for users
+  const [adminDashboardColor, setAdminDashboardColor] = useState("#1098e8") // Same as sidebar
+  const [ambassadorDashboardColor, setAmbassadorDashboardColor] =
+    useState("#1098e8") // Same as sidebar
 
-    // Load colors from localStorage on mount
-    useEffect(() => {
-        const savedAdminColor = localStorage.getItem('adminDashboardColor');
-        const savedAmbassadorColor = localStorage.getItem('ambassadorDashboardColor');
-        const savedUserColor = localStorage.getItem('userDashboardColor');
-        
-        if (savedAdminColor) {
-            setAdminDashboardColor(savedAdminColor);
-        }
-        if (savedAmbassadorColor) {
-            setAmbassadorDashboardColor(savedAmbassadorColor);
-        } else {
-            // Set default Steel Blue color (same as admin) if no saved color
-            setAmbassadorDashboardColor('#4682B4');
-            localStorage.setItem('ambassadorDashboardColor', '#4682B4');
-        }
-        if (savedUserColor) {
-            setUserDashboardColor(savedUserColor);
-        } else {
-            // Set default Steel Blue color for users
-            setUserDashboardColor('#4682B4');
-            localStorage.setItem('userDashboardColor', '#4682B4');
-        }
-    }, []);
+  // Load colors from localStorage on mount
+  useEffect(() => {
+    // Force update to new color
+    setAdminDashboardColor("#1098e8")
+    setAmbassadorDashboardColor("#1098e8")
+    localStorage.setItem("adminDashboardColor", "#1098e8")
+    localStorage.setItem("ambassadorDashboardColor", "#1098e8")
+  }, [])
 
-    // Save colors to localStorage when they change
-    useEffect(() => {
-        localStorage.setItem('adminDashboardColor', adminDashboardColor);
-    }, [adminDashboardColor]);
+  // Save colors to localStorage when they change
+  useEffect(() => {
+    localStorage.setItem("adminDashboardColor", adminDashboardColor)
+  }, [adminDashboardColor])
 
-    useEffect(() => {
-        localStorage.setItem('ambassadorDashboardColor', ambassadorDashboardColor);
-    }, [ambassadorDashboardColor]);
+  useEffect(() => {
+    localStorage.setItem("ambassadorDashboardColor", ambassadorDashboardColor)
+  }, [ambassadorDashboardColor])
 
-    useEffect(() => {
-        localStorage.setItem('userDashboardColor', userDashboardColor);
-    }, [userDashboardColor]);
+  const updateAdminDashboardColor = (color) => {
+    setAdminDashboardColor(color)
+  }
 
-    const updateAdminDashboardColor = (color) => {
-        setAdminDashboardColor(color);
-    };
+  const updateAmbassadorDashboardColor = (color) => {
+    setAmbassadorDashboardColor(color)
+  }
 
-    const updateAmbassadorDashboardColor = (color) => {
-        setAmbassadorDashboardColor(color);
-    };
+  const value = {
+    adminDashboardColor,
+    ambassadorDashboardColor,
+    updateAdminDashboardColor,
+    updateAmbassadorDashboardColor,
+  }
 
-    const value = {
-        adminDashboardColor,
-        ambassadorDashboardColor,
-        userDashboardColor,
-        updateAdminDashboardColor,
-        updateAmbassadorDashboardColor
-    };
-
-    return (
-        <ColorContext.Provider value={value}>
-            {children}
-        </ColorContext.Provider>
-    );
-};
+  return <ColorContext.Provider value={value}>{children}</ColorContext.Provider>
+}
