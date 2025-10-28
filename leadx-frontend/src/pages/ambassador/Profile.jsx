@@ -290,7 +290,7 @@ const Profile = () => {
   if (!profile) return <p className="text-center mt-8">Loading profile...</p>
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 mt-4">
       {/* Cover */}
       <div className="relative h-48 md:h-64 bg-gray-200">
         <img

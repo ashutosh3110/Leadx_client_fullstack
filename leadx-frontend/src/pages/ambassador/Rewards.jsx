@@ -169,7 +169,7 @@ const Rewards = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 mt-4">
       {/* Header */}
       <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-200 shadow-lg">
         <div className="flex items-center justify-between mb-4">
@@ -304,59 +304,48 @@ const Rewards = () => {
 
         {/* Rewards Table */}
         {filteredRewards.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-200">
-              <thead className="bg-slate-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                    Amount
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                    Remarks
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                    Date
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200">
-                {filteredRewards.map((reward) => (
-                  <tr
-                    key={reward._id}
-                    className="hover:bg-slate-50 transition-colors duration-200"
-                  >
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-lg font-semibold text-slate-900">
-                        {getCurrencySymbol(reward.currency || 'INR')}
-                        {reward.amount?.toLocaleString() || 0}
-                      </div>
-                      <div className="text-sm text-slate-500">
-                        {reward.currency || 'INR'}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-slate-900 max-w-xs">
-                        {reward.remarks || 'No remarks'}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                      {reward.createdAt ? new Date(reward.createdAt).toLocaleDateString() : 'N/A'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(reward.status)}`}>
-                        {getStatusIcon(reward.status)}
-                        <span className="ml-1">
-                          {reward.status?.charAt(0)?.toUpperCase() + reward.status?.slice(1) || 'Pending'}
-                        </span>
+          <div className="space-y-2">
+            {/* Header */}
+            <div className="grid grid-cols-4 gap-4 px-4 py-2 bg-slate-50 rounded-t-lg text-xs font-medium text-slate-500 uppercase tracking-wider">
+              <div>Amount</div>
+              <div>Remarks</div>
+              <div>Date</div>
+              <div>Status</div>
+            </div>
+            
+            {/* Rows */}
+            <div className="space-y-1 max-h-80 overflow-y-auto">
+              {filteredRewards.map((reward) => (
+                <div
+                  key={reward._id}
+                  className="grid grid-cols-4 gap-4 px-4 py-2 bg-white hover:bg-slate-50 transition-colors duration-200 border-b border-slate-100"
+                >
+                  <div className="flex flex-col">
+                    <div className="text-sm font-semibold text-slate-900">
+                      {getCurrencySymbol(reward.currency || 'INR')}
+                      {reward.amount?.toLocaleString() || 0}
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      {reward.currency || 'INR'}
+                    </div>
+                  </div>
+                  <div className="text-sm text-slate-900 truncate">
+                    {reward.remarks || 'No remarks'}
+                  </div>
+                  <div className="text-sm text-slate-500">
+                    {reward.createdAt ? new Date(reward.createdAt).toLocaleDateString() : 'N/A'}
+                  </div>
+                  <div>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(reward.status)}`}>
+                      {getStatusIcon(reward.status)}
+                      <span className="ml-1">
+                        {reward.status?.charAt(0)?.toUpperCase() + reward.status?.slice(1) || 'Pending'}
                       </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         ) : (
           <div className="text-center py-12">

@@ -83,7 +83,7 @@ const Dashboard = () => {
 
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 mt-4">
       {/* Error Display */}
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">

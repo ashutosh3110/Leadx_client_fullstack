@@ -70,10 +70,7 @@ const SimpleScriptForm = () => {
     e.preventDefault()
 
     if (
-      !formData.clientName ||
-      !formData.targetWebUrl ||
-      !formData.webUrl ||
-      !formData.webName
+      !formData.clientName
     ) {
       toast.error("Please fill in all required fields")
       return
@@ -142,30 +139,30 @@ const SimpleScriptForm = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-6 px-4">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-4 px-4">
+      <div className="max-w-2xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+        <div className="text-center mb-6">
+          <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
             Ambassador Widget Generator
           </h1>
-          <p className="text-slate-600 text-lg">
+          <p className="text-slate-600 text-sm">
             Generate embeddable ambassador widgets with AmbassadorCard UI
           </p>
         </div>
 
         {/* Main Form */}
-        <div className="bg-white rounded-xl shadow-lg border border-slate-200 p-6 mb-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Client Information */}
+        <div className="bg-white rounded-xl shadow-lg border border-slate-200 p-4 mb-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Institute Information */}
             <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-              <h2 className="text-lg font-semibold text-green-700 mb-4">
-                Client Information
+              <h2 className="text-base font-semibold text-green-700 mb-3">
+                Institute Information
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Client Name <span className="text-red-500">*</span>
+                  <label className="block text-xs font-medium text-slate-700 mb-2">
+                    Institute Name <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -174,14 +171,14 @@ const SimpleScriptForm = () => {
                       handleInputChange("clientName", e.target.value)
                     }
                     placeholder="University/College Name"
-                    className="w-full p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full p-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Client Email
+                  <label className="block text-xs font-medium text-slate-700 mb-2">
+                    Institute Email
                   </label>
                   <input
                     type="email"
@@ -189,29 +186,14 @@ const SimpleScriptForm = () => {
                     onChange={(e) =>
                       handleInputChange("clientEmail", e.target.value)
                     }
-                    placeholder="client@university.edu"
-                    className="w-full p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    placeholder="institute@university.edu"
+                    className="w-full p-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Target Website URL <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="url"
-                    value={formData.targetWebUrl}
-                    onChange={(e) =>
-                      handleInputChange("targetWebUrl", e.target.value)
-                    }
-                    placeholder="https://university.edu"
-                    className="w-full p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                    required
-                  />
-                </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                  <label className="block text-xs font-medium text-slate-700 mb-2">
                     Script Status
                   </label>
                   <select
@@ -219,55 +201,15 @@ const SimpleScriptForm = () => {
                     onChange={(e) =>
                       handleInputChange("isActive", e.target.value === "active")
                     }
-                    className="w-full p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full p-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                   >
                     <option value="active">Active</option>
                     <option value="inactive">Inactive</option>
                   </select>
                 </div>
-              </div>
-            </div>
-
-            {/* Web Settings */}
-            <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-              <h2 className="text-lg font-semibold text-blue-700 mb-4">
-                Web Settings
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Your Company URL <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="url"
-                    value={formData.webUrl}
-                    onChange={(e) =>
-                      handleInputChange("webUrl", e.target.value)
-                    }
-                    placeholder="https://yourcompany.com"
-                    className="w-full p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
-                </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Company Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.webName}
-                    onChange={(e) =>
-                      handleInputChange("webName", e.target.value)
-                    }
-                    placeholder="Your Company Name"
-                    className="w-full p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                  <label className="block text-xs font-medium text-slate-700 mb-2">
                     Privacy Policy URL
                   </label>
                   <input
@@ -277,12 +219,12 @@ const SimpleScriptForm = () => {
                       handleInputChange("policyUrl", e.target.value)
                     }
                     placeholder="https://yourcompany.com/privacy"
-                    className="w-full p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                  <label className="block text-xs font-medium text-slate-700 mb-2">
                     Terms URL
                   </label>
                   <input
@@ -292,20 +234,21 @@ const SimpleScriptForm = () => {
                       handleInputChange("termsUrl", e.target.value)
                     }
                     placeholder="https://yourcompany.com/terms"
-                    className="w-full p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                   />
                 </div>
               </div>
             </div>
 
+
             {/* UI Customization */}
             <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
-              <h2 className="text-lg font-semibold text-purple-700 mb-4">
+              <h2 className="text-base font-semibold text-purple-700 mb-3">
                 UI Customization
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                  <label className="block text-xs font-medium text-slate-700 mb-2">
                     Button Background Color
                   </label>
                   <div className="flex space-x-2">
@@ -334,7 +277,7 @@ const SimpleScriptForm = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                  <label className="block text-xs font-medium text-slate-700 mb-2">
                     Text Color
                   </label>
                   <div className="flex space-x-2">
@@ -359,7 +302,7 @@ const SimpleScriptForm = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                  <label className="block text-xs font-medium text-slate-700 mb-2">
                     Border Color
                   </label>
                   <div className="flex space-x-2">
@@ -384,7 +327,7 @@ const SimpleScriptForm = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                  <label className="block text-xs font-medium text-slate-700 mb-2">
                     Border Radius
                   </label>
                   <select
@@ -392,7 +335,7 @@ const SimpleScriptForm = () => {
                     onChange={(e) =>
                       handleInputChange("borderSize", e.target.value)
                     }
-                    className="w-full p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full p-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                   >
                     <option value="1">1 - Flat</option>
                     <option value="2">2 - Slightly Rounded</option>
@@ -407,14 +350,14 @@ const SimpleScriptForm = () => {
             {/* Questions */}
             <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-amber-700">
+                <h2 className="text-base font-semibold text-amber-700">
                   Default Questions ({formData.questions.length}/6)
                 </h2>
                 {formData.questions.length < 6 && (
                   <button
                     type="button"
                     onClick={handleAddQuestion}
-                    className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors text-sm font-medium"
+                    className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors text-xs font-medium"
                   >
                     Add Question
                   </button>
@@ -467,7 +410,7 @@ const SimpleScriptForm = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-2 text-sm bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading
                   ? "Generating..."
@@ -479,22 +422,22 @@ const SimpleScriptForm = () => {
 
         {/* Saved Configurations */}
         {savedConfigurations.length > 0 && (
-          <div className="bg-white rounded-xl shadow-lg border border-slate-200 p-6">
-            <h2 className="text-xl font-bold text-slate-800 mb-4">
+          <div className="bg-white rounded-xl shadow-lg border border-slate-200 p-4">
+            <h2 className="text-lg font-bold text-slate-800 mb-4">
               Generated Scripts
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {savedConfigurations.map((config) => (
                 <div
                   key={config._id}
-                  className="border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                  className="border border-slate-200 rounded-lg p-3 hover:shadow-md transition-shadow"
                 >
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex-1">
-                      <h3 className="font-semibold text-slate-800">
+                      <h3 className="text-sm font-semibold text-slate-800">
                         {config.clientName}
                       </h3>
-                      <p className="text-sm text-slate-600 truncate">
+                      <p className="text-xs text-slate-600 truncate">
                         {config.targetWebUrl}
                       </p>
                       <p className="text-xs text-slate-500 mt-1">

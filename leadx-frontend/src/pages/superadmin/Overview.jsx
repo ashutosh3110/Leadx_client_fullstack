@@ -31,11 +31,11 @@ const Overview = ({ stats }) => {
   }, [studentTimeFilter]);
 
   return (
-    <div className="space-y-6 sm:space-y-8">
+    <div className="space-y-4 sm:space-y-6">
       {/* For Ambassador Stats */}
-      <div className="space-y-3 sm:space-y-4">
-        <h2 className="text-lg sm:text-xl font-semibold text-gray-900">For Ambassador</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+      <div className="space-y-2 sm:space-y-3">
+        <h2 className="text-base sm:text-lg font-semibold text-gray-900">For Ambassador</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <StatCard
             title="Total Ambassadors"
             value={stats.totalAmbassadors}
@@ -43,7 +43,7 @@ const Overview = ({ stats }) => {
             color="from-slate-100 to-slate-200"
             icon={
               <svg
-                className="w-6 h-6 text-slate-600"
+                className="w-4 h-4 sm:w-5 sm:h-5 text-slate-600"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -65,7 +65,7 @@ const Overview = ({ stats }) => {
             color="from-slate-100 to-slate-200"
             icon={
               <svg
-                className="w-6 h-6 text-slate-600"
+                className="w-4 h-4 sm:w-5 sm:h-5 text-slate-600"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -86,7 +86,7 @@ const Overview = ({ stats }) => {
             color="from-slate-100 to-slate-200"
             icon={
               <svg
-                className="w-6 h-6 text-slate-600"
+                className="w-4 h-4 sm:w-5 sm:h-5 text-slate-600"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -108,7 +108,7 @@ const Overview = ({ stats }) => {
             color="from-slate-100 to-slate-200"
             icon={
               <svg
-                className="w-6 h-6 text-slate-600"
+                className="w-4 h-4 sm:w-5 sm:h-5 text-slate-600"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -126,16 +126,16 @@ const Overview = ({ stats }) => {
       </div>
 
       {/* For Student Section */}
-      <div className="space-y-3 sm:space-y-4">
-        <h2 className="text-lg sm:text-xl font-semibold text-gray-900">For Student</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+      <div className="space-y-2 sm:space-y-3">
+        <h2 className="text-base sm:text-lg font-semibold text-gray-900">For Student</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           <StatCard
             title="Total Chats"
             value={studentChatStats.totalChats}
             color="from-slate-100 to-slate-200"
             icon={
               <svg
-                className="w-6 h-6 text-slate-600"
+                className="w-4 h-4 sm:w-5 sm:h-5 text-slate-600"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -156,7 +156,7 @@ const Overview = ({ stats }) => {
             color="from-slate-100 to-slate-200"
             icon={
               <svg
-                className="w-6 h-6 text-slate-600"
+                className="w-4 h-4 sm:w-5 sm:h-5 text-slate-600"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -177,7 +177,7 @@ const Overview = ({ stats }) => {
             color="from-slate-100 to-slate-200"
             icon={
               <svg
-                className="w-6 h-6 text-slate-600"
+                className="w-4 h-4 sm:w-5 sm:h-5 text-slate-600"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -194,7 +194,7 @@ const Overview = ({ stats }) => {
         </div>
         
         {/* Time Filter Dropdown */}
-       
+            
       </div>
     </div>
   );

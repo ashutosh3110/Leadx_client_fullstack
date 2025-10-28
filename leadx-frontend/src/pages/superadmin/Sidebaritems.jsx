@@ -106,7 +106,7 @@ const sidebarItems = [
   },
   {
     id: "ambassador-login",
-    name: "Ambassador Login Table",
+    name: "Ambassador Login",
     icon: (
       <svg
         className="w-5 h-5"
@@ -126,7 +126,7 @@ const sidebarItems = [
 
   {
     id: "customize",
-    name: "Ambassador page setting",
+    name: "Ambassador setting",
     icon: (
       <svg
         className="w-5 h-5"

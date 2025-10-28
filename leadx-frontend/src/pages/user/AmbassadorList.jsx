@@ -19,6 +19,8 @@ const AmbassadorList = () => {
   const [selectedAmbassador, setSelectedAmbassador] = useState(null)
 
   useEffect(() => {
+    console.log("🔍 Current ambassadors state:", ambassadors)
+    console.log("🔍 Ambassadors length:", ambassadors.length)
     const fetchAmbassadors = async () => {
       try {
         setLoading(true)
@@ -31,8 +33,8 @@ const AmbassadorList = () => {
 
           // Handle different possible response formats
           let users = []
-          if (response.success && response.data && response.data.users) {
-            users = response.data.users
+          if (response.success && response.data && Array.isArray(response.data)) {
+            users = response.data
           } else if (response.data && Array.isArray(response.data)) {
             users = response.data
           } else if (Array.isArray(response)) {
@@ -52,6 +54,7 @@ const AmbassadorList = () => {
           )
 
           console.log("Filtered ambassadors:", ambassadorUsers)
+          console.log("First ambassador ID:", ambassadorUsers[0]?._id || ambassadorUsers[0]?.id)
 
           if (ambassadorUsers.length > 0) {
             // Map API data to card format
@@ -62,7 +65,17 @@ const AmbassadorList = () => {
             console.log("background", mappedAmbassadors.backgroundImage)
 
             console.log("Mapped ambassadors:", mappedAmbassadors)
+            console.log("First mapped ambassador ID:", mappedAmbassadors[0]?._id || mappedAmbassadors[0]?.id)
             setAmbassadors(mappedAmbassadors)
+            console.log("Set ambassadors state:", mappedAmbassadors)
+            console.log("First ambassador in state:", mappedAmbassadors[0])
+            console.log("First ambassador ID in state:", mappedAmbassadors[0]?._id || mappedAmbassadors[0]?.id)
+            console.log("First ambassador keys in state:", Object.keys(mappedAmbassadors[0] || {}))
+            console.log("First ambassador type in state:", typeof mappedAmbassadors[0])
+            console.log("First ambassador has _id:", mappedAmbassadors[0]?._id ? "Yes" : "No")
+            console.log("First ambassador has id:", mappedAmbassadors[0]?.id ? "Yes" : "No")
+            console.log("First ambassador _id value:", mappedAmbassadors[0]?._id)
+            console.log("First ambassador id value:", mappedAmbassadors[0]?.id)
             setTotalPages(Math.ceil(mappedAmbassadors.length / itemsPerPage))
             console.log(
               "Successfully loaded",
@@ -99,6 +112,14 @@ const AmbassadorList = () => {
   }, [itemsPerPage])
 
   const handleChat = (ambassador) => {
+    console.log("🔍 Selected ambassador:", ambassador)
+    console.log("🔍 Ambassador ID:", ambassador._id || ambassador.id)
+    console.log("🔍 Ambassador keys:", Object.keys(ambassador))
+    console.log("🔍 Ambassador type:", typeof ambassador)
+    if (!ambassador) {
+      console.error("❌ Ambassador is null or undefined")
+      return
+    }
     setSelectedAmbassador(ambassador)
     setIsChatModalOpen(true)
   }
@@ -174,11 +195,11 @@ const AmbassadorList = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-x-hidden">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 overflow-x-hidden">
         {/* Large Container Card */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8 overflow-x-hidden">
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-3 sm:p-4 overflow-x-hidden">
           {/* Ambassador Grid - 4 cards per row, 2 rows */}
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 overflow-x-hidden">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 overflow-x-hidden">
             {currentAmbassadors.map((ambassador) => (
               <AmbassadorCard
                 key={ambassador._id}
@@ -208,6 +229,9 @@ const AmbassadorList = () => {
         onClose={handleCloseChatModal}
         ambassador={selectedAmbassador}
       />
+      {console.log("🔍 Passing ambassador to ChatModal:", selectedAmbassador)}
+      {console.log("🔍 Selected ambassador type:", typeof selectedAmbassador)}
+      {console.log("🔍 Selected ambassador ID:", selectedAmbassador?._id || selectedAmbassador?.id)}
 
       {/* Profile Modal */}
       <ProfileModal

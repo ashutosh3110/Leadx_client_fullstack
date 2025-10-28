@@ -139,6 +139,12 @@ export const chatAPI = {
     const response = await api.get(`/messages/conversations/${ambassadorId}`);
     return response.data;
   },
+
+  // Get ambassadors with user messages count (admin only)
+  getAmbassadorsWithMessages: async () => {
+    const response = await api.get('/chat/admin/ambassadors-with-messages');
+    return response.data;
+  },
 };
 
 // Rewards API endpoints

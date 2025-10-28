@@ -83,7 +83,7 @@ const AmbassadorDetailModal = ({
                         {!ambassador.isVerified && (
                             <>
                                 <button
-                                    onClick={() => handleApproveApplication(ambassador._id)}
+                                    onClick={() => handleApproveApplication(ambassador._id || ambassador.id)}
                                     disabled={loading}
                                     className="px-2 sm:px-4 py-1.5 sm:py-2 border-2 border-green-500 text-green-600 hover:bg-green-500 hover:text-white text-xs sm:text-sm font-semibold rounded-full transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed disabled:border-green-300 disabled:text-green-300"
                                 >
@@ -100,7 +100,14 @@ const AmbassadorDetailModal = ({
                         )}
                         {ambassador.isVerified && (
                             <button
-                                onClick={() => handleAddReward(ambassador._id)}
+                                onClick={() => {
+                                    console.log('🔍 AmbassadorDetailModal - Add Reward clicked for ambassador:', ambassador);
+                                    console.log('🔍 AmbassadorDetailModal - Ambassador _id:', ambassador._id);
+                                    console.log('🔍 AmbassadorDetailModal - Ambassador id:', ambassador.id);
+                                    const ambassadorId = ambassador._id || ambassador.id;
+                                    console.log('🔍 AmbassadorDetailModal - Final ambassadorId:', ambassadorId);
+                                    handleAddReward(ambassadorId);
+                                }}
                                 className="px-4 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white text-sm font-semibold rounded-full transition-all duration-300 flex items-center space-x-2 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95"
                             >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
