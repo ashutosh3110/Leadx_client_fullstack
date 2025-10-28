@@ -1,61 +1,111 @@
-import mongoose from "mongoose"
+import { DataTypes } from "sequelize"
+import { sequelize } from "../config/db.js"
 
-const { Schema } = mongoose
-
-const customizationConfigSchema = new Schema(
-  {
-    configId: { type: String, unique: true }, // unique identifier for the script
-    adminId: { type: Schema.Types.ObjectId, ref: "User", required: true },
-
-    // Client Information
-    clientName: { type: String, required: true },
-    clientEmail: { type: String },
-    targetWebUrl: { type: String, required: true }, // where the script will be embedded
-
-    // Web Settings
-    webUrl: { type: String, required: true },
-    webName: { type: String, required: true },
-    status: { type: String, enum: ["active", "inactive"], default: "active" },
-
-    // Policy URLs
-    policyUrl: { type: String },
-    termsUrl: { type: String },
-
-    // Ambassador Card UI Settings
-    tilesAndButtonColor: {
-      type: String,
-      default: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-    },
-    textColor: { type: String, default: "#ffffff" },
-    borderColor: { type: String, default: "#e5e7eb" },
-    borderSize: { type: String, default: "3" },
-
-    // Questions for ambassador cards
-    questions: [{ type: String }],
-
-    // Selected ambassadors for this configuration
-    selectedAmbassadorIds: [{ type: Schema.Types.ObjectId, ref: "User" }],
-
-    // Script settings
-    scriptUrl: { type: String }, // generated script URL
-    isActive: { type: Boolean, default: true },
-
-    // Sales information
-    price: { type: Number },
-    soldAt: { type: Date },
-
-    // Legacy compatibility
-    ambassadorCardBackgroundColor: { type: String, default: "#3b82f6" },
-    ambassadorCardBorderColor: { type: String, default: "#e5e7eb" },
-    chatBackgroundColor: { type: String, default: "#3b82f6" },
-    chatTextColor: { type: String, default: "#ffffff" },
+const CustomizationConfig = sequelize.define('CustomizationConfig', {
+  configId: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    unique: true
   },
-  { timestamps: true }
-)
+  adminId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'Users',
+      key: 'id'
+    }
+  },
+  clientName: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  clientEmail: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  targetWebUrl: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  webUrl: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  webName: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  status: {
+    type: DataTypes.ENUM('active', 'inactive'),
+    defaultValue: 'active'
+  },
+  policyUrl: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  termsUrl: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  tilesAndButtonColor: {
+    type: DataTypes.STRING,
+    defaultValue: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+  },
+  textColor: {
+    type: DataTypes.STRING,
+    defaultValue: "#ffffff"
+  },
+  borderColor: {
+    type: DataTypes.STRING,
+    defaultValue: "#e5e7eb"
+  },
+  borderSize: {
+    type: DataTypes.STRING,
+    defaultValue: "3"
+  },
+  questions: {
+    type: DataTypes.JSON,
+    allowNull: true
+  },
+  selectedAmbassadorIds: {
+    type: DataTypes.JSON,
+    allowNull: true
+  },
+  scriptUrl: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  isActive: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true
+  },
+  price: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: true
+  },
+  soldAt: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  ambassadorCardBackgroundColor: {
+    type: DataTypes.STRING,
+    defaultValue: "#3b82f6"
+  },
+  ambassadorCardBorderColor: {
+    type: DataTypes.STRING,
+    defaultValue: "#e5e7eb"
+  },
+  chatBackgroundColor: {
+    type: DataTypes.STRING,
+    defaultValue: "#3b82f6"
+  },
+  chatTextColor: {
+    type: DataTypes.STRING,
+    defaultValue: "#ffffff"
+  }
+}, {
+  tableName: 'customization_configs',
+  timestamps: true
+})
 
-// Note: configId and scriptUrl are generated in the controller
-
-export const CustomizationConfig = mongoose.model(
-  "CustomizationConfig",
-  customizationConfigSchema
-)
+export { CustomizationConfig }

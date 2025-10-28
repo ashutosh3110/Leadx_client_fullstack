@@ -1,22 +1,19 @@
-import mongoose from "mongoose"
+import { DataTypes } from "sequelize"
+import { sequelize } from "../config/db.js"
 
-const { Schema } = mongoose
-
-const chatSchema = new Schema(
-  {
-    participants: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "User", // User or Ambassador
-        required: true,
-      },
-    ],
-    lastMessage: {
-      type: Schema.Types.ObjectId,
-      ref: "Message", // ✅ Reference to Message model
-    },
+const Chat = sequelize.define('Chat', {
+  participants: {
+    type: DataTypes.JSON,
+    allowNull: false
   },
-  { timestamps: true }
-)
+  lastMessageId: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+    // Removed foreign key constraint to avoid circular dependency
+  }
+}, {
+  tableName: 'chats',
+  timestamps: true
+})
 
-export const Chat = mongoose.model("Chat", chatSchema)
+export { Chat }

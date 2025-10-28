@@ -1,21 +1,50 @@
-import mongoose from "mongoose"
+import { DataTypes } from "sequelize"
+import { sequelize } from "../config/db.js"
 
-const loginHistorySchema = new mongoose.Schema(
-  {
-    userId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
-    ip: String,
-    region: String,
-    city: String,
-    isp: String,
-    browser: String,
-    os: String,
-    device: String,
+const LoginHistory = sequelize.define('LoginHistory', {
+  userId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'Users',
+      key: 'id'
+    }
   },
-  { timestamps: true }
-)
+  ipAddress: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  region: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  city: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  isp: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  browser: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  os: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  device: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  loginTime: {
+    type: DataTypes.DATE,
+    allowNull: true
+  }
+}, {
+  tableName: 'login_history',
+  timestamps: true
+})
 
-export const LoginHistory = mongoose.model("LoginHistory", loginHistorySchema)
+export { LoginHistory }

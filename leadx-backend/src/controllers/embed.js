@@ -3,6 +3,8 @@ import { EmbedConfig } from "../models/EmbedConfig.js"
 import { User } from "../models/user.js"
 import { Chat } from "../models/Chat.js"
 import { Message } from "../models/Message.js"
+import { sequelize as db } from "../config/db.js"
+import { Op } from "sequelize"
 import errGen from "../utils/errGen.js"
 import respo from "../utils/respo.js"
 import bcrypt from "bcryptjs"
@@ -55,7 +57,9 @@ export const updateConfig = async (req, res, next) => {
   try {
     const { id } = req.params
     const updates = req.body
-    const cfg = await EmbedConfig.findByIdAndUpdate(id, updates, { new: true })
+    const cfg = await EmbedConfig.findByPk(id)
+    if (!cfg) return next(errGen(404, "Config not found"))
+    await cfg.update(updates)
     if (!cfg) return next(errGen(404, "Config not found"))
     res.status(200).json(respo(true, "Embed config updated", cfg))
   } catch (err) {
@@ -66,7 +70,9 @@ export const updateConfig = async (req, res, next) => {
 // Admin: List configs
 export const listConfigs = async (req, res, next) => {
   try {
-    const list = await EmbedConfig.find().sort({ createdAt: -1 })
+    const list = await EmbedConfig.findAll({
+      order: [['createdAt', 'DESC']]
+    })
     res.status(200).json(respo(true, "Embed configs fetched", list))
   } catch (err) {
     next(err)
@@ -77,7 +83,7 @@ export const listConfigs = async (req, res, next) => {
 export const toggleStatus = async (req, res, next) => {
   try {
     const { id } = req.params
-    const cfg = await EmbedConfig.findById(id)
+    const cfg = await EmbedConfig.findByPk(id)
     if (!cfg) return next(errGen(404, "Config not found"))
     cfg.status = !cfg.status
     cfg.history.push({
@@ -107,7 +113,7 @@ export const recordSale = async (req, res, next) => {
       notes,
     } = req.body
 
-    const cfg = await EmbedConfig.findById(id)
+    const cfg = await EmbedConfig.findByPk(id)
     if (!cfg) return next(errGen(404, "Config not found"))
 
     cfg.soldTo = { clientName, clientEmail, websiteUrl }
@@ -124,17 +130,9 @@ export const recordSale = async (req, res, next) => {
 // Admin: Sales history
 export const salesHistory = async (req, res, next) => {
   try {
-    const list = await EmbedConfig.find(
-      {},
-      {
-        configKey: 1,
-        clientWebName: 1,
-        soldTo: 1,
-        history: 1,
-        status: 1,
-        createdAt: 1,
-      }
-    )
+    const list = await EmbedConfig.findAll({
+      attributes: ['configKey', 'clientWebName', 'soldTo', 'history', 'status', 'createdAt']
+    })
     res.status(200).json(respo(true, "Sales history fetched", list))
   } catch (err) {
     next(err)
@@ -145,7 +143,9 @@ export const salesHistory = async (req, res, next) => {
 export const serveWidget = async (req, res, next) => {
   try {
     const { configKey } = req.params
-    const cfg = await EmbedConfig.findOne({ configKey, status: true })
+    const cfg = await EmbedConfig.findOne({ 
+      where: { configKey, status: true }
+    })
     if (!cfg) return next(errGen(404, "Invalid or inactive widget"))
 
     // Build dynamic JS, using the API origin from this request
@@ -197,18 +197,22 @@ export const publicSubmit = async (req, res, next) => {
     // Handle both old configKey and new configId
     let cfg = null
     if (configKey) {
-      cfg = await EmbedConfig.findOne({ configKey, status: true })
+      cfg = await EmbedConfig.findOne({ 
+        where: { configKey, status: true }
+      })
     } else if (configId) {
       // Import CustomizationConfig here to avoid circular dependency
       const { CustomizationConfig } = await import(
         "../models/CustomizationConfig.js"
       )
-      cfg = await CustomizationConfig.findOne({ configId, isActive: true })
+      cfg = await CustomizationConfig.findOne({ 
+        where: { configId, isActive: true }
+      })
     }
 
     if (!cfg) return next(errGen(404, "Invalid or inactive widget"))
 
-    const ambassador = await User.findById(ambassadorId)
+    const ambassador = await User.findByPk(ambassadorId)
     if (
       !ambassador ||
       ambassador.role !== "ambassador" ||
@@ -233,27 +237,38 @@ export const publicSubmit = async (req, res, next) => {
 
     // Find or create chat
     let chat = await Chat.findOne({
-      participants: { $all: [user._id, ambassador._id] },
+      where: {
+        [Op.and]: [
+          db.where(
+            db.fn('JSON_CONTAINS', db.col('participants'), JSON.stringify(user.id)),
+            true
+          ),
+          db.where(
+            db.fn('JSON_CONTAINS', db.col('participants'), JSON.stringify(ambassador.id)),
+            true
+          )
+        ]
+      }
     })
     if (!chat)
-      chat = await Chat.create({ participants: [user._id, ambassador._id] })
+      chat = await Chat.create({ participants: [user.id, ambassador.id] })
 
     // Create message from user to ambassador
     const newMessage = await Message.create({
-      chatId: chat._id,
-      sender: user._id,
-      receiver: ambassador._id,
+      chatId: chat.id,
+      sender: user.id,
+      receiver: ambassador.id,
       content: message,
       isFormSubmission: true,
     })
 
-    chat.lastMessage = newMessage._id
+    chat.lastMessage = newMessage.id
     await chat.save()
 
     return res.status(201).json(
       respo(true, "Submitted successfully", {
-        chatId: chat._id,
-        messageId: newMessage._id,
+        chatId: chat.id,
+        messageId: newMessage.id,
       })
     )
   } catch (err) {

@@ -32,11 +32,13 @@ export const createCustomization = async (req, res) => {
     }
 
     // Get all verified ambassadors automatically
-    const allAmbassadors = await User.find({
-      role: "ambassador",
-      isVerified: true,
-    }).select("_id")
-    const finalAmbassadorIds = allAmbassadors.map((amb) => amb._id)
+    const allAmbassadors = await User.findAll({
+      where: {
+        role: "ambassador",
+        isVerified: true,
+      }
+    })
+    const finalAmbassadorIds = allAmbassadors.map((amb) => amb.id)
 
     // Generate unique configId
     const configId =
@@ -84,11 +86,12 @@ export const createCustomization = async (req, res) => {
 // Get all customizations for admin
 export const getCustomizations = async (req, res) => {
   try {
-    const customizations = await CustomizationConfig.find({
-      adminId: req.user.id,
+    const customizations = await CustomizationConfig.findAll({
+      where: {
+        adminId: req.user.id,
+      },
+      order: [['createdAt', 'DESC']]
     })
-      .populate("selectedAmbassadorIds", "name email profilePicture")
-      .sort({ createdAt: -1 })
 
     res.status(StatusCodes.OK).json({
       success: true,
@@ -110,11 +113,12 @@ export const updateCustomization = async (req, res) => {
     const { id } = req.params
     const updateData = req.body
 
-    const customization = await CustomizationConfig.findOneAndUpdate(
-      { _id: id, adminId: req.user.id },
-      updateData,
-      { new: true, runValidators: true }
-    ).populate("selectedAmbassadorIds", "name email profilePicture")
+    const customization = await CustomizationConfig.findOne({
+      where: { id: id, adminId: req.user.id }
+    })
+    if (!customization) return res.status(404).json({ success: false, message: "Customization not found" })
+    
+    await customization.update(updateData)
 
     if (!customization) {
       return res.status(StatusCodes.NOT_FOUND).json({
@@ -143,10 +147,12 @@ export const deleteCustomization = async (req, res) => {
   try {
     const { id } = req.params
 
-    const customization = await CustomizationConfig.findOneAndDelete({
-      _id: id,
-      adminId: req.user.id,
+    const customization = await CustomizationConfig.findOne({
+      where: { id: id, adminId: req.user.id }
     })
+    if (!customization) return res.status(404).json({ success: false, message: "Customization not found" })
+    
+    await customization.destroy()
 
     if (!customization) {
       return res.status(StatusCodes.NOT_FOUND).json({
@@ -175,8 +181,8 @@ export const generateScript = async (req, res) => {
     const { configId } = req.params
 
     const customization = await CustomizationConfig.findOne({
-      configId,
-    }).populate("selectedAmbassadorIds", "name email profilePicture bio")
+      where: { configId }
+    })
 
     if (!customization) {
       return res.status(StatusCodes.NOT_FOUND).json({
@@ -214,9 +220,8 @@ export const getPublicConfig = async (req, res) => {
     const { configId } = req.params
 
     const customization = await CustomizationConfig.findOne({
-      configId,
-      isActive: true,
-    }).populate("selectedAmbassadorIds", "name email profilePicture bio")
+      where: { configId, isActive: true }
+    })
 
     if (!customization) {
       return res.status(StatusCodes.NOT_FOUND).json({

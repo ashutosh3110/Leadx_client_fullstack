@@ -1,6 +1,8 @@
 import { Chat } from "../models/Chat.js"
 import { Message } from "../models/Message.js"
 import { User } from "../models/user.js"
+import { Op } from "sequelize"
+import { sequelize as db } from "../config/db.js"
 import { sendEmail } from "../utils/mailer.js"
 import sendWhatsApp from "../utils/sendWhatsApp.js"
 import errGen from "../utils/errGen.js"
@@ -34,7 +36,7 @@ export const startChat = async (req, res, next) => {
       })
     }
 
-    let user = await User.findOne({ email })
+    let user = await User.findOne({ where: { email } })
     console.log(
       "🔍 Existing user found:",
       user ? user.name : "No existing user"
@@ -63,7 +65,7 @@ export const startChat = async (req, res, next) => {
         password: hashedPassword,
       })
 
-      console.log("✅ New user created:", user._id, user.name)
+      console.log("✅ New user created:", user.id, user.name)
       console.log("🔍 User password field after creation:", user.password ? "Present" : "Missing")
       console.log("🔍 User password hash:", user.password ? user.password.substring(0, 20) + "..." : "No password")
 
@@ -103,28 +105,46 @@ export const startChat = async (req, res, next) => {
 
     console.log(
       "🔍 Looking for existing chat between user:",
-      user._id,
+      user.id,
       "and ambassador:",
       ambassadorId
     )
     let chat = await Chat.findOne({
-      participants: { $all: [user._id, ambassadorId] },
+      where: {
+        [Op.and]: [
+          db.where(
+            db.fn('JSON_CONTAINS', db.col('participants'), JSON.stringify(user.id)),
+            true
+          ),
+          db.where(
+            db.fn('JSON_CONTAINS', db.col('participants'), JSON.stringify(ambassadorId)),
+            true
+          )
+        ]
+      }
     })
 
-    console.log("🔍 Existing chat found:", chat ? chat._id : "No existing chat")
+    console.log("🔍 Existing chat found:", chat ? chat.id : "No existing chat")
     if (!chat) {
       console.log("🔍 Creating new chat...")
-      chat = await Chat.create({ participants: [user._id, ambassadorId] })
-      console.log("✅ New chat created:", chat._id)
+      chat = await Chat.create({ participants: [user.id, ambassadorId] })
+      console.log("✅ New chat created:", chat.id)
     }
 
-    const populatedChat = await Chat.findById(chat._id).populate(
-      "participants",
-      "name email role profileImage"
-    )
+    // Get participants from the participants array
+    const participantIds = chat.participants
+    const participants = await User.findAll({
+      where: { id: participantIds },
+      attributes: ['id', 'name', 'email', 'role', 'profileImage']
+    })
+
+    const populatedChat = {
+      ...chat.toJSON(),
+      participants: participants
+    }
 
     console.log("✅ Chat started successfully:", {
-      chatId: populatedChat._id,
+      chatId: populatedChat.id,
       participants: populatedChat.participants.length,
       user: populatedChat.participants.find((p) => p.role === "user")?.name,
       ambassador: populatedChat.participants.find(
@@ -148,7 +168,7 @@ export const startChat = async (req, res, next) => {
 export const sendMessage = async (req, res) => {
   try {
     console.log("🔍 sendMessage called with:", req.body)
-    const { chatId, receiver, content } = req.body
+    const { chatId, receiver, content, isFormSubmission } = req.body
     const sender = req.user.id
 
     console.log("🔍 Message details:", {
@@ -168,21 +188,33 @@ export const sendMessage = async (req, res) => {
     console.log("🔍 Creating new message...")
     const newMessage = await Message.create({
       chatId,
-      sender,
-      receiver,
+      senderId: sender,
+      receiverId: receiver,
       content,
+      isFormSubmission: isFormSubmission || false,
     })
 
-    console.log("✅ New message created:", newMessage._id)
+    console.log("✅ New message created:", newMessage.id)
 
-    const populatedMessage = await Message.findById(newMessage._id).populate(
-      "sender receiver",
-      "name email role profileImage phone"
-    )
+    // Manually populate sender and receiver
+    const senderUser = await User.findByPk(sender, {
+      attributes: ['id', 'name', 'email', 'role', 'profileImage', 'phone']
+    })
+    const receiverUser = await User.findByPk(receiver, {
+      attributes: ['id', 'name', 'email', 'role', 'profileImage', 'phone']
+    })
 
-    await Chat.findByIdAndUpdate(chatId, {
+    const populatedMessage = {
+      ...newMessage.toJSON(),
+      sender: senderUser,
+      receiver: receiverUser
+    }
+
+    await Chat.update({
       updatedAt: new Date(),
-      lastMessage: newMessage._id,
+      lastMessageId: newMessage.id,
+    }, {
+      where: { id: chatId }
     })
 
     // emit to receiver if online
@@ -190,7 +222,7 @@ export const sendMessage = async (req, res) => {
     if (receiverSocket) {
       receiverSocket.emit("newMessage", populatedMessage)
     } else {
-      const receiverUser = await User.findById(receiver)
+      const receiverUser = await User.findByPk(receiver)
 
       // fallback to email (optional - don't fail if email service is not configured)
       if (receiverUser?.email) {
@@ -249,7 +281,7 @@ export const editMessage = async (req, res) => {
         .json({ success: false, message: "Content required" })
     }
 
-    const msg = await Message.findById(messageId)
+    const msg = await Message.findByPk(messageId)
     if (!msg)
       return res
         .status(404)
@@ -275,10 +307,20 @@ export const editMessage = async (req, res) => {
     msg.content = content
     await msg.save()
 
-    const populatedMsg = await Message.findById(msg._id).populate(
-      "sender receiver",
-      "name email role profileImage"
-    )
+    const populatedMsg = await Message.findByPk(msg.id, {
+      include: [
+        {
+          model: User,
+          as: 'sender',
+          attributes: ['id', 'name', 'email', 'role', 'profileImage']
+        },
+        {
+          model: User,
+          as: 'receiver',
+          attributes: ['id', 'name', 'email', 'role', 'profileImage']
+        }
+      ]
+    })
 
     // socket broadcast bhi update ke liye
     const receiverSocket = onlineUsers.get(msg.receiver.toString())
@@ -298,7 +340,7 @@ export const deleteMessage = async (req, res) => {
   try {
     const { messageId } = req.params
 
-    const msg = await Message.findById(messageId)
+    const msg = await Message.findByPk(messageId)
     if (!msg)
       return res
         .status(404)
@@ -313,7 +355,7 @@ export const deleteMessage = async (req, res) => {
     // socket broadcast delete ke liye
     const receiverSocket = onlineUsers.get(msg.receiver.toString())
     if (receiverSocket) {
-      receiverSocket.emit("messageDeleted", msg._id)
+      receiverSocket.emit("messageDeleted", msg.id)
     }
 
     return res.json({ success: true, message: "Message deleted" })
@@ -327,11 +369,30 @@ export const deleteMessage = async (req, res) => {
 export const getMessages = async (req, res, next) => {
   try {
     const { chatId } = req.params
-    const messages = await Message.find({ chatId })
-      .populate("sender receiver", "name email role profileImage")
-      .sort({ createdAt: 1 })
+    const messages = await Message.findAll({
+      where: { chatId },
+      order: [['createdAt', 'ASC']]
+    })
 
-    res.status(200).json(respo(true, "Messages fetched", messages))
+    // Manually populate sender and receiver for each message
+    const populatedMessages = await Promise.all(
+      messages.map(async (message) => {
+        const sender = await User.findByPk(message.senderId, {
+          attributes: ['id', 'name', 'email', 'role', 'profileImage']
+        })
+        const receiver = await User.findByPk(message.receiverId, {
+          attributes: ['id', 'name', 'email', 'role', 'profileImage']
+        })
+        
+        return {
+          ...message.toJSON(),
+          sender: sender,
+          receiver: receiver
+        }
+      })
+    )
+
+    res.status(200).json(respo(true, "Messages fetched", populatedMessages))
   } catch (err) {
     next(err)
   }
@@ -340,19 +401,31 @@ export const getMessages = async (req, res, next) => {
 // 🔹 Get all chats for current user
 export const getMyChats = async (req, res, next) => {
   try {
-    const chats = await Chat.find({ participants: req.user.id })
-      .populate("participants", "name email role profileImage")
-      .populate({
-        path: "lastMessage",
-        select: "content sender createdAt",
-        populate: {
-          path: "sender",
-          select: "name email profileImage",
-        },
-      })
-      .sort({ updatedAt: -1 })
+    const chats = await Chat.findAll({
+      where: db.where(
+        db.fn('JSON_CONTAINS', db.col('participants'), JSON.stringify(req.user.id)),
+        true
+      ),
+      order: [['updatedAt', 'DESC']]
+    })
 
-    res.status(200).json(respo(true, "Chats fetched", chats))
+    // Populate participants for each chat
+    const populatedChats = await Promise.all(
+      chats.map(async (chat) => {
+        const participantIds = chat.participants
+        const participants = await User.findAll({
+          where: { id: participantIds },
+          attributes: ['id', 'name', 'email', 'role', 'profileImage']
+        })
+        
+        return {
+          ...chat.toJSON(),
+          participants: participants
+        }
+      })
+    )
+
+    res.status(200).json(respo(true, "Chats fetched", populatedChats))
   } catch (err) {
     next(err)
   }
@@ -363,8 +436,8 @@ export const deleteChat = async (req, res, next) => {
   try {
     const { chatId } = req.params
 
-    await Chat.findByIdAndDelete(chatId)
-    await Message.deleteMany({ chatId })
+    await Chat.destroy({ where: { id: chatId } })
+    await Message.destroy({ where: { chatId: chatId } })
 
     res.status(200).json(respo(true, "Chat deleted"))
   } catch (err) {
@@ -384,19 +457,34 @@ export const adminGetChatsByAmbassador = async (req, res, next) => {
     
     console.log('🔍 Admin fetching chats for ambassador:', ambassadorId)
     
-    const chats = await Chat.find({ participants: ambassadorId })
-      .populate("participants", "name email role profileImage")
-      .populate({
-        path: "lastMessage",
-        select: "content sender createdAt",
-        populate: { path: "sender", select: "name email profileImage" },
+    const chats = await Chat.findAll({
+      where: db.where(
+        db.fn('JSON_CONTAINS', db.col('participants'), JSON.stringify(parseInt(ambassadorId))),
+        true
+      ),
+      order: [['updatedAt', 'DESC']]
+    })
+
+    // Populate participants for each chat
+    const populatedChats = await Promise.all(
+      chats.map(async (chat) => {
+        const participantIds = chat.participants
+        const participants = await User.findAll({
+          where: { id: participantIds },
+          attributes: ['id', 'name', 'email', 'role', 'profileImage']
+        })
+        
+        return {
+          ...chat.toJSON(),
+          participants: participants
+        }
       })
-      .sort({ updatedAt: -1 })
+    )
     
-    console.log('🔍 Found chats:', chats.length)
-    console.log('🔍 Chats data:', chats)
+    console.log('🔍 Found chats:', populatedChats.length)
+    console.log('🔍 Chats data:', populatedChats)
     
-    res.status(200).json(respo(true, "Chats fetched", chats))
+    res.status(200).json(respo(true, "Chats fetched", populatedChats))
   } catch (err) {
     console.error('❌ Error fetching chats by ambassador:', err)
     next(err)
@@ -408,10 +496,31 @@ export const adminGetMessages = async (req, res, next) => {
   try {
     if (req.user.role !== "admin") return next(errGen(403, "Forbidden"))
     const { chatId } = req.params
-    const messages = await Message.find({ chatId })
-      .populate("sender receiver", "name email role profileImage")
-      .sort({ createdAt: 1 })
-    res.status(200).json(respo(true, "Messages fetched", messages))
+    
+    const messages = await Message.findAll({
+      where: { chatId: parseInt(chatId) },
+      order: [['createdAt', 'ASC']]
+    })
+
+    // Manually populate sender and receiver for each message
+    const populatedMessages = await Promise.all(
+      messages.map(async (message) => {
+        const sender = await User.findByPk(message.senderId, {
+          attributes: ['id', 'name', 'email', 'role', 'profileImage']
+        })
+        const receiver = await User.findByPk(message.receiverId, {
+          attributes: ['id', 'name', 'email', 'role', 'profileImage']
+        })
+        
+        return {
+          ...message.toJSON(),
+          sender: sender,
+          receiver: receiver
+        }
+      })
+    )
+
+    res.status(200).json(respo(true, "Messages fetched", populatedMessages))
   } catch (err) {
     next(err)
   }
@@ -431,20 +540,31 @@ export const adminSendAsAmbassador = async (req, res, next) => {
     }
 
     const newMessage = await Message.create({
-      chatId,
-      sender: asAmbassadorId,
-      receiver: toUserId,
+      chatId: parseInt(chatId),
+      senderId: parseInt(asAmbassadorId),
+      receiverId: parseInt(toUserId),
       content,
     })
 
-    const populatedMessage = await Message.findById(newMessage._id).populate(
-      "sender receiver",
-      "name email role profileImage"
-    )
+    // Manually populate sender and receiver
+    const sender = await User.findByPk(parseInt(asAmbassadorId), {
+      attributes: ['id', 'name', 'email', 'role', 'profileImage']
+    })
+    const receiver = await User.findByPk(parseInt(toUserId), {
+      attributes: ['id', 'name', 'email', 'role', 'profileImage']
+    })
 
-    await Chat.findByIdAndUpdate(chatId, {
+    const populatedMessage = {
+      ...newMessage.toJSON(),
+      sender: sender,
+      receiver: receiver
+    }
+
+    await Chat.update({
       updatedAt: new Date(),
-      lastMessage: newMessage._id,
+      lastMessageId: newMessage.id,
+    }, {
+      where: { id: parseInt(chatId) }
     })
 
     const receiverSocket = onlineUsers.get(toUserId.toString())
@@ -465,13 +585,13 @@ export const getMyUsers = async (req, res, next) => {
     console.log("🔍 Getting users for ambassador:", ambassadorId)
 
     // Get all chats where this ambassador is a participant
-    const chats = await Chat.find({ participants: ambassadorId })
-      .populate(
-        "participants",
-        "name email phone country state profileImage role conversionStatus"
-      )
-      .populate("lastMessage", "content createdAt")
-      .sort({ updatedAt: -1 })
+    const chats = await Chat.findAll({
+      where: db.where(
+        db.fn('JSON_CONTAINS', db.col('participants'), JSON.stringify(parseInt(ambassadorId))),
+        true
+      ),
+      order: [['updatedAt', 'DESC']]
+    })
 
     console.log(`📊 Found ${chats.length} chats for ambassador`)
 
@@ -479,26 +599,36 @@ export const getMyUsers = async (req, res, next) => {
     const usersMap = new Map()
 
     for (const chat of chats) {
+      // Get participants for this chat
+      const participantIds = chat.participants
+      const participants = await User.findAll({
+        where: { id: participantIds },
+        attributes: ['id', 'name', 'email', 'phone', 'country', 'state', 'profileImage', 'role', 'conversionStatus', 'convertedAt', 'convertedBy', 'enrolledAt', 'enrolledBy', 'createdAt', 'updatedAt']
+      })
+
       // Filter participants to get only users (not the ambassador himself)
-      const users = chat.participants.filter(
-        (p) => p && p.role === "user" && p._id.toString() !== ambassadorId
+      const users = participants.filter(
+        (p) => p && p.role === "user" && p.id.toString() !== ambassadorId.toString()
       )
 
       for (const user of users) {
-        if (!usersMap.has(user._id.toString())) {
+        if (!usersMap.has(user.id.toString())) {
           // Get message count for this user in this chat
-          const messageCount = await Message.countDocuments({
-            chatId: chat._id,
-            $or: [{ sender: user._id }, { receiver: user._id }],
+          const messageCount = await Message.count({
+            where: {
+              chatId: chat.id,
+              [Op.or]: [{ senderId: user.id }, { receiverId: user.id }],
+            }
           })
 
           // Get last message time for this chat
           const lastMessage = await Message.findOne({
-            chatId: chat._id,
-          }).sort({ createdAt: -1 })
+            where: { chatId: chat.id },
+            order: [['createdAt', 'DESC']]
+          })
 
-          usersMap.set(user._id.toString(), {
-            _id: user._id,
+          usersMap.set(user.id.toString(), {
+            id: user.id,
             name: user.name,
             email: user.email,
             phone: user.phone,
@@ -506,15 +636,23 @@ export const getMyUsers = async (req, res, next) => {
             state: user.state,
             profileImage: user.profileImage,
             conversionStatus: user.conversionStatus || "pending",
+            convertedAt: user.convertedAt,
+            convertedBy: user.convertedBy,
+            enrolledAt: user.enrolledAt,
+            enrolledBy: user.enrolledBy,
+            createdAt: user.createdAt,
+            updatedAt: user.updatedAt,
             messageCount: messageCount,
             lastActivity: lastMessage?.createdAt || chat.updatedAt,
           })
         } else {
           // Update message count if user already exists
-          const existingUser = usersMap.get(user._id.toString())
-          const additionalMessages = await Message.countDocuments({
-            chatId: chat._id,
-            $or: [{ sender: user._id }, { receiver: user._id }],
+          const existingUser = usersMap.get(user.id.toString())
+          const additionalMessages = await Message.count({
+            where: {
+              chatId: chat.id,
+              [Op.or]: [{ senderId: user.id }, { receiverId: user.id }],
+            }
           })
           existingUser.messageCount += additionalMessages
         }
@@ -545,33 +683,32 @@ export const adminGetChatStats = async (req, res, next) => {
     const hoursAgo = new Date(Date.now() - hours * 60 * 60 * 1000)
 
     // Build query based on time filter
-    const timeQuery = { createdAt: { $gte: hoursAgo } }
+    const timeQuery = { createdAt: { [Op.gte]: hoursAgo } }
 
     // Get all messages in the time period
-    const allMessages = await Message.find(timeQuery).populate(
-      "sender",
-      "name email role"
-    )
+    const allMessages = await Message.findAll({
+      where: timeQuery,
+      include: [
+        {
+          model: User,
+          as: 'sender',
+          attributes: ['id', 'name', 'email', 'role']
+        }
+      ]
+    })
 
     // Separate messages by type (ambassador vs student)
     let filteredMessages = allMessages
 
     if (type === "ambassador") {
-      // Messages where sender is ambassador or receiver is ambassador
+      // Messages where sender is ambassador
       filteredMessages = allMessages.filter(
-        (msg) =>
-          msg.sender?.role === "ambassador" ||
-          (typeof msg.receiver === "object" &&
-            msg.receiver?.role === "ambassador")
+        (msg) => msg.sender?.role === "ambassador"
       )
     } else if (type === "student") {
       // Messages where sender is not ambassador (student/user)
       filteredMessages = allMessages.filter(
-        (msg) =>
-          msg.sender?.role !== "ambassador" &&
-          (typeof msg.receiver === "object"
-            ? msg.receiver?.role !== "ambassador"
-            : true)
+        (msg) => msg.sender?.role !== "ambassador"
       )
     }
 
@@ -614,6 +751,68 @@ export const adminGetChatStats = async (req, res, next) => {
       })
     )
   } catch (err) {
+    next(err)
+  }
+}
+
+// 📊 Get Ambassadors with User Messages Count (Admin only)
+export const getAmbassadorsWithMessages = async (req, res, next) => {
+  try {
+    if (req.user.role !== "admin") return next(errGen(403, "Forbidden"))
+
+    console.log('🔍 getAmbassadorsWithMessages called');
+
+    // Get all chats that have messages from users (non-ambassadors)
+    const chatsWithUserMessages = await Chat.findAll({
+      include: [
+        {
+          model: Message,
+          as: 'messages',
+          where: {
+            // Messages from users (not ambassadors)
+            senderId: {
+              [Op.in]: db.literal(`(
+                SELECT id FROM users WHERE role != 'ambassador'
+              )`)
+            }
+          },
+          attributes: ['id', 'senderId'],
+          required: true // Only chats that have user messages
+        }
+      ],
+      attributes: ['id', 'participants']
+    });
+
+    console.log('✅ Found chats with user messages:', chatsWithUserMessages.length);
+
+    // Extract unique ambassador IDs from chat participants
+    const ambassadorIds = new Set();
+    
+    for (const chat of chatsWithUserMessages) {
+      const participants = chat.participants || [];
+      
+      // Find ambassadors in participants
+      for (const participantId of participants) {
+        const participant = await User.findByPk(participantId, {
+          attributes: ['id', 'role']
+        });
+        
+        if (participant && participant.role === 'ambassador') {
+          ambassadorIds.add(participant.id);
+        }
+      }
+    }
+
+    const totalAmbassadorsWithMessages = ambassadorIds.size;
+    console.log('✅ Total ambassadors with user messages:', totalAmbassadorsWithMessages);
+
+    res.status(200).json(
+      respo(true, "Ambassadors with messages count fetched", {
+        totalAmbassadorsWithMessages
+      })
+    )
+  } catch (err) {
+    console.error('❌ Error in getAmbassadorsWithMessages:', err);
     next(err)
   }
 }
