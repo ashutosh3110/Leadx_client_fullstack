@@ -61,6 +61,10 @@ const User = sequelize.define('User', {
     type: DataTypes.STRING,
     allowNull: true
   },
+  city: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
   about: {
     type: DataTypes.TEXT,
     allowNull: true
@@ -160,6 +164,7 @@ const userValidationSchema = Joi.object({
   extracurriculars: Joi.array().items(Joi.string()).optional(),
   country: Joi.string().allow(""),
   state: Joi.string().allow(""),
+  city: Joi.string().allow(""),
   about: Joi.string().allow(""),
 
   profileImage: Joi.string().uri().allow(""),

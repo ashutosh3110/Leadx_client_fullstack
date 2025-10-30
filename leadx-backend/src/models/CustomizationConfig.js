@@ -47,6 +47,10 @@ const CustomizationConfig = sequelize.define('CustomizationConfig', {
     type: DataTypes.STRING,
     allowNull: true
   },
+  chatRuleUrl: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
   tilesAndButtonColor: {
     type: DataTypes.STRING,
     defaultValue: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"

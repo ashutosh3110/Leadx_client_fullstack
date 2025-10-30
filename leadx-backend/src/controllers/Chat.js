@@ -312,12 +312,12 @@ export const editMessage = async (req, res) => {
         {
           model: User,
           as: 'sender',
-          attributes: ['id', 'name', 'email', 'role', 'profileImage']
+          attributes: ['id', 'name', 'email', 'role', 'profileImage', 'country', 'state', 'city']
         },
         {
           model: User,
           as: 'receiver',
-          attributes: ['id', 'name', 'email', 'role', 'profileImage']
+          attributes: ['id', 'name', 'email', 'role', 'profileImage', 'country', 'state', 'city']
         }
       ]
     })
@@ -378,10 +378,10 @@ export const getMessages = async (req, res, next) => {
     const populatedMessages = await Promise.all(
       messages.map(async (message) => {
         const sender = await User.findByPk(message.senderId, {
-          attributes: ['id', 'name', 'email', 'role', 'profileImage']
+          attributes: ['id', 'name', 'email', 'role', 'profileImage', 'country', 'state', 'city']
         })
         const receiver = await User.findByPk(message.receiverId, {
-          attributes: ['id', 'name', 'email', 'role', 'profileImage']
+          attributes: ['id', 'name', 'email', 'role', 'profileImage', 'country', 'state', 'city']
         })
         
         return {
@@ -415,7 +415,7 @@ export const getMyChats = async (req, res, next) => {
         const participantIds = chat.participants
         const participants = await User.findAll({
           where: { id: participantIds },
-          attributes: ['id', 'name', 'email', 'role', 'profileImage']
+          attributes: ['id', 'name', 'email', 'role', 'profileImage', 'country', 'state', 'city']
         })
         
         return {
@@ -471,7 +471,7 @@ export const adminGetChatsByAmbassador = async (req, res, next) => {
         const participantIds = chat.participants
         const participants = await User.findAll({
           where: { id: participantIds },
-          attributes: ['id', 'name', 'email', 'role', 'profileImage']
+          attributes: ['id', 'name', 'email', 'role', 'profileImage', 'country', 'state', 'city']
         })
         
         return {
@@ -506,10 +506,10 @@ export const adminGetMessages = async (req, res, next) => {
     const populatedMessages = await Promise.all(
       messages.map(async (message) => {
         const sender = await User.findByPk(message.senderId, {
-          attributes: ['id', 'name', 'email', 'role', 'profileImage']
+          attributes: ['id', 'name', 'email', 'role', 'profileImage', 'country', 'state', 'city']
         })
         const receiver = await User.findByPk(message.receiverId, {
-          attributes: ['id', 'name', 'email', 'role', 'profileImage']
+          attributes: ['id', 'name', 'email', 'role', 'profileImage', 'country', 'state', 'city']
         })
         
         return {
@@ -751,6 +751,114 @@ export const adminGetChatStats = async (req, res, next) => {
       })
     )
   } catch (err) {
+    next(err)
+  }
+}
+
+// 📊 Get Total Conversations Count (Admin only)
+export const getTotalConversations = async (req, res, next) => {
+  try {
+    if (req.user.role !== "admin") return next(errGen(403, "Forbidden"))
+
+    console.log('🔍 getTotalConversations called');
+
+    // Get total count of all chats
+    const totalChats = await Chat.count();
+    
+    console.log('✅ Total conversations (chats):', totalChats);
+
+    res.status(200).json(
+      respo(true, "Total conversations count fetched", {
+        totalConversations: totalChats
+      })
+    )
+  } catch (err) {
+    console.error('❌ Error in getTotalConversations:', err);
+    next(err)
+  }
+}
+
+// 📊 Get Student Statistics (Admin only)
+export const getStudentStats = async (req, res, next) => {
+  try {
+    if (req.user.role !== "admin") return next(errGen(403, "Forbidden"))
+
+    console.log('🔍 getStudentStats called');
+
+    // 1. Total Students (users with role = 'user')
+    const totalStudents = await User.count({
+      where: { role: 'user' }
+    });
+
+    // 2. Total Initiated Chats (all chats)
+    const totalInitiatedChats = await Chat.count();
+
+    // 3. Get all chats with their message counts
+    const chatsWithMessages = await Chat.findAll({
+      include: [
+        {
+          model: Message,
+          as: 'messages',
+          attributes: ['id', 'senderId', 'receiverId'],
+          required: false
+        }
+      ],
+      attributes: ['id', 'participants']
+    });
+
+    // 4. Calculate replied and unreplied chats
+    let repliedChats = 0;
+    let unrepliedChats = 0;
+
+    for (const chat of chatsWithMessages) {
+      const messages = chat.messages || [];
+      
+      if (messages.length === 0) {
+        unrepliedChats++;
+        continue;
+      }
+
+      // Check if there are messages from both users and ambassadors
+      const userMessages = messages.filter(msg => {
+        // Find if sender is a user (not ambassador)
+        const senderId = msg.senderId;
+        return chat.participants.includes(senderId);
+      });
+
+      const ambassadorMessages = messages.filter(msg => {
+        // Find if sender is an ambassador
+        const senderId = msg.senderId;
+        return chat.participants.includes(senderId);
+      });
+
+      // Check if both user and ambassador have sent messages
+      const hasUserMessages = userMessages.length > 0;
+      const hasAmbassadorMessages = ambassadorMessages.length > 0;
+
+      if (hasUserMessages && hasAmbassadorMessages) {
+        repliedChats++;
+      } else if (hasUserMessages && !hasAmbassadorMessages) {
+        unrepliedChats++;
+      }
+    }
+
+    console.log('✅ Student stats calculated:', {
+      totalStudents,
+      totalInitiatedChats,
+      repliedChats,
+      unrepliedChats
+    });
+
+    res.status(200).json(
+      respo(true, "Student statistics fetched", {
+        totalStudents,
+        totalInitiatedChats,
+        repliedChats,
+        unrepliedChats
+      })
+    )
+  } catch (err) {
+    console.error('❌ Error in getStudentStats:', err);
     next(err)
   }
 }

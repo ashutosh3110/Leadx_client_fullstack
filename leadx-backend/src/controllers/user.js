@@ -127,8 +127,8 @@ export const loginUser = async (req, res, next) => {
     os = agent.os.toString()
     browser = agent.toAgent()
 
-        // 🌐 Fetch IP geo info for ambassadors only
-        if (user.role === "ambassador" && ip) {
+        // 🌐 Fetch IP geo info for all users
+        if (ip) {
           const apiKey =
             process.env.IPDATA_API_KEY ||
             "a15111aa6cea99eb45b31303978093a58b64d26b1dfb90b7077e9d69"
@@ -151,99 +151,56 @@ export const loginUser = async (req, res, next) => {
             }
           }
 
+          // Try ip-api.com first as it's more reliable and free
           try {
-            const response = await fetch(
-              `https://api.ipdata.co/${targetIp}?api-key=${apiKey}`
-            )
-
+            console.log('🌐 Trying ip-api.com first...')
+            const response = await fetch(`http://ip-api.com/json/${targetIp}`)
+            
             if (response.ok) {
               const data = await response.json()
-              console.log("📍 Location data from ipdata:", data)
-
-              // Use real location data
-              region = data.region || data.state || ""
-              city = data.city || ""
-              isp = data.asn?.name || data.carrier?.name || data.organisation || ""
-
-              // If still no location data, try alternative API
-              if (!city && !region) {
-                try {
-                  console.log('🌐 Trying alternative location API...')
-                  const altResponse = await fetch(`http://ip-api.com/json/${targetIp}`)
-                  if (altResponse.ok) {
-                    const altData = await altResponse.json()
-                    console.log("📍 Alternative API response:", altData)
-                    
-                    if (altData.status === 'success') {
-                      region = altData.regionName || altData.state || ""
-                      city = altData.city || ""
-                      isp = altData.isp || altData.org || ""
-                    }
-                  }
-                } catch (altErr) {
-                  console.log('⚠️ Alternative API also failed:', altErr.message)
-                }
+              console.log("📍 ip-api.com response:", data)
+              
+              if (data.status === 'success') {
+                region = data.regionName || data.state || ""
+                city = data.city || ""
+                isp = data.isp || data.org || ""
+                console.log(`📍 ip-api.com location: ${city}, ${region} | ISP: ${isp}`)
+              } else {
+                console.log('⚠️ ip-api.com returned fail status, trying ipdata...')
+                // Fallback to ipdata
+                await tryIpdataAPI(targetIp, apiKey)
               }
-
-              console.log(`📍 Final location: ${city}, ${region} | ISP: ${isp}`)
-
             } else {
-              console.error("❌ ipdata error:", await response.text())
-              // Try alternative API if ipdata fails
-              try {
-                console.log('🌐 ipdata failed, trying alternative API...')
-                const altResponse = await fetch(`http://ip-api.com/json/${targetIp}`)
-                if (altResponse.ok) {
-                  const altData = await altResponse.json()
-                  console.log("📍 Alternative API response:", altData)
-                  
-                  if (altData.status === 'success') {
-                    region = altData.regionName || altData.state || ""
-                    city = altData.city || ""
-                    isp = altData.isp || altData.org || ""
-                    console.log(`📍 Alternative location: ${city}, ${region} | ISP: ${isp}`)
-                  } else {
-                    region = ""
-                    city = ""
-                    isp = ""
-                  }
-                } else {
-                  region = ""
-                  city = ""
-                  isp = ""
-                }
-              } catch (altErr) {
-                console.log('⚠️ Alternative API also failed:', altErr.message)
-                region = ""
-                city = ""
-                isp = ""
-              }
+              console.log('⚠️ ip-api.com failed, trying ipdata...')
+              await tryIpdataAPI(targetIp, apiKey)
             }
           } catch (err) {
-            console.error("⚠️ Location fetch failed:", err)
-            // Try alternative API as fallback
+            console.error("⚠️ ip-api.com failed:", err.message)
+            await tryIpdataAPI(targetIp, apiKey)
+          }
+
+          // Fallback function for ipdata API
+          async function tryIpdataAPI(ip, key) {
             try {
-              console.log('🌐 Primary API failed, trying alternative...')
-              const altResponse = await fetch(`http://ip-api.com/json/${targetIp}`)
-              if (altResponse.ok) {
-                const altData = await altResponse.json()
-                if (altData.status === 'success') {
-                  region = altData.regionName || altData.state || ""
-                  city = altData.city || ""
-                  isp = altData.isp || altData.org || ""
-                  console.log(`📍 Fallback location: ${city}, ${region} | ISP: ${isp}`)
-                } else {
-                  region = ""
-                  city = ""
-                  isp = ""
-                }
+              const response = await fetch(`https://api.ipdata.co/${ip}?api-key=${key}`)
+              
+              if (response.ok) {
+                const data = await response.json()
+                console.log("📍 ipdata response:", data)
+                
+                // Use ipdata results
+                region = data.region || data.state || ""
+                city = data.city || ""
+                isp = data.asn?.name || data.carrier?.name || data.organisation || ""
+                console.log(`📍 ipdata location: ${city}, ${region} | ISP: ${isp}`)
               } else {
+                console.error("❌ ipdata error:", await response.text())
                 region = ""
                 city = ""
                 isp = ""
               }
-            } catch (fallbackErr) {
-              console.log('⚠️ All location APIs failed:', fallbackErr.message)
+            } catch (ipdataErr) {
+              console.error("❌ ipdata failed:", ipdataErr.message)
               region = ""
               city = ""
               isp = ""
@@ -1183,6 +1140,13 @@ export const getAllUsersWithChatHistory = async (req, res, next) => {
         try {
           console.log(`🔍 Processing user: ${user.name} (${user.id})`)
 
+          // Get latest login history for geo location data
+          const latestLogin = await LoginHistory.findOne({
+            where: { userId: user.id },
+            order: [['loginTime', 'DESC']],
+            attributes: ['region', 'city', 'device', 'browser', 'os', 'loginTime']
+          })
+
           // Get all chats for this user using JSON_CONTAINS
           const chats = await Chat.findAll({
             where: db.where(
@@ -1314,6 +1278,11 @@ export const getAllUsersWithChatHistory = async (req, res, next) => {
 
           const result = {
             ...user.toJSON(),
+            geoLocation: {
+              location: latestLogin ? `${latestLogin.city || 'Unknown'}, ${latestLogin.region || 'Unknown'}` : 'Not available',
+              device: latestLogin ? `${latestLogin.device || 'Unknown'} (${latestLogin.browser || 'Unknown'})` : 'Not available',
+              lastLogin: latestLogin ? latestLogin.loginTime : null
+            },
             chatHistory: {
               totalChats: populatedChats.length,
               totalMessages,
@@ -1338,6 +1307,11 @@ export const getAllUsersWithChatHistory = async (req, res, next) => {
           )
           return {
             ...user.toJSON(),
+            geoLocation: {
+              location: 'Not available',
+              device: 'Not available',
+              lastLogin: null
+            },
             chatHistory: {
               totalChats: 0,
               totalMessages: 0,
