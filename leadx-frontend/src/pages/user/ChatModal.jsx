@@ -1096,16 +1096,16 @@ const ChatModal = ({ isOpen, onClose, ambassador }) => {
                     </a>{" "}
                     and
                     <a
-                      href={customization.termsUrl || "#"}
+                      href={customization.chatRuleUrl || "#"}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-red-500 underline hover:text-red-700"
                       onClick={(e) => {
                         e.preventDefault()
                         e.stopPropagation()
-                        if (customization.termsUrl) {
+                        if (customization.chatRuleUrl) {
                           window.open(
-                            customization.termsUrl,
+                            customization.chatRuleUrl,
                             "_blank",
                             "noopener,noreferrer"
                           )

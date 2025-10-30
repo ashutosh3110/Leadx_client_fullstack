@@ -149,12 +149,14 @@ const AdminChat = () => {
                     
                     const user = chat.participants.find(p => p && p.id && p.id !== ambassadorId);
                     console.log('🔍 Found user:', user);
+                    console.log('🔍 User country:', user?.country);
                     
                     if (user && user.id) {
                         return {
                             id: user.id,
                             name: user.name || 'Unknown User',
                             email: user.email || 'No email',
+                            country: user.country || 'Not specified',
                             profileImage: user.profileImage,
                             chatId: chat.id,
                             lastMessage: chat.lastMessage ? {
@@ -561,9 +563,14 @@ const AdminChat = () => {
                                                     )}
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="text-xs font-medium text-slate-900 truncate">
-                                                        {user.name}
-                                                    </p>
+                                                    <div className="flex items-center gap-1.5">
+                                                        <p className="text-xs font-medium text-slate-900 truncate">
+                                                            {user.name}
+                                                        </p>
+                                                        <span className="text-[9px] text-slate-400 bg-slate-100 px-1 py-0.5 rounded-full flex-shrink-0">
+                                                            {user.country}
+                                                        </span>
+                                                    </div>
                                                     <p className="text-xs text-slate-500 truncate">
                                                         {user.email}
                                                     </p>
@@ -608,7 +615,12 @@ const AdminChat = () => {
                                         )}
                                     </div>
                                     <div className="min-w-0 flex-1">
-                                        <h3 className="font-medium text-slate-900 text-xs truncate">{selectedUser.name}</h3>
+                                        <div className="flex items-center gap-2">
+                                            <h3 className="font-medium text-slate-900 text-xs truncate">{selectedUser.name}</h3>
+                                            <span className="text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full">
+                                                {selectedUser.country}
+                                            </span>
+                                        </div>
                                         <p className="text-xs text-slate-500 truncate">{selectedUser.email}</p>
                                         <p className="text-xs text-blue-600 font-medium truncate">
                                             💬 Chatting as {selectedAmbassador.name}
@@ -628,12 +640,10 @@ const AdminChat = () => {
 
                         {/* Messages */}
                         <div className="flex-1 overflow-y-auto p-2 space-y-1.5 bg-gray-50">
-                            {/* Debug Info */}
-                            {import.meta.env.DEV && (
-                                <div className="text-xs text-gray-400 p-1.5 bg-gray-100 rounded mb-2">
-                                    Debug: Loading: {loading.toString()}, Messages: {chatMessages.length}, Selected User: {selectedUser?.name || 'None'}
-                                </div>
-                            )}
+                            {/* Privacy Notice */}
+                            <div className="text-xs text-gray-400 p-1.5 bg-gray-100 rounded mb-2">
+                                Don't share your personal information like email and phone number
+                            </div>
                             {loading ? (
                                 <div className="flex justify-center items-center h-24">
                                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
@@ -705,7 +715,7 @@ const AdminChat = () => {
                                                                 {message.message}
                                                                 
                                                                 {/* Time and Status inside message box */}
-                                                                <div className={`flex items-center justify-end mt-0.5 text-xs ${
+                                                                <div className={`flex items-center justify-end mt-0.5 text-[8px] ${
                                                                     message.isUser 
                                                                         ? "text-blue-600" 
                                                                         : "text-blue-100"

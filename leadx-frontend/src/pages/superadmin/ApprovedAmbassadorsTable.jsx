@@ -121,26 +121,35 @@ const ApprovedAmbassadorsTable = ({
             console.error('Error fetching states:', error);
             // Fallback to mock Indian states data
             const mockStates = [
-                { name: 'Maharashtra' },
-                { name: 'Karnataka' },
-                { name: 'Tamil Nadu' },
-                { name: 'Delhi' },
-                { name: 'Gujarat' },
-                { name: 'Uttar Pradesh' },
-                { name: 'West Bengal' },
-                { name: 'Rajasthan' },
-                { name: 'Madhya Pradesh' },
-                { name: 'Kerala' },
                 { name: 'Andhra Pradesh' },
-                { name: 'Telangana' },
-                { name: 'Bihar' },
-                { name: 'Odisha' },
+                { name: 'Arunachal Pradesh' },
                 { name: 'Assam' },
-                { name: 'Punjab' },
-                { name: 'Haryana' },
-                { name: 'Jharkhand' },
+                { name: 'Bihar' },
                 { name: 'Chhattisgarh' },
-                { name: 'Himachal Pradesh' }
+                { name: 'Goa' },
+                { name: 'Gujarat' },
+                { name: 'Haryana' },
+                { name: 'Himachal Pradesh' },
+                { name: 'Jharkhand' },
+                { name: 'Karnataka' },
+                { name: 'Kerala' },
+                { name: 'Madhya Pradesh' },
+                { name: 'Maharashtra' },
+                { name: 'Manipur' },
+                { name: 'Meghalaya' },
+                { name: 'Mizoram' },
+                { name: 'Nagaland' },
+                { name: 'Odisha' },
+                { name: 'Punjab' },
+                { name: 'Rajasthan' },
+                { name: 'Sikkim' },
+                { name: 'Tamil Nadu' },
+                { name: 'Telangana' },
+                { name: 'Tripura' },
+                { name: 'Uttar Pradesh' },
+                { name: 'Uttarakhand' },
+                { name: 'West Bengal' },
+                { name: 'Delhi' }
             ];
             setStates(mockStates);
         } finally {
@@ -232,93 +241,45 @@ const ApprovedAmbassadorsTable = ({
 
                     {/* Country Filter */}
                     <div className="flex-1">
-                            <label className="block text-xs font-normal text-slate-700 mb-0.5">Country</label>
-                        <div className="relative">
-                            {countryFilter && countries.length > 0 && !loadingCountries && (
-                                <div className="absolute z-10 w-full mb-1 bg-white border border-slate-300 rounded-lg shadow-lg max-h-60 overflow-y-auto bottom-full">
-                                    {countries
-                                        .filter(country => 
-                                            country.name?.toLowerCase().includes(countryFilter.toLowerCase())
-                                        )
-                                        .slice(0, 10)
-                                        .map((country, index) => (
-                                            <div
-                                                key={index}
-                                                onClick={() => {
-                                                    setCountryFilter(country.name);
-                                                    // Hide dropdown after selection
-                                                    setTimeout(() => {
-                                                        document.activeElement?.blur();
-                                                    }, 100);
-                                                }}
-                                                className="px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm border-b border-slate-100 last:border-b-0"
-                                            >
-                                                {country.name}
-                                            </div>
-                                        ))}
-                                </div>
-                            )}
-                            <input
-                                type="text"
-                                placeholder={loadingCountries ? "Loading countries..." : "Search or select country..."}
-                                value={countryFilter}
-                                onChange={(e) => setCountryFilter(e.target.value)}
-                                onFocus={() => setCountrySearchTerm(countryFilter)}
-                                className="w-full px-2 py-1 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs bg-white"
-                                disabled={loadingCountries}
-                            />
-                            {loadingCountries && (
-                                <div className="absolute right-3 top-3">
-                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
-                                </div>
-                            )}
-                        </div>
+                        <label className="block text-xs font-normal text-slate-700 mb-0.5">Country</label>
+                        <select
+                            value={countryFilter}
+                            onChange={(e) => setCountryFilter(e.target.value)}
+                            disabled={loadingCountries}
+                            className="w-full px-2 py-1 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs bg-white disabled:bg-gray-100"
+                        >
+                            <option value="">All Countries</option>
+                            {countries.map((country, index) => (
+                                <option key={index} value={country.name}>
+                                    {country.name}
+                                </option>
+                            ))}
+                        </select>
+                        {loadingCountries && (
+                            <div className="text-xs text-gray-500 mt-1">Loading countries...</div>
+                        )}
                     </div>
 
                     {/* State Filter - Show only when India is selected */}
                     {countryFilter && countryFilter.toLowerCase() === 'india' && (
                         <div className="flex-1">
-                            <label className="block text-xs font-normal text-slate-700 mb-0.5">Indian States</label>
-                            <div className="relative">
-                                {stateFilter && states.length > 0 && !loadingStates && (
-                                    <div className="absolute z-10 w-full mb-1 bg-white border border-slate-300 rounded-lg shadow-lg max-h-60 overflow-y-auto bottom-full">
-                                        {states
-                                            .filter(state => 
-                                                state.name?.toLowerCase().includes(stateFilter.toLowerCase())
-                                            )
-                                            .slice(0, 10)
-                                            .map((state, index) => (
-                                                <div
-                                                    key={index}
-                                                    onClick={() => {
-                                                        setStateFilter(state.name);
-                                                        // Hide dropdown after selection
-                                                        setTimeout(() => {
-                                                            document.activeElement?.blur();
-                                                        }, 100);
-                                                    }}
-                                                    className="px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm border-b border-slate-100 last:border-b-0"
-                                                >
-                                                    {state.name}
-                                                </div>
-                                            ))}
-                                    </div>
-                                )}
-                                <input
-                                    type="text"
-                                    placeholder={loadingStates ? "Loading Indian states..." : states.length === 0 ? "No states available" : "Search or select Indian state..."}
-                                    value={stateFilter}
-                                    onChange={(e) => setStateFilter(e.target.value)}
-                                    onFocus={() => setStateSearchTerm(stateFilter)}
-                                    className="w-full px-2 py-1 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs bg-white"
-                                    disabled={loadingStates || states.length === 0}
-                                />
-                                {loadingStates && (
-                                    <div className="absolute right-3 top-3">
-                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
-                                    </div>
-                                )}
-                            </div>
+                            <label className="block text-xs font-normal text-slate-700 mb-0.5">State</label>
+                            <select
+                                value={stateFilter}
+                                onChange={(e) => setStateFilter(e.target.value)}
+                                disabled={loadingStates}
+                                className="w-full px-2 py-1 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs bg-white disabled:bg-gray-100"
+                            >
+                                <option value="">All States</option>
+                                {states.map((state, index) => (
+                                    <option key={index} value={state.name}>
+                                        {state.name}
+                                    </option>
+                                ))}
+                            </select>
+                            {loadingStates && (
+                                <div className="text-xs text-gray-500 mt-1">Loading states...</div>
+                            )}
                         </div>
                     )}
 
@@ -353,7 +314,7 @@ const ApprovedAmbassadorsTable = ({
                             <th className="px-2 py-2 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider whitespace-nowrap">Country</th>
                             <th className="px-2 py-2 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider whitespace-nowrap">Status</th>
                             <th className="px-2 py-2 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider whitespace-nowrap">Reward</th>
-                            <th className="px-2 py-2 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider whitespace-nowrap">Joined</th>
+                            <th className="px-2 py-2 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider whitespace-nowrap">Registered</th>
                             <th className="px-2 py-2 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider whitespace-nowrap">Actions</th>
                         </tr>
                     </thead>

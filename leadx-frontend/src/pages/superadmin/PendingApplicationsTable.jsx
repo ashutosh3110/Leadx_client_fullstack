@@ -124,26 +124,35 @@ const PendingApplicationsTable = ({
             console.error('Error fetching states:', error);
             // Fallback to mock Indian states data
             const mockStates = [
-                { name: 'Maharashtra' },
-                { name: 'Karnataka' },
-                { name: 'Tamil Nadu' },
-                { name: 'Delhi' },
-                { name: 'Gujarat' },
-                { name: 'Uttar Pradesh' },
-                { name: 'West Bengal' },
-                { name: 'Rajasthan' },
-                { name: 'Madhya Pradesh' },
-                { name: 'Kerala' },
                 { name: 'Andhra Pradesh' },
-                { name: 'Telangana' },
-                { name: 'Bihar' },
-                { name: 'Odisha' },
+                { name: 'Arunachal Pradesh' },
                 { name: 'Assam' },
-                { name: 'Punjab' },
-                { name: 'Haryana' },
-                { name: 'Jharkhand' },
+                { name: 'Bihar' },
                 { name: 'Chhattisgarh' },
-                { name: 'Himachal Pradesh' }
+                { name: 'Goa' },
+                { name: 'Gujarat' },
+                { name: 'Haryana' },
+                { name: 'Himachal Pradesh' },
+                { name: 'Jharkhand' },
+                { name: 'Karnataka' },
+                { name: 'Kerala' },
+                { name: 'Madhya Pradesh' },
+                { name: 'Maharashtra' },
+                { name: 'Manipur' },
+                { name: 'Meghalaya' },
+                { name: 'Mizoram' },
+                { name: 'Nagaland' },
+                { name: 'Odisha' },
+                { name: 'Punjab' },
+                { name: 'Rajasthan' },
+                { name: 'Sikkim' },
+                { name: 'Tamil Nadu' },
+                { name: 'Telangana' },
+                { name: 'Tripura' },
+                { name: 'Uttar Pradesh' },
+                { name: 'Uttarakhand' },
+                { name: 'West Bengal' },
+                { name: 'Delhi' }
             ];
             setStates(mockStates);
         } finally {
@@ -179,7 +188,7 @@ const PendingApplicationsTable = ({
                 <div className="relative">
                     <input
                         type="text"
-                        placeholder="Search by name or email..."
+                        placeholder="Search by ambassador name or email..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="pl-8 pr-3 py-1.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs bg-white w-full sm:w-64"
@@ -208,92 +217,44 @@ const PendingApplicationsTable = ({
                     {/* Country Filter */}
                     <div className="flex-1 min-w-[120px]">
                         <label className="block text-xs font-normal text-slate-700 mb-0.5">Country</label>
-                        <div className="relative">
-                            {countryFilter && countries.length > 0 && !loadingCountries && (
-                                <div className="absolute z-10 w-full mb-1 bg-white border border-slate-300 rounded-lg shadow-lg max-h-60 overflow-y-auto bottom-full">
-                                    {countries
-                                        .filter(country => 
-                                            country.name?.toLowerCase().includes(countryFilter.toLowerCase())
-                                        )
-                                        .slice(0, 10)
-                                        .map((country, index) => (
-                                            <div
-                                                key={index}
-                                                onClick={() => {
-                                                    setCountryFilter(country.name);
-                                                    // Hide dropdown after selection
-                                                    setTimeout(() => {
-                                                        document.activeElement?.blur();
-                                                    }, 100);
-                                                }}
-                                                className="px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm border-b border-slate-100 last:border-b-0"
-                                            >
-                                                {country.name}
-                                            </div>
-                                        ))}
-                                </div>
-                            )}
-                            <input
-                                type="text"
-                                placeholder={loadingCountries ? "Loading countries..." : "Search or select country..."}
-                                value={countryFilter}
-                                onChange={(e) => setCountryFilter(e.target.value)}
-                                onFocus={() => setCountrySearchTerm(countryFilter)}
-                                className="w-full px-2 py-1 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs bg-white"
-                                disabled={loadingCountries}
-                            />
-                            {loadingCountries && (
-                                <div className="absolute right-3 top-3">
-                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
-                                </div>
-                            )}
-                        </div>
+                        <select
+                            value={countryFilter}
+                            onChange={(e) => setCountryFilter(e.target.value)}
+                            disabled={loadingCountries}
+                            className="w-full px-2 py-1 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs bg-white disabled:bg-gray-100"
+                        >
+                            <option value="">All Countries</option>
+                            {countries.map((country, index) => (
+                                <option key={index} value={country.name}>
+                                    {country.name}
+                                </option>
+                            ))}
+                        </select>
+                        {loadingCountries && (
+                            <div className="text-xs text-gray-500 mt-1">Loading countries...</div>
+                        )}
                     </div>
 
                     {/* State Filter - Show only when India is selected */}
                     {countryFilter && countryFilter.toLowerCase() === 'india' && (
                         <div className="flex-1 min-w-[120px]">
-                            <label className="block text-xs font-normal text-slate-700 mb-0.5">Indian States</label>
-                            <div className="relative">
-                                {stateFilter && states.length > 0 && !loadingStates && (
-                                    <div className="absolute z-10 w-full mb-1 bg-white border border-slate-300 rounded-lg shadow-lg max-h-60 overflow-y-auto bottom-full">
-                                        {states
-                                            .filter(state => 
-                                                state.name?.toLowerCase().includes(stateFilter.toLowerCase())
-                                            )
-                                            .slice(0, 10)
-                                            .map((state, index) => (
-                                                <div
-                                                    key={index}
-                                                    onClick={() => {
-                                                        setStateFilter(state.name);
-                                                        // Hide dropdown after selection
-                                                        setTimeout(() => {
-                                                            document.activeElement?.blur();
-                                                        }, 100);
-                                                    }}
-                                                    className="px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm border-b border-slate-100 last:border-b-0"
-                                                >
-                                                    {state.name}
-                                                </div>
-                                            ))}
-                                    </div>
-                                )}
-                                <input
-                                    type="text"
-                                    placeholder={loadingStates ? "Loading Indian states..." : states.length === 0 ? "No states available" : "Search or select Indian state..."}
-                                    value={stateFilter}
-                                    onChange={(e) => setStateFilter(e.target.value)}
-                                    onFocus={() => setStateSearchTerm(stateFilter)}
-                                    className="w-full px-2 py-1 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs bg-white"
-                                    disabled={loadingStates || states.length === 0}
-                                />
-                                {loadingStates && (
-                                    <div className="absolute right-3 top-3">
-                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
-                                    </div>
-                                )}
-                            </div>
+                            <label className="block text-xs font-normal text-slate-700 mb-0.5">State</label>
+                            <select
+                                value={stateFilter}
+                                onChange={(e) => setStateFilter(e.target.value)}
+                                disabled={loadingStates}
+                                className="w-full px-2 py-1 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs bg-white disabled:bg-gray-100"
+                            >
+                                <option value="">All States</option>
+                                {states.map((state, index) => (
+                                    <option key={index} value={state.name}>
+                                        {state.name}
+                                    </option>
+                                ))}
+                            </select>
+                            {loadingStates && (
+                                <div className="text-xs text-gray-500 mt-1">Loading states...</div>
+                            )}
                         </div>
                     )}
 
@@ -321,10 +282,11 @@ const PendingApplicationsTable = ({
 
             {/* Responsive container with horizontal scroll */}
             <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-lg border border-slate-200 overflow-x-auto max-w-6xl mx-auto">
-                <table className="w-full divide-y divide-slate-200" style={{ minWidth: '500px' }}>
+                <table className="w-full divide-y divide-slate-200" style={{ minWidth: '600px' }}>
                     <thead className="bg-gradient-to-r from-yellow-50 to-orange-50">
                         <tr>
-                            <th className="px-2 py-2 text-center text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Applicant</th>
+                            <th className="px-2 py-2 text-center text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Ambassador</th>
+                            <th className="px-2 py-2 text-center text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Email</th>
                             <th className="px-2 py-2 text-center text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Course</th>
                             <th className="px-2 py-2 text-center text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Country</th>
                             <th className="px-2 py-2 text-center text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Applied</th>
@@ -335,7 +297,7 @@ const PendingApplicationsTable = ({
                         {paginatedApplications.length > 0 ? paginatedApplications.map((application, index) => (
                             <tr key={application._id || index} className="hover:bg-yellow-50/50 transition-colors duration-200 mb-1">
                                 <td className="px-2 py-2 whitespace-nowrap text-center">
-                                    <div className="flex items-center justify-center">
+                                    <div className="flex items-center justify-center space-x-2">
                                         <div className="w-6 h-6 rounded-full overflow-hidden border-2 border-yellow-200 flex-shrink-0">
                                             {application.profileImage ? (
                                                 <img
@@ -346,26 +308,30 @@ const PendingApplicationsTable = ({
                                                         e.target.style.display = 'none';
                                                         e.target.parentElement.innerHTML = `
                                                             <div class="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold">
-                                                                ${application.name.charAt(0).toUpperCase()}
+                                                                ${application.name ? application.name.charAt(0).toUpperCase() : 'A'}
                                                             </div>
                                                         `;
                                                     }}
                                                 />
                                             ) : (
                                                 <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold">
-                                                    {application.name.charAt(0).toUpperCase()}
+                                                    {application.name ? application.name.charAt(0).toUpperCase() : 'A'}
                                                 </div>
                                             )}
                                         </div>
-                                        <div className="ml-1 min-w-0 flex-1 text-center">
+                                        <div className="min-w-0 flex-1 text-center">
                                             <button 
                                                 onClick={() => handleViewAmbassadorDetails(application)}
-                                                className="text-xs font-normal text-blue-600 hover:text-blue-800 transition-colors cursor-pointer text-center truncate block w-full"
+                                                className="text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors cursor-pointer text-center truncate block w-full"
                                             >
-                                                {application.name}
+                                                {application.name ? application.name.charAt(0).toUpperCase() + application.name.slice(1) : 'Unknown Ambassador'}
                                             </button>
-                                            <div className="text-xs text-slate-500 truncate text-center">{application.email}</div>
                                         </div>
+                                    </div>
+                                </td>
+                                <td className="px-2 py-2 whitespace-nowrap text-center">
+                                    <div className="text-xs text-slate-600 truncate max-w-40" title={application.email}>
+                                        {application.email || 'No email provided'}
                                     </div>
                                 </td>
                                 <td className="px-2 py-2 whitespace-nowrap text-xs text-slate-900">
@@ -402,13 +368,13 @@ const PendingApplicationsTable = ({
                             </tr>
                         )) : (
                             <tr>
-                                <td colSpan="5" className="px-6 py-8 text-center">
+                                <td colSpan="6" className="px-6 py-8 text-center">
                                     <div className="flex flex-col items-center">
                                         <svg className="w-12 h-12 text-slate-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 009.586 13H7" />
                                         </svg>
                                         <h4 className="text-sm font-medium text-slate-500 mb-1">
-                                            {searchTerm ? `No applications found for "${searchTerm}"` : 'No Pending Applications'}
+                                            {searchTerm ? `No ambassadors found for "${searchTerm}"` : 'No Pending Applications'}
                                         </h4>
                                         <p className="text-xs text-slate-400">
                                             {searchTerm ? 'Try adjusting your search terms' : 'All ambassador applications have been processed'}
@@ -444,3 +410,4 @@ const PendingApplicationsTable = ({
 };
 
 export default PendingApplicationsTable;
+

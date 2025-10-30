@@ -42,6 +42,7 @@ const AdminUsers = () => {
                     console.log(`🔍 Processing user: ${user.name}`)
                     console.log(`🔍 Raw user object:`, user)
                     console.log(`🔍 User ID field:`, user.id)
+                    console.log(`🌍 Geo Location data:`, user.geoLocation)
                     console.log(`📊 Raw chat history:`, user.chatHistory)
                     console.log(`📊 Ambassadors from backend:`, user.chatHistory?.ambassadors)
 
@@ -73,6 +74,12 @@ const AdminUsers = () => {
                         convertedBy: user.convertedBy,
                         enrolledAt: user.enrolledAt,
                         enrolledBy: user.enrolledBy,
+                        // Geo location data
+                        geoLocation: user.geoLocation || {
+                            location: 'Not available',
+                            device: 'Not available',
+                            lastLogin: null
+                        },
                         // Additional chat history data
                         chatHistory: {
                             totalChats: user.chatHistory?.totalChats || 0,
@@ -238,11 +245,12 @@ const AdminUsers = () => {
 
             {/* Responsive container with horizontal scroll */}
             <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-lg border border-slate-200 overflow-x-auto max-w-6xl mx-auto">
-                <table className="w-full divide-y divide-slate-200" style={{ minWidth: '500px' }}>
+                <table className="w-full divide-y divide-slate-200" style={{ minWidth: '700px' }}>
                     <thead className="bg-gradient-to-r from-yellow-50 to-orange-50">
                         <tr>
                             <th className="px-2 py-2 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider whitespace-nowrap">Prospect</th>
                             <th className="px-2 py-2 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider whitespace-nowrap">Contact</th>
+                            <th className="px-2 py-2 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider whitespace-nowrap">Geo Location</th>
                             <th className="px-2 py-2 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider whitespace-nowrap">Country</th>
                             <th className="px-2 py-2 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider whitespace-nowrap">Ambassadors</th>
                             <th className="px-2 py-2 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider whitespace-nowrap">Status & Date</th>
@@ -253,7 +261,7 @@ const AdminUsers = () => {
                     <tbody className="divide-y divide-slate-200 space-y-1">
                         {filteredUsers.length === 0 ? (
                             <tr>
-                                <td colSpan="7" className="px-4 py-8 text-center">
+                                <td colSpan="8" className="px-4 py-8 text-center">
                                     <div className="flex flex-col items-center justify-center space-y-2">
                                         <div className="text-gray-400 text-4xl">📊</div>
                                         <div className="text-gray-500 text-lg font-medium">No Data Available</div>
@@ -282,6 +290,14 @@ const AdminUsers = () => {
                                 <td className="px-2 py-2 whitespace-nowrap text-center">
                                     <div className="text-xs font-normal text-slate-900">{user.email || 'N/A'}</div>
                                     <div className="text-xs text-slate-500">{user.phone || 'No phone'}</div>
+                                </td>
+                                <td className="px-2 py-2 whitespace-nowrap text-center">
+                                    <div className="text-xs font-medium text-slate-900">
+                                        {user.geoLocation?.location || 'Not available'}
+                                    </div>
+                                    <div className="text-xs text-slate-500">
+                                        {user.geoLocation?.device || 'Device unknown'}
+                                    </div>
                                 </td>
                                 <td className="px-2 py-2 whitespace-nowrap text-xs text-slate-900">
                                     <div className="flex justify-center items-center">

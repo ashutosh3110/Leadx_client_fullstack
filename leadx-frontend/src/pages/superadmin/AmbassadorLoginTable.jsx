@@ -94,7 +94,7 @@ const AmbassadorLoginTable = () => {
       <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-lg border border-slate-200 overflow-x-auto max-w-6xl mx-auto">
         <table
           className="w-full divide-y divide-slate-200"
-          style={{ minWidth: "500px" }}
+          style={{ minWidth: "700px" }}
         >
           <thead className="bg-gradient-to-r from-yellow-50 to-orange-50">
             <tr>
@@ -114,6 +114,9 @@ const AmbassadorLoginTable = () => {
                 Location
               </th>
               <th className="px-2 py-2 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider whitespace-nowrap">
+                Device
+              </th>
+              <th className="px-2 py-2 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider whitespace-nowrap">
                 ISP
               </th>
             </tr>
@@ -121,7 +124,7 @@ const AmbassadorLoginTable = () => {
           <tbody className="divide-y divide-slate-200 space-y-1">
             {loading ? (
               <tr>
-                <td colSpan="6" className="px-4 py-8 text-center">
+                <td colSpan="7" className="px-4 py-8 text-center">
                   <div className="flex flex-col items-center justify-center space-y-2">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500"></div>
                     <div className="text-gray-500 text-sm font-medium">Loading login data...</div>
@@ -130,7 +133,7 @@ const AmbassadorLoginTable = () => {
               </tr>
             ) : error ? (
               <tr>
-                <td colSpan="6" className="px-4 py-8 text-center">
+                <td colSpan="7" className="px-4 py-8 text-center">
                   <div className="flex flex-col items-center justify-center space-y-3">
                     <div className="text-red-400 text-4xl">⚠️</div>
                     <div className="text-red-500 text-sm font-medium">Error loading data</div>
@@ -154,7 +157,7 @@ const AmbassadorLoginTable = () => {
               </tr>
             ) : logins.length === 0 ? (
               <tr>
-                <td colSpan="6" className="px-4 py-8 text-center">
+                <td colSpan="7" className="px-4 py-8 text-center">
                   <div className="flex flex-col items-center justify-center space-y-2">
                     <div className="text-gray-400 text-4xl">📊</div>
                     <div className="text-gray-500 text-sm font-medium">No Login Data Available</div>
@@ -225,6 +228,17 @@ const AmbassadorLoginTable = () => {
                         Location not detected
                       </div>
                     )}
+                  </div>
+                </td>
+                <td className="px-2 py-2 whitespace-nowrap text-center">
+                  <div className="text-xs font-medium text-slate-900">
+                    {log.device || 'Unknown'}
+                  </div>
+                  <div className="text-xs text-slate-500">
+                    {log.browser || 'Browser unknown'}
+                  </div>
+                  <div className="text-xs text-slate-400">
+                    {log.os || 'OS unknown'}
                   </div>
                 </td>
                 <td className="px-2 py-2 whitespace-nowrap text-xs text-slate-900">

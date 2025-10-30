@@ -84,16 +84,35 @@ const RewardsTab = ({ rewards, adminDashboardColor, onEditReward, onDeleteReward
       if (!apiKey) {
         console.warn('Country API key not found. Using fallback states.');
         setStates([
-          { name: 'Maharashtra' },
-          { name: 'Karnataka' },
-          { name: 'Tamil Nadu' },
-          { name: 'Gujarat' },
-          { name: 'Rajasthan' },
-          { name: 'Uttar Pradesh' },
-          { name: 'Madhya Pradesh' },
-          { name: 'West Bengal' },
           { name: 'Andhra Pradesh' },
-          { name: 'Kerala' }
+          { name: 'Arunachal Pradesh' },
+          { name: 'Assam' },
+          { name: 'Bihar' },
+          { name: 'Chhattisgarh' },
+          { name: 'Goa' },
+          { name: 'Gujarat' },
+          { name: 'Haryana' },
+          { name: 'Himachal Pradesh' },
+          { name: 'Jharkhand' },
+          { name: 'Karnataka' },
+          { name: 'Kerala' },
+          { name: 'Madhya Pradesh' },
+          { name: 'Maharashtra' },
+          { name: 'Manipur' },
+          { name: 'Meghalaya' },
+          { name: 'Mizoram' },
+          { name: 'Nagaland' },
+          { name: 'Odisha' },
+          { name: 'Punjab' },
+          { name: 'Rajasthan' },
+          { name: 'Sikkim' },
+          { name: 'Tamil Nadu' },
+          { name: 'Telangana' },
+          { name: 'Tripura' },
+          { name: 'Uttar Pradesh' },
+          { name: 'Uttarakhand' },
+          { name: 'West Bengal' },
+          { name: 'Delhi' }
         ]);
         return;
       }
@@ -114,11 +133,35 @@ const RewardsTab = ({ rewards, adminDashboardColor, onEditReward, onDeleteReward
       console.error('Error loading states:', error);
       // Fallback states
       setStates([
-        { name: 'Maharashtra' },
-        { name: 'Karnataka' },
-        { name: 'Tamil Nadu' },
+        { name: 'Andhra Pradesh' },
+        { name: 'Arunachal Pradesh' },
+        { name: 'Assam' },
+        { name: 'Bihar' },
+        { name: 'Chhattisgarh' },
+        { name: 'Goa' },
         { name: 'Gujarat' },
-        { name: 'Rajasthan' }
+        { name: 'Haryana' },
+        { name: 'Himachal Pradesh' },
+        { name: 'Jharkhand' },
+        { name: 'Karnataka' },
+        { name: 'Kerala' },
+        { name: 'Madhya Pradesh' },
+        { name: 'Maharashtra' },
+        { name: 'Manipur' },
+        { name: 'Meghalaya' },
+        { name: 'Mizoram' },
+        { name: 'Nagaland' },
+        { name: 'Odisha' },
+        { name: 'Punjab' },
+        { name: 'Rajasthan' },
+        { name: 'Sikkim' },
+        { name: 'Tamil Nadu' },
+        { name: 'Telangana' },
+        { name: 'Tripura' },
+        { name: 'Uttar Pradesh' },
+        { name: 'Uttarakhand' },
+        { name: 'West Bengal' },
+        { name: 'Delhi' }
       ]);
     } finally {
       setLoadingStates(false);
@@ -345,7 +388,7 @@ const RewardsTab = ({ rewards, adminDashboardColor, onEditReward, onDeleteReward
               <tr key={reward.id || index} className="hover:bg-yellow-50/50 transition-colors duration-200 mb-1">
                 <td className="px-2 py-2 whitespace-nowrap text-center">
                   <div className="text-xs font-semibold text-slate-900">
-                    {reward.ambassadorName || 'Unknown Ambassador'}
+                    {reward.ambassadorName ? reward.ambassadorName.charAt(0).toUpperCase() + reward.ambassadorName.slice(1) : 'Unknown Ambassador'}
                   </div>
                 </td>
                 <td className="px-2 py-2 whitespace-nowrap text-center">

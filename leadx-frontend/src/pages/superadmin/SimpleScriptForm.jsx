@@ -4,13 +4,12 @@ import { customizationAPI } from "../utils/apicopy"
 
 const SimpleScriptForm = () => {
   const [formData, setFormData] = useState({
-    clientName: "",
-    clientEmail: "",
     targetWebUrl: "",
     webUrl: "",
     webName: "",
     policyUrl: "",
     termsUrl: "",
+    chatRuleUrl: "",
     tilesAndButtonColor: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
     textColor: "#ffffff",
     borderColor: "#e5e7eb",
@@ -69,12 +68,7 @@ const SimpleScriptForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault()
 
-    if (
-      !formData.clientName
-    ) {
-      toast.error("Please fill in all required fields")
-      return
-    }
+    // No required fields validation needed since basic information section is removed
 
     try {
       setLoading(true)
@@ -91,13 +85,12 @@ const SimpleScriptForm = () => {
 
         // Reset form
         setFormData({
-          clientName: "",
-          clientEmail: "",
           targetWebUrl: "",
           webUrl: "",
           webName: "",
           policyUrl: "",
           termsUrl: "",
+          chatRuleUrl: "",
           tilesAndButtonColor:
             "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
           textColor: "#ffffff",
@@ -154,60 +147,14 @@ const SimpleScriptForm = () => {
         {/* Main Form */}
         <div className="bg-white rounded-xl shadow-lg border border-slate-200 p-4 mb-6">
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Institute Information */}
-            <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-              <h2 className="text-base font-semibold text-green-700 mb-3">
-                Institute Information
+
+
+            {/* UI Customization */}
+            <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
+              <h2 className="text-base font-semibold text-purple-700 mb-3">
+                UI Customization
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-2">
-                    Institute Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.clientName}
-                    onChange={(e) =>
-                      handleInputChange("clientName", e.target.value)
-                    }
-                    placeholder="University/College Name"
-                    className="w-full p-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-2">
-                    Institute Email
-                  </label>
-                  <input
-                    type="email"
-                    value={formData.clientEmail}
-                    onChange={(e) =>
-                      handleInputChange("clientEmail", e.target.value)
-                    }
-                    placeholder="institute@university.edu"
-                    className="w-full p-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                  />
-                </div>
-
-
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-2">
-                    Script Status
-                  </label>
-                  <select
-                    value={formData.isActive ? "active" : "inactive"}
-                    onChange={(e) =>
-                      handleInputChange("isActive", e.target.value === "active")
-                    }
-                    className="w-full p-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                  >
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                  </select>
-                </div>
-
                 <div>
                   <label className="block text-xs font-medium text-slate-700 mb-2">
                     Privacy Policy URL
@@ -219,7 +166,7 @@ const SimpleScriptForm = () => {
                       handleInputChange("policyUrl", e.target.value)
                     }
                     placeholder="https://yourcompany.com/privacy"
-                    className="w-full p-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full p-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                   />
                 </div>
 
@@ -234,19 +181,24 @@ const SimpleScriptForm = () => {
                       handleInputChange("termsUrl", e.target.value)
                     }
                     placeholder="https://yourcompany.com/terms"
-                    className="w-full p-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full p-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                   />
                 </div>
-              </div>
-            </div>
 
-
-            {/* UI Customization */}
-            <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
-              <h2 className="text-base font-semibold text-purple-700 mb-3">
-                UI Customization
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-2">
+                    Chat Rules URL
+                  </label>
+                  <input
+                    type="url"
+                    value={formData.chatRuleUrl}
+                    onChange={(e) =>
+                      handleInputChange("chatRuleUrl", e.target.value)
+                    }
+                    placeholder="https://yourcompany.com/chat-rules"
+                    className="w-full p-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
                 <div>
                   <label className="block text-xs font-medium text-slate-700 mb-2">
                     Button Background Color

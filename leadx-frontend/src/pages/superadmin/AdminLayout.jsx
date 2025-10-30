@@ -579,21 +579,21 @@ const AdminLayout = () => {
                 console.error('Failed to fetch rewards:', rewardsError);
             }
 
-            // Get ambassadors with user messages count
-            let ambassadorsWithMessages = 0;
+            // Get total conversations count
+            let totalConversations = 0;
             try {
-                const ambassadorsData = await chatAPI.getAmbassadorsWithMessages();
-                ambassadorsWithMessages = ambassadorsData.data.totalAmbassadorsWithMessages || 0;
-                console.log('✅ Ambassadors with messages:', ambassadorsWithMessages);
+                const conversationsData = await chatAPI.getTotalConversations();
+                totalConversations = conversationsData.data.totalConversations || 0;
+                console.log('✅ Total conversations:', totalConversations);
             } catch (error) {
-                console.error('❌ Error fetching ambassadors with messages:', error);
+                console.error('❌ Error fetching total conversations:', error);
             }
 
             setStats({
                 totalAmbassadors: verifiedAmbassadors.length,
                 activeAmbassadors: verifiedAmbassadors.length,
                 pendingApplications: pendingAmbassadors.length,
-                totalConversations: ambassadorsWithMessages,
+                totalConversations: totalConversations,
                 totalRewards: rewardsCount,
                 monthlyGrowth: Math.floor(Math.random() * 25) + 5
             });

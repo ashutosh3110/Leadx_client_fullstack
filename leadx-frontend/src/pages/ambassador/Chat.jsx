@@ -5,6 +5,7 @@ import { toast } from "react-toastify"
 import api from "../utils/Api"
 import { getToken, getUser } from "../utils/auth"
 import { useColorContext } from "../../context/ColorContext"
+import { validateMessage, filterSensitiveData, getDetailedSecurityWarning } from "../../utils/chatSecurity"
 
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL
 const API_BASE_URL = import.meta.env.VITE_API_URL
@@ -19,6 +20,8 @@ const Chat = () => {
   const [isSending, setIsSending] = useState(false)
   const [loading, setLoading] = useState(false)
   const [fetchingMessages, setFetchingMessages] = useState(false)
+  const [securityWarning, setSecurityWarning] = useState(null)
+  const [messageError, setMessageError] = useState("")
   const messageEndRef = useRef(null)
   const { ambassadorDashboardColor } = useColorContext()
 
@@ -187,6 +190,20 @@ const Chat = () => {
 
   const handleSend = async () => {
     if (!newMessage.trim() || !selectedChat || isSending) return
+
+    // Validate message for sensitive information
+    const validation = validateMessage(newMessage.trim())
+    if (!validation.isValid) {
+      const warning = getDetailedSecurityWarning(validation.violations)
+      setSecurityWarning(warning)
+      setMessageError(warning.message)
+      toast.error("Please don't share personal information for security reasons.")
+      return
+    }
+
+    // Clear any previous warnings
+    setSecurityWarning(null)
+    setMessageError("")
 
     const receiver = selectedChat.participants.find((p) => (p._id || p.id) !== userId)
     if (!(receiver?._id || receiver?.id)) return
@@ -524,10 +541,10 @@ const Chat = () => {
                                     maxWidth: '100%'
                                   }}
                                 >
-                                  {message.content}
+                                  {filterSensitiveData(message.content)}
                                   
                                   {/* Time and Status inside message box */}
-                                  <div className={`flex items-center justify-end mt-0.5 text-xs ${
+                                  <div className={`flex items-center justify-end mt-0.5 text-[8px] ${
                                     isUser 
                                       ? "text-gray-600" 
                                       : "text-blue-100"
@@ -559,18 +576,41 @@ const Chat = () => {
                 )}
             </div>
 
+              {/* Security Warning */}
+              {securityWarning && (
+                <div className="bg-yellow-50 border-l-4 border-yellow-400 p-2 mx-2 mb-2">
+                  <div className="flex">
+                    <div className="flex-shrink-0">
+                      <svg className="h-4 w-4 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <div className="ml-2">
+                      <p className="text-xs text-yellow-700">
+                        <strong>Security Notice:</strong> {securityWarning.message}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Message Input */}
               <div className="p-2 border-t flex gap-1 sm:gap-2 bg-white">
               <input
                 type="text"
                 placeholder="Type a message..."
                 value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                  className="flex-1 border rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm focus:outline-none focus:ring-2"
-                style={{ 
-                    borderColor: '#3b82f640',
-                    focusRingColor: '#3b82f6'
+                onChange={(e) => {
+                  setNewMessage(e.target.value)
+                  // Clear warnings when user starts typing
+                  if (securityWarning || messageError) {
+                    setSecurityWarning(null)
+                    setMessageError("")
+                  }
                 }}
+                className={`flex-1 border rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm focus:outline-none focus:ring-2 ${
+                  messageError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                }`}
                 onKeyDown={(e) => e.key === "Enter" && handleSend()}
               />
               <button
