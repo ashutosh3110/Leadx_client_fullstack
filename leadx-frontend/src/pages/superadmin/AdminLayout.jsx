@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
-import { ambassadorAPI, approvalAPI, rewardsAPI } from '../utils/Api';
+import { ambassadorAPI, approvalAPI, rewardsAPI, chatAPI } from '../utils/Api';
 
 import ProfileDropdown from './ProfileDropdown';
 import SimpleSettingsForm from './SimpleSettingsForm';
@@ -128,7 +128,7 @@ const AdminLayout = () => {
             console.log('Approval response:', response);
 
             if (response.success) {
-                const approvedUser = pendingApplications.find(user => user._id === userId);
+                const approvedUser = pendingApplications.find(user => (user.id || user._id) === userId);
 
                 if (approvedUser) {
                     const updatedUser = {
@@ -137,7 +137,7 @@ const AdminLayout = () => {
                         approvedAt: new Date().toISOString()
                     };
 
-                    setPendingApplications(prev => prev.filter(user => user._id !== userId));
+                    setPendingApplications(prev => prev.filter(user => (user.id || user._id) !== userId));
                     setAmbassadors(prev => [updatedUser, ...prev]);
 
                     setStats(prev => ({
@@ -169,7 +169,7 @@ const AdminLayout = () => {
             console.log('Rejection response:', response);
 
             if (response.success) {
-                setPendingApplications(prev => prev.filter(user => user._id !== userId));
+                setPendingApplications(prev => prev.filter(user => (user.id || user._id) !== userId));
                 setStats(prev => ({
                     ...prev,
                     pendingApplications: prev.pendingApplications - 1
@@ -199,10 +199,14 @@ const AdminLayout = () => {
     };
 
     const handleAddReward = (ambassadorId) => {
-        const ambassador = ambassadors.find(amb => amb._id === ambassadorId);
+        console.log('🔍 handleAddReward called with ambassadorId:', ambassadorId);
+        const ambassador = ambassadors.find(amb => (amb.id || amb._id) === ambassadorId);
+        console.log('🔍 Found ambassador:', ambassador);
         if (ambassador) {
             setSelectedAmbassador(ambassador);
             setIsAddRewardModalOpen(true);
+        } else {
+            console.error('❌ Ambassador not found for ID:', ambassadorId);
         }
     };
 
@@ -272,7 +276,7 @@ const AdminLayout = () => {
             );
 
             setAmbassadors(prev => prev.map(ambassador => 
-                ambassador._id === reward.ambassadorId 
+                (ambassador.id || ambassador._id) === reward.ambassadorId 
                     ? { ...ambassador, hasReward: ambassadorHasOtherRewards }
                     : ambassador
             ));
@@ -299,7 +303,7 @@ const AdminLayout = () => {
             console.log('Submitting reward:', rewardData);
 
             const apiData = {
-                ambassador: rewardData.ambassadorId,
+                ambassador: rewardData.ambassador,
                 amount: rewardData.amount,
                 currency: rewardData.currency,
                 status: 'pending',
@@ -309,15 +313,19 @@ const AdminLayout = () => {
             const response = await rewardsAPI.createReward(apiData);
             console.log('Reward created successfully:', response);
 
+            // Find ambassador to get course info
+            const ambassador = ambassadors.find(amb => (amb.id || amb._id) === rewardData.ambassador);
+            
             const newReward = {
-                id: response.data._id,
-                ambassadorId: rewardData.ambassadorId,
+                id: response.data.id || response.data._id,
+                ambassadorId: rewardData.ambassador, // Use ambassador field as ambassadorId
                 ambassadorName: rewardData.ambassadorName,
+                course: ambassador?.program || ambassador?.course || 'Not specified',
                 amount: rewardData.amount,
                 currency: rewardData.currency,
-                status: response.data.status,
+                status: response.data.status || 'pending',
                 remarks: rewardData.remarks,
-                createdAt: response.data.createdAt,
+                createdAt: response.data.createdAt || new Date().toISOString(),
                 country: rewardData.country,
                 state: rewardData.state
             };
@@ -325,7 +333,7 @@ const AdminLayout = () => {
             setRewards(prev => [newReward, ...prev]);
 
             setAmbassadors(prev => prev.map(ambassador => 
-                ambassador._id === rewardData.ambassadorId 
+                (ambassador.id || ambassador._id) === rewardData.ambassador 
                     ? { ...ambassador, hasReward: true }
                     : ambassador
             ));
@@ -336,6 +344,9 @@ const AdminLayout = () => {
             }));
 
             toast.success(`✅ Reward of ${rewardData.currency} ${rewardData.amount} added successfully for ${rewardData.ambassadorName}!`);
+            
+            // Refresh rewards data to ensure consistency
+            await refreshRewards();
 
         } catch (error) {
             console.error('Error submitting reward:', error);
@@ -344,6 +355,40 @@ const AdminLayout = () => {
             throw error;
         } finally {
             setLoading(false);
+        }
+    };
+
+    // Function to refresh rewards data
+    const refreshRewards = async () => {
+        try {
+            const rewardsResponse = await rewardsAPI.getAllRewards();
+            console.log('Refreshed rewards response:', rewardsResponse);
+            
+            if (rewardsResponse.success && Array.isArray(rewardsResponse.data)) {
+                const transformedRewards = rewardsResponse.data.map(reward => {
+                    // Handle case where ambassador might be null
+                    const ambassador = reward.ambassador || {};
+                    
+                    return {
+                        id: reward.id,
+                        ambassadorId: ambassador.id || reward.ambassadorId,
+                        ambassadorName: ambassador.name || 'Unknown Ambassador',
+                        course: ambassador.program || ambassador.course || 'Not specified',
+                        amount: reward.amount,
+                        currency: reward.currency,
+                        status: reward.status,
+                        remarks: reward.remarks,
+                        createdAt: reward.createdAt,
+                        country: ambassador.country || 'Not specified',
+                        state: ambassador.state || ''
+                    };
+                });
+                
+                setRewards(transformedRewards);
+                console.log('Rewards refreshed:', transformedRewards);
+            }
+        } catch (error) {
+            console.error('Failed to refresh rewards:', error);
         }
     };
 
@@ -410,7 +455,7 @@ const AdminLayout = () => {
             if (response.success) {
                 // Update local state with the response data (which has the updated status)
                 setAmbassadors(prev => prev.map(ambassador => 
-                    ambassador._id === ambassadorId 
+                    (ambassador.id || ambassador._id) === ambassadorId 
                         ? { ...ambassador, ...response.data } // Use response.data instead of updatedData
                         : ambassador
                 ));
@@ -440,7 +485,7 @@ const AdminLayout = () => {
                 
                 if (response.success) {
                     // Remove from local state
-                    setAmbassadors(prev => prev.filter(ambassador => ambassador._id !== ambassadorId));
+                    setAmbassadors(prev => prev.filter(ambassador => (ambassador.id || ambassador._id) !== ambassadorId));
                     setStats(prev => ({
                         ...prev,
                         totalAmbassadors: prev.totalAmbassadors - 1,
@@ -505,22 +550,24 @@ const AdminLayout = () => {
                     console.log('Raw rewards data:', rewardsResponse.data);
                     const transformedRewards = rewardsResponse.data.map(reward => {
                         console.log('Ambassador data:', reward.ambassador);
-                        console.log('Program field:', reward.ambassador.program);
-                        console.log('Course field:', reward.ambassador.course);
-                        console.log('Program value:', reward.ambassador.program);
-                        console.log('Program type:', typeof reward.ambassador.program);
+                        console.log('Program field:', reward.ambassador?.program);
+                        console.log('Course field:', reward.ambassador?.course);
+                        
+                        // Handle case where ambassador might be null
+                        const ambassador = reward.ambassador || {};
+                        
                         return {
-                            id: reward._id,
-                            ambassadorId: reward.ambassador._id,
-                            ambassadorName: reward.ambassador.name,
-                            course: reward.ambassador.program || reward.ambassador.course || 'Not specified',
+                            id: reward.id,
+                            ambassadorId: ambassador.id || reward.ambassadorId,
+                            ambassadorName: ambassador.name || 'Unknown Ambassador',
+                            course: ambassador.program || ambassador.course || 'Not specified',
                             amount: reward.amount,
                             currency: reward.currency,
                             status: reward.status,
                             remarks: reward.remarks,
                             createdAt: reward.createdAt,
-                            country: reward.ambassador.country || 'Not specified',
-                            state: reward.ambassador.state || ''
+                            country: ambassador.country || 'Not specified',
+                            state: ambassador.state || ''
                         };
                     });
                     
@@ -532,11 +579,21 @@ const AdminLayout = () => {
                 console.error('Failed to fetch rewards:', rewardsError);
             }
 
+            // Get total conversations count
+            let totalConversations = 0;
+            try {
+                const conversationsData = await chatAPI.getTotalConversations();
+                totalConversations = conversationsData.data.totalConversations || 0;
+                console.log('✅ Total conversations:', totalConversations);
+            } catch (error) {
+                console.error('❌ Error fetching total conversations:', error);
+            }
+
             setStats({
                 totalAmbassadors: verifiedAmbassadors.length,
                 activeAmbassadors: verifiedAmbassadors.length,
                 pendingApplications: pendingAmbassadors.length,
-                totalConversations: Math.floor(Math.random() * 150) + 50,
+                totalConversations: totalConversations,
                 totalRewards: rewardsCount,
                 monthlyGrowth: Math.floor(Math.random() * 25) + 5
             });
@@ -577,7 +634,7 @@ const AdminLayout = () => {
 
             {/* Main Content Area */}
             <div
-                className="flex-1 flex flex-col lg:ml-72 min-h-screen relative z-10 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100"
+                className="flex-1 flex flex-col lg:ml-48 min-h-screen relative z-10 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100"
                 style={{
                     background: `linear-gradient(135deg, ${adminDashboardColor}15, ${adminDashboardColor}10)`,
                     minHeight: '100vh',
@@ -588,7 +645,7 @@ const AdminLayout = () => {
                 <div
                     className="bg-white border-b sticky top-0 z-20 shadow-sm"
                 >
-                    <div className="px-4 sm:px-6 py-3">
+                    <div className="px-3 sm:px-4 py-2">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <button
@@ -600,7 +657,7 @@ const AdminLayout = () => {
                                     </svg>
                                 </button>
 
-                                <h1 className="text-base sm:text-lg font-semibold text-gray-700">
+                                <h1 className="text-sm sm:text-base font-semibold text-gray-700">
                                     {getPageTitle()}
                                 </h1>
                             </div>
@@ -616,7 +673,7 @@ const AdminLayout = () => {
                                         </svg>
                                     </div>
                                     <div className="text-left hidden sm:block">
-                                        <p className="text-sm font-medium text-slate-800">Admin User</p>
+                                        <p className="text-xs font-medium text-slate-800">Admin User</p>
                                         <p className="text-xs text-slate-500">admin@leadx.com</p>
                                     </div>
                                     <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -634,7 +691,7 @@ const AdminLayout = () => {
                 </div>
 
                 {/* Content Area */}
-                <div className="flex-1 p-2 sm:p-4 lg:p-6 overflow-y-auto bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100" style={{ backgroundColor: '#f8fafc' }}>
+                <div className="flex-1 p-2 sm:p-3 lg:p-4 overflow-y-auto bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100" style={{ backgroundColor: '#f8fafc' }}>
                     <Outlet context={{
                         stats,
                         ambassadors,

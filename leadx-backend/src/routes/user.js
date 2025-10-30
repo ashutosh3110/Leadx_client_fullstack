@@ -1,7 +1,6 @@
 import { Router } from "express"
 import { authenticate, checkRole } from "../middlewares/authenticate.js"
 import uploader from "../utils/uploader.js"
-import mongoose from "mongoose"
 
 import {
   registerUser,
@@ -163,10 +162,10 @@ router.patch(
    🧠 Dynamic Routes (must come last)
 ========================== */
 
-// ✅ Add ObjectId validation here
+// ✅ Add ID validation here
 router.get("/:id", async (req, res, next) => {
   const { id } = req.params
-  if (!mongoose.Types.ObjectId.isValid(id)) {
+  if (!id || isNaN(parseInt(id))) {
     return res.status(400).json({ success: false, message: "Invalid user ID" })
   }
   return getUserById(req, res, next)

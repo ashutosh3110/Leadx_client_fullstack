@@ -1,62 +1,145 @@
-import mongoose from "mongoose"
+import { DataTypes } from "sequelize"
+import { sequelize } from "../config/db.js"
 import Joi from "joi"
 
-const { Schema } = mongoose
-
-const userSchema = new Schema(
-  {
-    // Basic Info
-    name: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
-    phone: { type: String, required: true },
-    alternativeMobile: { type: String },
-    password: { type: String, required: true }, // ✅ required for all users
-
-    // Program / Education Info (only for ambassadors)
-    program: { type: String },
-    course: { type: String },
-    year: { type: String },
-    graduationYear: { type: String },
-
-    // Profile Info
-    languages: [{ type: String }],
-    extracurriculars: [{ type: String }],
-    country: { type: String },
-    state: { type: String },
-    about: { type: String },
-
-    // Profile Images
-    profileImage: { type: String },
-    thumbnailImage: { type: String },
-
-    // Roles
-    role: {
-      type: String,
-      enum: ["user", "ambassador", "admin"], // ✅ added "user"
-      default: "user",
-    },
-
-    isVerified: { type: Boolean, default: false },
-    hasReward: { type: Boolean, default: false },
-    status: { 
-      type: String, 
-      enum: ["active", "inactive"], 
-      default: "active" 
-    },
-    conversionStatus: {
-      type: String,
-      enum: ["pending", "converted", "enrolled"],
-      default: "pending"
-    },
-
-    // For reset password (only if user/ambassador registered with password)
-    resetCode: { type: String },
-    resetCodeExpires: { type: Date },
+const User = sequelize.define('User', {
+  // Basic Info
+  name: {
+    type: DataTypes.STRING,
+    allowNull: false
   },
-  { timestamps: true }
-)
+  email: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    unique: true
+  },
+  phone: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  alternativeMobile: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  password: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
 
-const User = mongoose.model("User", userSchema)
+  // Program / Education Info (only for ambassadors)
+  program: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  course: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  year: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  graduationYear: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+
+  // Profile Info
+  languages: {
+    type: DataTypes.JSON,
+    allowNull: true
+  },
+  extracurriculars: {
+    type: DataTypes.JSON,
+    allowNull: true
+  },
+  country: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  state: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  city: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  about: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+
+  // Profile Images
+  profileImage: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  thumbnailImage: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+
+  // Roles
+  role: {
+    type: DataTypes.ENUM('user', 'ambassador', 'admin'),
+    defaultValue: 'user'
+  },
+
+  isVerified: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  hasReward: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  status: {
+    type: DataTypes.ENUM('active', 'inactive'),
+    defaultValue: 'active'
+  },
+  conversionStatus: {
+    type: DataTypes.ENUM('pending', 'converted', 'enrolled'),
+    defaultValue: 'pending'
+  },
+  convertedAt: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  convertedBy: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'Users',
+      key: 'id'
+    }
+  },
+  enrolledAt: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  enrolledBy: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'Users',
+      key: 'id'
+    }
+  },
+
+  // For reset password
+  resetCode: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  resetCodeExpires: {
+    type: DataTypes.DATE,
+    allowNull: true
+  }
+}, {
+  tableName: 'users',
+  timestamps: true
+})
 
 //
 // Joi Validation Schema
@@ -81,6 +164,7 @@ const userValidationSchema = Joi.object({
   extracurriculars: Joi.array().items(Joi.string()).optional(),
   country: Joi.string().allow(""),
   state: Joi.string().allow(""),
+  city: Joi.string().allow(""),
   about: Joi.string().allow(""),
 
   profileImage: Joi.string().uri().allow(""),

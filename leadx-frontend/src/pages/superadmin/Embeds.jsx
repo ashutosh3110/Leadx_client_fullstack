@@ -139,7 +139,7 @@ const Embeds = () => {
     return (
       <div className="mt-2">
         <div className="text-xs text-slate-500 mb-1">Embed this on client site:</div>
-        <pre className="bg-slate-900 text-green-300 text-sm p-3 rounded overflow-auto"><code>{snippet}</code></pre>
+        <pre className="bg-slate-900 text-green-300 text-sm px-2 py-2 rounded overflow-auto"><code>{snippet}</code></pre>
       </div>
     )
   }
@@ -206,38 +206,45 @@ const Embeds = () => {
       </div>
 
       <div>
-        <h2 className="text-xl font-semibold mb-2">Embed Configurations</h2>
-        <div className="overflow-auto">
-          <table className="min-w-full bg-white rounded shadow">
-            <thead>
-              <tr className="text-left border-b">
-                <th className="p-3">Client</th>
-                <th className="p-3">Config Key</th>
-                <th className="p-3">Status</th>
-                <th className="p-3">Sold To</th>
-                <th className="p-3">Actions</th>
+        <h2 className="text-xs font-semibold text-slate-800 mb-2 flex items-center">
+          <svg className="w-4 h-4 text-yellow-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+          </svg>
+          Embed Configurations
+        </h2>
+        
+        {/* Responsive container with horizontal scroll */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-lg border border-slate-200 overflow-x-auto max-w-6xl mx-auto">
+          <table className="w-full divide-y divide-slate-200" style={{ minWidth: '500px' }}>
+            <thead className="bg-gradient-to-r from-yellow-50 to-orange-50">
+              <tr>
+                <th className="px-2 py-2 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider whitespace-nowrap">Client</th>
+                <th className="px-2 py-2 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider whitespace-nowrap">Config Key</th>
+                <th className="px-2 py-2 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider whitespace-nowrap">Status</th>
+                <th className="px-2 py-2 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider whitespace-nowrap">Sold To</th>
+                <th className="px-2 py-2 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider whitespace-nowrap">Actions</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-slate-200 space-y-1">
               {configs.map(cfg => (
-                <tr key={cfg._id} className="border-b align-top">
-                  <td className="p-3">
-                    <div className="font-medium">{cfg.clientWebName}</div>
+                <tr key={cfg._id} className="hover:bg-yellow-50/50 transition-colors duration-200 mb-1 align-top">
+                  <td className="px-2 py-2">
+                    <div className="text-xs font-normal text-slate-900">{cfg.clientWebName}</div>
                     <div className="text-xs text-slate-500">{cfg.clientWebUrl}</div>
                     <ScriptSnippet configKey={cfg.configKey} />
                   </td>
-                  <td className="p-3">
+                  <td className="px-2 py-2">
                     <code className="text-xs bg-slate-100 px-2 py-1 rounded">{cfg.configKey}</code>
                   </td>
-                  <td className="p-3">
+                  <td className="px-2 py-2">
                     <span className={`px-2 py-1 rounded text-xs ${cfg.status ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}>{cfg.status ? 'Active' : 'Inactive'}</span>
                   </td>
-                  <td className="p-3">
-                    <div className="text-sm">{cfg.soldTo?.clientName || '-'}</div>
+                  <td className="px-2 py-2">
+                    <div className="text-xs font-normal text-slate-900">{cfg.soldTo?.clientName || '-'}</div>
                     <div className="text-xs text-slate-500">{cfg.soldTo?.clientEmail || ''}</div>
                     <div className="text-xs text-slate-500">{cfg.soldTo?.websiteUrl || ''}</div>
                   </td>
-                  <td className="p-3 space-y-2">
+                  <td className="px-2 py-2 space-y-2">
                     <button onClick={()=>toggleStatus(cfg._id)} className="px-3 py-1 rounded bg-slate-800 text-white">{cfg.status ? 'Deactivate' : 'Activate'}</button>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       <input placeholder="Client Name" className="border rounded p-2" onChange={(e)=>cfg.__saleName=e.target.value} />
@@ -250,7 +257,7 @@ const Embeds = () => {
               ))}
               {!configs.length && (
                 <tr>
-                  <td className="p-3 text-slate-500" colSpan={5}>No configurations yet.</td>
+                  <td className="px-2 py-2 text-slate-500" colSpan={5}>No configurations yet.</td>
                 </tr>
               )}
             </tbody>

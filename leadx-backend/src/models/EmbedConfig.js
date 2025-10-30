@@ -1,43 +1,58 @@
-import mongoose from "mongoose"
+import { DataTypes } from "sequelize"
+import { sequelize } from "../config/db.js"
 
-const { Schema } = mongoose
-
-const saleHistorySchema = new Schema(
-  {
-    clientName: { type: String },
-    clientEmail: { type: String },
-    websiteUrl: { type: String },
-    status: { type: String, enum: ["active", "inactive"], default: "active" },
-    activatedAt: { type: Date, default: Date.now },
-    deactivatedAt: { type: Date },
-    notes: { type: String },
+const EmbedConfig = sequelize.define('EmbedConfig', {
+  configKey: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    unique: true
   },
-  { _id: false }
-)
-
-const embedConfigSchema = new Schema(
-  {
-    configKey: { type: String, unique: true, index: true }, // public key for script
-    clientWebUrl: { type: String, required: true },
-    clientWebName: { type: String, required: true },
-    ambassadorIds: [{ type: Schema.Types.ObjectId, ref: "User" }],
-    uiConfig: {
-      themeColor: { type: String, default: "#4f46e5" },
-      position: { type: String, enum: ["right", "left"], default: "right" },
-      buttonText: { type: String, default: "Chat with Ambassador" },
-      titleText: { type: String, default: "Ask our Ambassadors" },
-      logoUrl: { type: String },
-    },
-    status: { type: Boolean, default: true }, // active/inactive
-    createdBy: { type: Schema.Types.ObjectId, ref: "User" }, // admin
-    soldTo: {
-      clientName: { type: String },
-      clientEmail: { type: String },
-      websiteUrl: { type: String },
-    },
-    history: [saleHistorySchema],
+  clientWebUrl: {
+    type: DataTypes.STRING,
+    allowNull: false
   },
-  { timestamps: true }
-)
+  clientWebName: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  ambassadorIds: {
+    type: DataTypes.JSON,
+    allowNull: true
+  },
+  uiConfig: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    defaultValue: {
+      themeColor: "#4f46e5",
+      position: "right",
+      buttonText: "Chat with Ambassador",
+      titleText: "Ask our Ambassadors",
+      logoUrl: null
+    }
+  },
+  status: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true
+  },
+  createdBy: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'Users',
+      key: 'id'
+    }
+  },
+  soldTo: {
+    type: DataTypes.JSON,
+    allowNull: true
+  },
+  history: {
+    type: DataTypes.JSON,
+    allowNull: true
+  }
+}, {
+  tableName: 'embed_configs',
+  timestamps: true
+})
 
-export const EmbedConfig = mongoose.model("EmbedConfig", embedConfigSchema)
+export { EmbedConfig }

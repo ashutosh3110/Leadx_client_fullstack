@@ -224,8 +224,8 @@ const AmbassadorCard = ({ ambassador, onChat, onViewProfile }) => {
   const getAbout = () => {
     const fullText =
       ambassador.description || ambassador.about || `Not Available.`
-    // Limit to 40 characters to make more space for profile image
-    return fullText.length > 110 ? fullText.substring(0, 130) + "..." : fullText
+    // Limit to 60 characters to make space for chat button
+    return fullText.length > 60 ? fullText.substring(0, 60) + "..." : fullText
   }
 
   const getOverlayText = () => {
@@ -250,9 +250,9 @@ const AmbassadorCard = ({ ambassador, onChat, onViewProfile }) => {
   const overlayText = getOverlayText()
 
   return (
-    <div className="group relative bg-white rounded-2xl transition-all duration-500 border-2 border-slate-200 overflow-hidden w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-6xl h-[450px] md:h-[450px] flex flex-col overflow-y-hidden">
+    <div className="group relative bg-white rounded-2xl transition-all duration-500 border-2 border-slate-200 overflow-hidden w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl h-[380px] md:h-[400px] flex flex-col">
       {/* Background Image Section - Starting from top */}
-      <div className="relative h-20 md:h-20 w-full">
+      <div className="relative h-20 md:h-24 w-full">
         <img
           src={getBackgroundImageUrl()}
           alt="Background"
@@ -269,7 +269,7 @@ const AmbassadorCard = ({ ambassador, onChat, onViewProfile }) => {
         <div className="absolute -bottom-8 md:-bottom-8 left-1/2 transform -translate-x-1/2">
           <div className="relative flex items-center gap-2">
             {/* Profile Image */}
-            <div className="relative w-20 h-20 md:w-20 md:h-20 rounded-full border-4 border-white overflow-hidden">
+            <div className="relative w-16 h-16 md:w-16 md:h-16 rounded-full border-4 border-white overflow-hidden">
               <img
                 src={getProfileImage()}
                 alt={ambassador.name}
@@ -278,7 +278,7 @@ const AmbassadorCard = ({ ambassador, onChat, onViewProfile }) => {
                   const target = e.target
                   target.style.display = "none"
                   target.parentElement.innerHTML = `
-                                        <div class="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xl font-bold">
+                                        <div class="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-lg font-bold">
                                             ${ambassador.name
                       .charAt(0)
                       .toUpperCase()}
@@ -292,15 +292,15 @@ const AmbassadorCard = ({ ambassador, onChat, onViewProfile }) => {
       </div>
 
       {/* Main Content Container */}
-      <div className="p-4 md:p-4 flex-1 flex flex-col relative overflow-hidden pt-12 md:pt-12 justify-between">
+      <div className="p-2 md:p-2 flex-1 flex flex-col relative overflow-hidden pt-12 md:pt-12 justify-between">
         {/* Info Icon - Right Corner */}
-        <div className="absolute top-4 right-4 md:top-4 md:right-4">
+        <div className="absolute top-2 right-2 md:top-2 md:right-2">
           <button
             onClick={() => onViewProfile(ambassador)}
-            className="w-8 h-8 md:w-8 md:h-8 rounded-full bg-white/90 backdrop-blur-sm border border-slate-200 hover:border-blue-300 flex items-center justify-center transition-all duration-300 hover:scale-110"
+            className="w-6 h-6 md:w-6 md:h-6 rounded-full bg-white/90 backdrop-blur-sm border border-slate-200 hover:border-blue-300 flex items-center justify-center transition-all duration-300 hover:scale-110"
           >
             <svg
-              className="w-4 h-4 md:w-4 md:h-4 text-slate-600 hover:text-blue-600"
+              className="w-3 h-3 md:w-3 md:h-3 text-slate-600 hover:text-blue-600"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -318,14 +318,14 @@ const AmbassadorCard = ({ ambassador, onChat, onViewProfile }) => {
         {/* Content Section - Flexible */}
         <div className="flex-1 flex flex-col">
           {/* Name with Flag - Mobile Only */}
-          <div className="md:hidden flex items-center justify-center gap-2 mt-4 mb-3">
+          <div className="md:hidden flex items-center justify-center gap-2 mt-2 mb-2">
             <h3
-              className="text-base font-semibold text-slate-900"
+              className="text-sm font-semibold text-slate-900"
               style={{ fontFamily: "Inter, system-ui, sans-serif" }}
             >
               {ambassador.name?.charAt(0)?.toUpperCase() + ambassador.name?.slice(1)?.toLowerCase()}
             </h3>
-            <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden">
+            <div className="w-4 h-4 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden">
               <img
                 src={getCountryFlag(ambassador.country || "India")}
                 alt={`${ambassador.country || "India"} flag`}
@@ -339,19 +339,19 @@ const AmbassadorCard = ({ ambassador, onChat, onViewProfile }) => {
 
           {/* Name - Desktop Only */}
           <h3
-            className="hidden md:block relative text-base font-semibold text-slate-900 text-center mb-3 mt-4"
+            className="hidden md:block relative text-sm font-semibold text-slate-900 text-center mb-2 mt-2"
             style={{ fontFamily: "Inter, system-ui, sans-serif" }}
           >
             {ambassador.name?.charAt(0)?.toUpperCase() + ambassador.name?.slice(1)?.toLowerCase()}
           </h3>
 
           {/* Mobile Info Section - Show all content like desktop */}
-          <div className="md:hidden space-y-1 mb-2">
+          <div className="md:hidden space-y-0.5 mb-1">
             {/* Program Card */}
-            <div className="bg-white/30 backdrop-blur-sm rounded-md p-1 border border-slate-200/30 hover:bg-white/50 transition-colors duration-300">
+            <div className="bg-white/30 backdrop-blur-sm rounded-md p-0.5 border border-slate-200/30 hover:bg-white/50 transition-colors duration-300">
               <div className="text-center">
                 <p
-                  className="text-xs font-semibold text-slate-900 mb-1"
+                  className="text-xs font-normal text-slate-900"
                   style={{ fontFamily: "Inter, system-ui, sans-serif" }}
                 >
                   {ambassador.course || ambassador.program || "BBA"}
@@ -360,7 +360,7 @@ const AmbassadorCard = ({ ambassador, onChat, onViewProfile }) => {
             </div>
 
             {/* Location Card */}
-            <div className="bg-white/30 backdrop-blur-sm rounded-md p-1 border border-slate-200/30 hover:bg-white/50 transition-colors duration-300">
+            <div className="bg-white/30 backdrop-blur-sm rounded-md p-0.5 border border-slate-200/30 hover:bg-white/50 transition-colors duration-300">
               <div className="text-center">
                 <p
                   className="text-xs text-slate-900 font-semibold"
@@ -399,7 +399,7 @@ const AmbassadorCard = ({ ambassador, onChat, onViewProfile }) => {
             </div>
 
             {/* Languages Card */}
-            <div className="bg-white/30 backdrop-blur-sm rounded-md p-1 border border-slate-200/30 hover:bg-white/50 transition-colors duration-300">
+            <div className="bg-white/30 backdrop-blur-sm rounded-md p-0.5 border border-slate-200/30 hover:bg-white/50 transition-colors duration-300">
               <div className="text-center">
                 <p
                   className="text-xs text-slate-900 font-semibold"
@@ -417,7 +417,7 @@ const AmbassadorCard = ({ ambassador, onChat, onViewProfile }) => {
             </div>
 
             {/* About Card - Compact */}
-            <div className="bg-white/30 backdrop-blur-sm rounded-md p-1 border border-slate-200/30 hover:bg-white/50 transition-colors duration-300">
+            <div className="bg-white/30 backdrop-blur-sm rounded-md p-0.5 border border-slate-200/30 hover:bg-white/50 transition-colors duration-300">
               <div className="text-center">
                 <p
                   className="text-xs text-slate-900 font-semibold"
@@ -429,21 +429,19 @@ const AmbassadorCard = ({ ambassador, onChat, onViewProfile }) => {
                   className="text-xs text-slate-600 leading-tight font-light"
                   style={{ fontFamily: "Inter, system-ui, sans-serif" }}
                 >
-                  {getAbout().length > 30
-                    ? getAbout().substring(0, 100) + "..."
-                    : getAbout()}
+                  {getAbout()}
                 </p>
               </div>
             </div>
           </div>
 
           {/* Desktop Info Section - Card Style - Compact */}
-          <div className="hidden md:block space-y-1 mb-2">
+          <div className="hidden md:block space-y-0.5 mb-1">
             {/* Program Card */}
-            <div className="bg-white/30 backdrop-blur-sm rounded-md p-1 border border-slate-200/30 hover:bg-white/50 transition-colors duration-300">
+            <div className="bg-white/30 backdrop-blur-sm rounded-md p-0.5 border border-slate-200/30 hover:bg-white/50 transition-colors duration-300">
               <div className="text-center">
                 <p
-                  className="text-xs font-semibold text-slate-900 mb-1"
+                  className="text-xs font-normal text-slate-900"
                   style={{ fontFamily: "Inter, system-ui, sans-serif" }}
                 >
                   {ambassador.course || ambassador.program || "BBA"}
@@ -452,7 +450,7 @@ const AmbassadorCard = ({ ambassador, onChat, onViewProfile }) => {
             </div>
 
             {/* Location Card */}
-            <div className="bg-white/30 backdrop-blur-sm rounded-md p-1 border border-slate-200/30 hover:bg-white/50 transition-colors duration-300">
+            <div className="bg-white/30 backdrop-blur-sm rounded-md p-0.5 border border-slate-200/30 hover:bg-white/50 transition-colors duration-300">
               <div className="text-center">
                 <p
                   className="text-xs text-slate-900 font-semibold"
@@ -491,7 +489,7 @@ const AmbassadorCard = ({ ambassador, onChat, onViewProfile }) => {
             </div>
 
             {/* Languages Card */}
-            <div className="bg-white/30 backdrop-blur-sm rounded-md p-1 border border-slate-200/30 hover:bg-white/50 transition-colors duration-300">
+            <div className="bg-white/30 backdrop-blur-sm rounded-md p-0.5 border border-slate-200/30 hover:bg-white/50 transition-colors duration-300">
               <div className="text-center">
                 <p
                   className="text-xs text-slate-900 font-semibold"
@@ -509,7 +507,7 @@ const AmbassadorCard = ({ ambassador, onChat, onViewProfile }) => {
             </div>
 
             {/* About Card - Compact */}
-            <div className="bg-white/30 backdrop-blur-sm rounded-md p-1 border border-slate-200/30 hover:bg-white/50 transition-colors duration-300">
+            <div className="bg-white/30 backdrop-blur-sm rounded-md p-0.5 border border-slate-200/30 hover:bg-white/50 transition-colors duration-300">
               <div className="text-center">
                 <p
                   className="text-xs text-slate-900 font-semibold"
@@ -521,9 +519,7 @@ const AmbassadorCard = ({ ambassador, onChat, onViewProfile }) => {
                   className="text-xs text-slate-600 leading-tight font-light"
                   style={{ fontFamily: "Inter, system-ui, sans-serif" }}
                 >
-                  {getAbout().length > 30
-                    ? getAbout().substring(0, 100) + "..."
-                    : getAbout()}
+                  {getAbout()}
                 </p>
               </div>
             </div>
@@ -531,12 +527,12 @@ const AmbassadorCard = ({ ambassador, onChat, onViewProfile }) => {
         </div>
 
         {/* Action Buttons - Fixed at bottom */}
-        <div className="mt-auto pt-2">
-          <div className="flex flex-col space-y-1 overflow-hidden">
+        <div className="mt-auto pt-2 pb-2">
+          <div className="flex flex-col space-y-1">
             {/* Chat Button */}
             <button
               onClick={() => onChat(ambassador)}
-              className="w-full md:w-full font-bold py-2.5 md:py-2.5 px-3 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 transform hover:scale-105"
+              className="w-full md:w-full font-bold py-2 md:py-2 px-2 rounded-lg flex items-center justify-center gap-1"
               style={{
                 backgroundColor: customization.chatBackgroundColor || "#EF4444",
                 color: customization.chatTextColor || "#FFFFFF",
@@ -550,7 +546,7 @@ const AmbassadorCard = ({ ambassador, onChat, onViewProfile }) => {
                 />
               </svg>
               <span
-                className="text-sm font-medium"
+                className="text-xs font-medium"
                 style={{ fontFamily: "Inter, system-ui, sans-serif" }}
               >
                 Chat

@@ -6,6 +6,9 @@ import api from "../utils/Api"
 import { toast } from "react-toastify"
 
 const ChatModal = ({ isOpen, onClose, ambassador }) => {
+  console.log("🔍 ChatModal ambassador prop:", ambassador)
+  console.log("🔍 Ambassador type:", typeof ambassador)
+  console.log("🔍 Ambassador keys:", ambassador ? Object.keys(ambassador) : "No ambassador")
   const { ambassadorDashboardColor } = useColorContext()
   const { customization } = useCustomization()
   const [currentStep, setCurrentStep] = useState(1)
@@ -307,8 +310,16 @@ const ChatModal = ({ isOpen, onClose, ambassador }) => {
     setIsSubmitting(true)
     try {
       console.log("🚀 Starting chat submission...")
+      console.log("🔍 Ambassador object:", ambassador)
+      
+      if (!ambassador) {
+        console.error("❌ Ambassador is null or undefined")
+        toast.error("Ambassador information not found. Please try again.")
+        return
+      }
+      
       console.log("📝 Form data:", {
-        ambassadorId: ambassador._id,
+        ambassadorId: ambassador.id,
         name: formData.name,
         email: formData.email,
         phone: formData.mobile,
@@ -317,7 +328,7 @@ const ChatModal = ({ isOpen, onClose, ambassador }) => {
 
       // Start chat with backend
       const response = await api.post("/chat/start", {
-        ambassadorId: ambassador._id,
+        ambassadorId: ambassador.id,
         name: formData.name,
         email: formData.email,
         phone: formData.mobile,
@@ -331,13 +342,13 @@ const ChatModal = ({ isOpen, onClose, ambassador }) => {
 
       if (response.data.success) {
         const chat = response.data.data
-        console.log("💬 Chat created:", chat._id)
+        console.log("💬 Chat created:", chat.id)
 
         // Send the initial message
         console.log("📤 Sending initial message...")
         const messageResponse = await api.post("/chat/send", {
-          chatId: chat._id,
-          receiver: ambassador._id,
+          chatId: chat.id,
+          receiver: ambassador.id,
           content: formData.message,
         })
 
@@ -1085,16 +1096,16 @@ const ChatModal = ({ isOpen, onClose, ambassador }) => {
                     </a>{" "}
                     and
                     <a
-                      href={customization.termsUrl || "#"}
+                      href={customization.chatRuleUrl || "#"}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-red-500 underline hover:text-red-700"
                       onClick={(e) => {
                         e.preventDefault()
                         e.stopPropagation()
-                        if (customization.termsUrl) {
+                        if (customization.chatRuleUrl) {
                           window.open(
-                            customization.termsUrl,
+                            customization.chatRuleUrl,
                             "_blank",
                             "noopener,noreferrer"
                           )

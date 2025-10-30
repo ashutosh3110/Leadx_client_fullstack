@@ -1,41 +1,42 @@
 import React, { useState, useEffect } from "react";
 import StatCard from "./StatCard"; // adjust path as needed
+import { chatAPI } from "../utils/Api";
 
 const Overview = ({ stats }) => {
-  const [studentTimeFilter, setStudentTimeFilter] = useState('24');
-  const [studentChatStats, setStudentChatStats] = useState({
-    totalChats: 0,
-    unrepliedChats: 0,
-    repliedChats: 0
+  const [studentStats, setStudentStats] = useState({
+    totalStudents: 0,
+    totalInitiatedChats: 0,
+    repliedChats: 0,
+    unrepliedChats: 0
   });
 
-  // Fetch chat statistics based on time filter
-  const fetchChatStats = async (timeFilter, type) => {
+  // Fetch student statistics
+  const fetchStudentStats = async () => {
     try {
-      const hours = timeFilter === '12' ? 12 : 24;
-      const response = await fetch(`/api/chat/admin/stats?hours=${hours}&type=${type}`);
-      const data = await response.json();
-      
-      setStudentChatStats({
-        totalChats: data.totalChats || 0,
-        unrepliedChats: data.unrepliedChats || 0,
-        repliedChats: data.repliedChats || 0
-      });
+      const response = await chatAPI.getStudentStats();
+      if (response.success) {
+        setStudentStats({
+          totalStudents: response.data.totalStudents || 0,
+          totalInitiatedChats: response.data.totalInitiatedChats || 0,
+          repliedChats: response.data.repliedChats || 0,
+          unrepliedChats: response.data.unrepliedChats || 0
+        });
+      }
     } catch (error) {
-      console.error('Error fetching chat stats:', error);
+      console.error('Error fetching student stats:', error);
     }
   };
 
   useEffect(() => {
-    fetchChatStats(studentTimeFilter, 'student');
-  }, [studentTimeFilter]);
+    fetchStudentStats();
+  }, []);
 
   return (
-    <div className="space-y-6 sm:space-y-8">
+    <div className="space-y-4 sm:space-y-6">
       {/* For Ambassador Stats */}
-      <div className="space-y-3 sm:space-y-4">
-        <h2 className="text-lg sm:text-xl font-semibold text-gray-900">For Ambassador</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+      <div className="space-y-2 sm:space-y-3">
+        <h2 className="text-base sm:text-lg font-semibold text-gray-900">For Ambassador</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <StatCard
             title="Total Ambassadors"
             value={stats.totalAmbassadors}
@@ -43,7 +44,7 @@ const Overview = ({ stats }) => {
             color="from-slate-100 to-slate-200"
             icon={
               <svg
-                className="w-6 h-6 text-slate-600"
+                className="w-4 h-4 sm:w-5 sm:h-5 text-slate-600"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -65,7 +66,7 @@ const Overview = ({ stats }) => {
             color="from-slate-100 to-slate-200"
             icon={
               <svg
-                className="w-6 h-6 text-slate-600"
+                className="w-4 h-4 sm:w-5 sm:h-5 text-slate-600"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -86,7 +87,7 @@ const Overview = ({ stats }) => {
             color="from-slate-100 to-slate-200"
             icon={
               <svg
-                className="w-6 h-6 text-slate-600"
+                className="w-4 h-4 sm:w-5 sm:h-5 text-slate-600"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -108,7 +109,7 @@ const Overview = ({ stats }) => {
             color="from-slate-100 to-slate-200"
             icon={
               <svg
-                className="w-6 h-6 text-slate-600"
+                className="w-4 h-4 sm:w-5 sm:h-5 text-slate-600"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -126,16 +127,37 @@ const Overview = ({ stats }) => {
       </div>
 
       {/* For Student Section */}
-      <div className="space-y-3 sm:space-y-4">
-        <h2 className="text-lg sm:text-xl font-semibold text-gray-900">For Student</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+      <div className="space-y-2 sm:space-y-3">
+        <h2 className="text-base sm:text-lg font-semibold text-gray-900">For Student</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <StatCard
-            title="Total Chats"
-            value={studentChatStats.totalChats}
-            color="from-slate-100 to-slate-200"
+            title="Total Students"
+            value={studentStats.totalStudents}
+            color="from-blue-100 to-blue-200"
             icon={
               <svg
-                className="w-6 h-6 text-slate-600"
+                className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
+                />
+              </svg>
+            }
+          />
+
+          <StatCard
+            title="Initiated Chats"
+            value={studentStats.totalInitiatedChats}
+            color="from-green-100 to-green-200"
+            icon={
+              <svg
+                className="w-4 h-4 sm:w-5 sm:h-5 text-green-600"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -151,33 +173,12 @@ const Overview = ({ stats }) => {
           />
 
           <StatCard
-            title="Unreplied Chats"
-            value={studentChatStats.unrepliedChats}
-            color="from-slate-100 to-slate-200"
+            title="Replied"
+            value={studentStats.repliedChats}
+            color="from-emerald-100 to-emerald-200"
             icon={
               <svg
-                className="w-6 h-6 text-slate-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            }
-          />
-
-          <StatCard
-            title="Replied Chats"
-            value={studentChatStats.repliedChats}
-            color="from-slate-100 to-slate-200"
-            icon={
-              <svg
-                className="w-6 h-6 text-slate-600"
+                className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -191,10 +192,28 @@ const Overview = ({ stats }) => {
               </svg>
             }
           />
+
+          <StatCard
+            title="Unreplied"
+            value={studentStats.unrepliedChats}
+            color="from-red-100 to-red-200"
+            icon={
+              <svg
+                className="w-4 h-4 sm:w-5 sm:h-5 text-red-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            }
+          />
         </div>
-        
-        {/* Time Filter Dropdown */}
-       
       </div>
     </div>
   );

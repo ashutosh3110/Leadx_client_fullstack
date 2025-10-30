@@ -128,7 +128,7 @@ const AddRewardModal = ({
 
         try {
             const rewardData = {
-                ambassadorId: ambassador._id,
+                ambassador: String(ambassador._id || ambassador.id),
                 ambassadorName: ambassador.name,
                 amount: amount,
                 currency: formData.currency,
@@ -141,6 +141,9 @@ const AddRewardModal = ({
 
             console.log('✅ AddRewardModal - Form Data:', formData);
             console.log('✅ AddRewardModal - Parsed Amount:', amount);
+            console.log('✅ AddRewardModal - Ambassador ID (raw):', ambassador._id || ambassador.id);
+            console.log('✅ AddRewardModal - Ambassador ID (string):', String(ambassador._id || ambassador.id));
+            console.log('✅ AddRewardModal - Ambassador ID type:', typeof String(ambassador._id || ambassador.id));
             console.log('✅ AddRewardModal - Reward Data to Submit:', rewardData);
             console.log('✅ AddRewardModal - Is Amount Valid?', !isNaN(amount) && amount > 0);
 

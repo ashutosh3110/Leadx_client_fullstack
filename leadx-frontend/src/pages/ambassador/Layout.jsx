@@ -14,13 +14,12 @@ const Layout = () => {
       }}
     >
       <Sidebar />
-        <div 
-          className="flex flex-col min-h-screen relative z-20"
-          style={{ marginLeft: '256px' }}
-        >
+      <div 
+        className="flex flex-col min-h-screen relative z-20 lg:ml-14 xl:ml-56"
+      >
         <Navbar />
         <main 
-          className="flex-1 overflow-y-auto p-6"
+          className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6 pt-16 lg:pt-6"
           style={{ 
             background: `linear-gradient(135deg, ${ambassadorDashboardColor}15, ${ambassadorDashboardColor}10)`
           }}

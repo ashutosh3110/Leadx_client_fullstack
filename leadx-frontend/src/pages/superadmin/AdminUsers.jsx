@@ -37,8 +37,12 @@ const AdminUsers = () => {
 
             if (response.data.success) {
                 // Transform the data to match our frontend structure
+                console.log('🔍 Raw API response data:', response.data.data);
                 const transformedUsers = response.data.data.map(user => {
                     console.log(`🔍 Processing user: ${user.name}`)
+                    console.log(`🔍 Raw user object:`, user)
+                    console.log(`🔍 User ID field:`, user.id)
+                    console.log(`🌍 Geo Location data:`, user.geoLocation)
                     console.log(`📊 Raw chat history:`, user.chatHistory)
                     console.log(`📊 Ambassadors from backend:`, user.chatHistory?.ambassadors)
 
@@ -50,7 +54,8 @@ const AdminUsers = () => {
                     console.log(`📊 User ${user.name} conversionStatus:`, user.conversionStatus)
 
                     return {
-                        _id: user._id,
+                        id: user.id, // Use 'id' from Sequelize, not '_id'
+                        _id: user.id, // Keep _id for backward compatibility
                         name: user.name,
                         email: user.email,
                         phone: user.phone,
@@ -58,11 +63,23 @@ const AdminUsers = () => {
                         state: user.state || '',
                         city: user.city || '',
                         status: user.conversionStatus || 'pending', // Use conversionStatus
+                        conversionStatus: user.conversionStatus || 'pending', // Also keep conversionStatus field
                         registerDate: user.createdAt,
                         ambassadors: ambassadorNames, // Extract ambassador names
                         lastChatDate: user.chatHistory?.lastActivity || user.updatedAt,
                         role: user.role,
                         profileImage: user.profileImage,
+                        // Conversion timestamps
+                        convertedAt: user.convertedAt,
+                        convertedBy: user.convertedBy,
+                        enrolledAt: user.enrolledAt,
+                        enrolledBy: user.enrolledBy,
+                        // Geo location data
+                        geoLocation: user.geoLocation || {
+                            location: 'Not available',
+                            device: 'Not available',
+                            lastLogin: null
+                        },
                         // Additional chat history data
                         chatHistory: {
                             totalChats: user.chatHistory?.totalChats || 0,
@@ -110,6 +127,15 @@ const AdminUsers = () => {
     const handleStatusChange = async (userId, newStatus) => {
         try {
             console.log('🔄 Admin updating user status to:', newStatus);
+            console.log('🔍 User ID being used:', userId);
+            console.log('🔍 User ID type:', typeof userId);
+
+            // Validate userId exists
+            if (!userId) {
+                console.error('❌ User ID is undefined or null');
+                toast.error('Error: User ID not found. Please refresh the page.');
+                return;
+            }
 
             // Use conversionStatus API
             const response = await api.patch(`/auth/user/${userId}/conversion-status`, {
@@ -117,14 +143,41 @@ const AdminUsers = () => {
             });
 
             if (response.data.success) {
-                // Update local state
-                setUsers(prev => prev.map(user =>
-                    user._id === userId ? { ...user, status: newStatus } : user
-                ));
+                // Update local state with timestamp data from response
+                const updatedUserData = response.data.data;
+                const currentTime = new Date().toISOString();
+                
+                setUsers(prev => prev.map(user => {
+                    const userIdToCheck = user.id || user._id; // Use id first, then _id as fallback
+                    if (userIdToCheck === userId) {
+                        const updatedUser = { 
+                            ...user, 
+                            status: newStatus, 
+                            conversionStatus: newStatus,
+                            convertedAt: updatedUserData?.convertedAt || (newStatus === 'converted' ? currentTime : user.convertedAt),
+                            convertedBy: updatedUserData?.convertedBy || user.convertedBy,
+                            enrolledAt: updatedUserData?.enrolledAt || (newStatus === 'enrolled' ? currentTime : user.enrolledAt),
+                            enrolledBy: updatedUserData?.enrolledBy || user.enrolledBy
+                        };
+                        return updatedUser;
+                    }
+                    return user;
+                }));
 
                 // Update selected user if it's the same
-                if (selectedUser && selectedUser._id === userId) {
-                    setSelectedUser(prev => ({ ...prev, status: newStatus }));
+                if (selectedUser) {
+                    const selectedUserId = selectedUser.id || selectedUser._id; // Use id first, then _id as fallback
+                    if (selectedUserId === userId) {
+                        setSelectedUser(prev => ({ 
+                            ...prev, 
+                            status: newStatus, 
+                            conversionStatus: newStatus,
+                            convertedAt: updatedUserData?.convertedAt || (newStatus === 'converted' ? currentTime : prev.convertedAt),
+                            convertedBy: updatedUserData?.convertedBy || prev.convertedBy,
+                            enrolledAt: updatedUserData?.enrolledAt || (newStatus === 'enrolled' ? currentTime : prev.enrolledAt),
+                            enrolledBy: updatedUserData?.enrolledBy || prev.enrolledBy
+                        }));
+                    }
                 }
 
                 toast.success('✅ User status updated successfully');
@@ -133,6 +186,7 @@ const AdminUsers = () => {
             }
         } catch (error) {
             console.error('Error updating user status:', error);
+            console.error('Error response:', error.response?.data);
             toast.error('Error updating user status. Please try again.');
         }
     };
@@ -165,64 +219,92 @@ const AdminUsers = () => {
 
     return (
         <div>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-4">
-                <div className="flex items-center space-x-3">
-                    <h3 className="text-lg font-semibold text-slate-800 flex items-center">
-                        <svg className="w-5 h-5 text-yellow-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                        </svg>
-                        User Management ({filteredUsers.length})
-                    </h3>
-                </div>
-                <div className="flex items-center space-x-3">
-                    <div className="relative">
-                        <input
-                            type="text"
-                            placeholder="Search by name, email, country, or ambassador..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 text-sm bg-white w-full sm:w-64"
-                        />
-                        <svg className="w-4 h-4 text-slate-400 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
-                    </div>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 gap-3">
+                <h3 className="text-xs font-semibold text-slate-800 flex items-center">
+                    <svg className="w-4 h-4 text-yellow-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                    </svg>
+                    User Management ({filteredUsers.length})
+                </h3>
+                
+                {/* Search Bar */}
+                <div className="relative">
+                    <input
+                        type="text"
+                        placeholder="Search by name, email, country, or ambassador..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-8 pr-3 py-1.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs bg-white w-full sm:w-64"
+                    />
+                    <svg className="w-3 h-3 text-slate-400 absolute left-2 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
                 </div>
             </div>
 
 
             {/* Responsive container with horizontal scroll */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-slate-200 overflow-x-auto">
-                <table className="w-full divide-y divide-slate-200" style={{ minWidth: '900px' }}>
+            <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-lg border border-slate-200 overflow-x-auto max-w-6xl mx-auto">
+                <table className="w-full divide-y divide-slate-200" style={{ minWidth: '700px' }}>
                     <thead className="bg-gradient-to-r from-yellow-50 to-orange-50">
                         <tr>
-                            <th className="px-2 lg:px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">User</th>
-                            <th className="px-2 lg:px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Contact</th>
-                            <th className="px-2 lg:px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Country</th>
-                            <th className="px-2 lg:px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Ambassadors</th>
-                            <th className="px-2 lg:px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Status</th>
-                            <th className="px-2 lg:px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Register Date</th>
-                            <th className="px-2 lg:px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Actions</th>
+                            <th className="px-2 py-2 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider whitespace-nowrap">Prospect</th>
+                            <th className="px-2 py-2 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider whitespace-nowrap">Contact</th>
+                            <th className="px-2 py-2 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider whitespace-nowrap">Geo Location</th>
+                            <th className="px-2 py-2 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider whitespace-nowrap">Country</th>
+                            <th className="px-2 py-2 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider whitespace-nowrap">Ambassadors</th>
+                            <th className="px-2 py-2 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider whitespace-nowrap">Status & Date</th>
+                            <th className="px-2 py-2 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider whitespace-nowrap">Registered</th>
+                            <th className="px-2 py-2 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider whitespace-nowrap">Actions</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-200">
-                        {filteredUsers.map((user, index) => (
-                            <tr key={user._id || index} className="hover:bg-yellow-50/50 transition-colors duration-200">
-                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-center">
-                                    <div className="text-sm font-semibold text-slate-900">
-                                        {user.name || 'Unknown User'}
+                    <tbody className="divide-y divide-slate-200 space-y-1">
+                        {filteredUsers.length === 0 ? (
+                            <tr>
+                                <td colSpan="8" className="px-4 py-8 text-center">
+                                    <div className="flex flex-col items-center justify-center space-y-2">
+                                        <div className="text-gray-400 text-4xl">📊</div>
+                                        <div className="text-gray-500 text-lg font-medium">No Data Available</div>
+                                        <div className="text-gray-400 text-sm">
+                                            {searchTerm ? 'No users found matching your search criteria.' : 'No users found in the database.'}
+                                        </div>
+                                        {searchTerm && (
+                                            <button
+                                                onClick={() => setSearchTerm('')}
+                                                className="mt-2 text-blue-600 hover:text-blue-800 text-sm underline"
+                                            >
+                                                Clear search
+                                            </button>
+                                        )}
                                     </div>
                                 </td>
-                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-center">
-                                    <div className="text-sm font-semibold text-slate-900">{user.email || 'N/A'}</div>
+                            </tr>
+                        ) : (
+                            filteredUsers.map((user, index) => (
+                            <tr key={user.id || user._id || index} className="hover:bg-yellow-50/50 transition-colors duration-200 mb-1">
+                                <td className="px-2 py-2 whitespace-nowrap text-center">
+                                    <div className="text-xs font-bold text-slate-900">
+                                        {user.name ? user.name.charAt(0).toUpperCase() + user.name.slice(1) : 'Unknown User'}
+                                    </div>
+                                </td>
+                                <td className="px-2 py-2 whitespace-nowrap text-center">
+                                    <div className="text-xs font-normal text-slate-900">{user.email || 'N/A'}</div>
                                     <div className="text-xs text-slate-500">{user.phone || 'No phone'}</div>
                                 </td>
-                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-sm text-slate-900">
+                                <td className="px-2 py-2 whitespace-nowrap text-center">
+                                    <div className="text-xs font-medium text-slate-900">
+                                        {user.geoLocation?.location || 'Not available'}
+                                    </div>
+                                    <div className="text-xs text-slate-500">
+                                        {user.geoLocation?.device || 'Device unknown'}
+                                    </div>
+                                </td>
+                                <td className="px-2 py-2 whitespace-nowrap text-xs text-slate-900">
                                     <div className="flex justify-center items-center">
                                         <span className="truncate max-w-24">{user.country || 'Not specified'}</span>
                                     </div>
                                 </td>
-                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-center">
+                                <td className="px-2 py-2 whitespace-nowrap text-center">
                                     <div className="flex flex-wrap gap-1 justify-center">
                                         {user.ambassadors && user.ambassadors.length > 0 ? (
                                             <>
@@ -258,23 +340,61 @@ const AdminUsers = () => {
                                         )}
                                     </div>
                                 </td>
-                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-center">
-                                    <select
-                                        value={user.status}
-                                        onChange={(e) => handleStatusChange(user._id, e.target.value)}
-                                        className={`text-xs font-semibold rounded-full px-2 py-1 border-0 focus:ring-2 focus:ring-blue-500 ${getStatusColor(user.status)}`}
-                                        style={{ backgroundColor: 'white' }}
-                                        title="Change user status"
-                                    >
-                                        <option value="pending" style={{ backgroundColor: 'white' }}>Pending</option>
-                                        <option value="converted" style={{ backgroundColor: 'white' }}>Converted</option>
-                                        <option value="enrolled" style={{ backgroundColor: 'white' }}>Enrolled</option>
-                                    </select>
+                                <td className="px-2 py-2 whitespace-nowrap text-center">
+                                    <div className="flex flex-col items-center gap-1">
+                                        <select
+                                            value={user.status || user.conversionStatus}
+                                            onChange={(e) => {
+                                                const userId = user.id || user._id; // Use id first, then _id as fallback
+                                                console.log('🔍 Dropdown onChange - User object:', user);
+                                                console.log('🔍 Dropdown onChange - Using userId:', userId);
+                                                handleStatusChange(userId, e.target.value);
+                                            }}
+                                            className={`text-xs font-semibold rounded-full px-2 py-1 border-0 focus:ring-2 focus:ring-blue-500 ${getStatusColor(user.status || user.conversionStatus)}`}
+                                            style={{ backgroundColor: 'white' }}
+                                            title="Change user status"
+                                        >
+                                            <option value="pending" style={{ backgroundColor: 'white' }}>Pending</option>
+                                            <option value="converted" style={{ backgroundColor: 'white' }}>Converted</option>
+                                            <option value="enrolled" style={{ backgroundColor: 'white' }}>Enrolled</option>
+                                        </select>
+                                        
+                                        {/* Show conversion date and time */}
+                                        {(user.status === 'converted' || user.conversionStatus === 'converted') && user.convertedAt && (
+                                            <div className="text-[10px] text-blue-600 text-center">
+                                                <div className="font-medium">
+                                                    {new Date(user.convertedAt).toLocaleDateString('en-IN')}
+                                                </div>
+                                                <div className="text-[9px] text-gray-500">
+                                                    {new Date(user.convertedAt).toLocaleTimeString('en-IN', { 
+                                                        hour: '2-digit', 
+                                                        minute: '2-digit',
+                                                        hour12: true 
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )}
+                                        
+                                        {(user.status === 'enrolled' || user.conversionStatus === 'enrolled') && user.enrolledAt && (
+                                            <div className="text-[10px] text-green-600 text-center">
+                                                <div className="font-medium">
+                                                    {new Date(user.enrolledAt).toLocaleDateString('en-IN')}
+                                                </div>
+                                                <div className="text-[9px] text-gray-500">
+                                                    {new Date(user.enrolledAt).toLocaleTimeString('en-IN', { 
+                                                        hour: '2-digit', 
+                                                        minute: '2-digit',
+                                                        hour12: true 
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
                                 </td>
-                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-sm text-slate-500 text-center">
+                                <td className="px-2 py-2 whitespace-nowrap text-xs text-slate-500 text-center">
                                     {user.registerDate ? new Date(user.registerDate).toLocaleDateString() : 'N/A'}
                                 </td>
-                                <td className="px-2 lg:px-4 py-4 whitespace-nowrap text-center">
+                                <td className="px-2 py-2 whitespace-nowrap text-center">
                                     <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2">
                                         {/* <button
                                             onClick={() => handleUserClick(user)}
@@ -289,9 +409,11 @@ const AdminUsers = () => {
                                             onClick={async () => {
                                                 if (window.confirm('Are you sure you want to delete this user?')) {
                                                     try {
-                                                        const response = await api.delete(`/auth/${user._id}`);
+                                                        const userId = user.id || user._id;
+                                                        console.log('🔍 Delete - Using userId:', userId);
+                                                        const response = await api.delete(`/auth/${userId}`);
                                                         if (response.data.success) {
-                                                            setUsers(prev => prev.filter(u => u._id !== user._id));
+                                                            setUsers(prev => prev.filter(u => (u.id || u._id) !== userId));
                                                             toast.success('User deleted successfully');
                                                         } else {
                                                             toast.error('Failed to delete user');
@@ -312,31 +434,7 @@ const AdminUsers = () => {
                                     </div>
                                 </td>
                             </tr>
-                        ))}
-                        {filteredUsers.length === 0 && (
-                            <tr>
-                                <td colSpan="7" className="px-6 py-8 text-center">
-                                    <div className="flex flex-col items-center">
-                                        <svg className="w-12 h-12 text-slate-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-                                        </svg>
-                                        <h4 className="text-sm font-medium text-slate-500 mb-1">
-                                            {searchTerm ? `No users found for "${searchTerm}"` : 'No Users Yet'}
-                                        </h4>
-                                        <p className="text-xs text-slate-400">
-                                            {searchTerm ? 'Try adjusting your search terms' : 'Users will appear here when they interact through ambassador cards'}
-                                        </p>
-                                        {searchTerm && (
-                                            <button
-                                                onClick={() => setSearchTerm('')}
-                                                className="mt-2 text-blue-600 hover:text-blue-800 text-sm underline"
-                                            >
-                                                Clear search
-                                            </button>
-                                        )}
-                                    </div>
-                                </td>
-                            </tr>
+                        ))
                         )}
                     </tbody>
                 </table>
@@ -378,24 +476,24 @@ const AdminUsers = () => {
                                     )}
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700">Name</label>
+                                    <label className="block text-xs font-medium text-gray-700">Name</label>
                                     <p className="mt-1 text-lg font-semibold text-gray-900">{selectedUser.name}</p>
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700">Email</label>
-                                <p className="mt-1 text-sm text-gray-900">{selectedUser.email}</p>
+                                <label className="block text-xs font-medium text-gray-700">Email</label>
+                                <p className="mt-1 text-xs text-gray-900">{selectedUser.email}</p>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700">Phone</label>
-                                <p className="mt-1 text-sm text-gray-900">{selectedUser.phone}</p>
+                                <label className="block text-xs font-medium text-gray-700">Phone</label>
+                                <p className="mt-1 text-xs text-gray-900">{selectedUser.phone}</p>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700">Country</label>
-                                <p className="mt-1 text-sm text-gray-900">{selectedUser.country}</p>
+                                <label className="block text-xs font-medium text-gray-700">Country</label>
+                                <p className="mt-1 text-xs text-gray-900">{selectedUser.country}</p>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700">Ambassadors</label>
+                                <label className="block text-xs font-medium text-gray-700">Ambassadors</label>
                                 <div className="mt-1 flex flex-wrap gap-1">
                                     {selectedUser.ambassadors && selectedUser.ambassadors.length > 0 ? (
                                         selectedUser.ambassadors.map((ambassador, index) => (
@@ -407,13 +505,13 @@ const AdminUsers = () => {
                                             </span>
                                         ))
                                     ) : (
-                                        <span className="text-sm text-gray-500">No ambassadors</span>
+                                        <span className="text-xs text-gray-500">No ambassadors</span>
                                     )}
                                 </div>
                                 {/* Show detailed chat history if available */}
                                 {selectedUser.chatHistory && selectedUser.chatHistory.totalChats > 0 && (
                                     <div className="mt-2 p-3 bg-gray-50 rounded-lg">
-                                        <h4 className="text-sm font-medium text-gray-700 mb-2">Chat Statistics</h4>
+                                        <h4 className="text-xs font-medium text-gray-700 mb-2">Chat Statistics</h4>
                                         <div className="grid grid-cols-2 gap-2 text-xs">
                                             <div>
                                                 <span className="text-gray-500">Total Chats:</span>
@@ -436,14 +534,14 @@ const AdminUsers = () => {
                                 )}
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700">Status</label>
+                                <label className="block text-xs font-medium text-gray-700">Status</label>
                                 <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(selectedUser.status)}`}>
                                     {getStatusText(selectedUser.status)}
                                 </span>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700">Register Date</label>
-                                <p className="mt-1 text-sm text-gray-900">{new Date(selectedUser.registerDate).toLocaleDateString()}</p>
+                                <label className="block text-xs font-medium text-gray-700">Register Date</label>
+                                <p className="mt-1 text-xs text-gray-900">{new Date(selectedUser.registerDate).toLocaleDateString()}</p>
                             </div>
                             <div className="mt-4 flex justify-end space-x-2">
                                 <button
@@ -456,8 +554,12 @@ const AdminUsers = () => {
                                 <div className="relative">
                                     <select
                                         value={selectedUser.status}
-                                        onChange={(e) => handleStatusChange(selectedUser._id, e.target.value)}
-                                        className={`block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md ${getStatusColor(selectedUser.status)}`}
+                                        onChange={(e) => {
+                                            const userId = selectedUser.id || selectedUser._id;
+                                            console.log('🔍 Modal onChange - Using userId:', userId);
+                                            handleStatusChange(userId, e.target.value);
+                                        }}
+                                        className={`block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-xs rounded-md ${getStatusColor(selectedUser.status)}`}
                                         style={{ backgroundColor: 'white' }}
                                     >
                                         <option value="pending" style={{ backgroundColor: 'white' }}>Pending</option>
@@ -500,9 +602,9 @@ const AdminUsers = () => {
                                     <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
-                                    <span className="text-sm text-blue-700 font-medium">Chat Statistics</span>
+                                    <span className="text-xs text-blue-700 font-medium">Chat Statistics</span>
                                 </div>
-                                <div className="mt-2 grid grid-cols-2 gap-4 text-sm">
+                                <div className="mt-2 grid grid-cols-2 gap-4 text-xs">
                                     <div>
                                         <span className="text-gray-600">Total Ambassadors:</span>
                                         <span className="ml-2 font-semibold text-blue-600">{selectedUser.ambassadors?.length || 0}</span>
@@ -536,11 +638,11 @@ const AdminUsers = () => {
                                                 key={index}
                                                 className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors"
                                             >
-                                                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                                                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
                                                     {ambassador.charAt(0).toUpperCase()}
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="text-sm font-medium text-gray-900 truncate">
+                                                    <p className="text-xs font-medium text-gray-900 truncate">
                                                         {ambassador}
                                                     </p>
                                                     <p className="text-xs text-gray-500">

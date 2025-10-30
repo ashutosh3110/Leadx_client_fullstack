@@ -1,32 +1,30 @@
-import mongoose from "mongoose"
-const { Schema } = mongoose
+import { DataTypes } from "sequelize"
+import { sequelize } from "../config/db.js"
 
-const rewardSchema = new Schema(
-  {
-    ambassador: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
-    amount: {
-      type: Number,
-      required: true,
-    },
-    currency: {
-      type: String,
-      enum: ["INR", "USD"],
-      required: true,
-    },
-    status: {
-      type: String,
-      enum: ["added", "notAdded", "paid"],
-      default: "pending",
-    },
-    remarks: { type: String },
+const Reward = sequelize.define('Reward', {
+  ambassadorId: {
+    type: DataTypes.INTEGER,
+    allowNull: false
   },
-  { timestamps: true }
-)
-
-const Reward = mongoose.model("Reward", rewardSchema)
+  amount: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: false
+  },
+  currency: {
+    type: DataTypes.ENUM('INR', 'USD'),
+    allowNull: false
+  },
+  status: {
+    type: DataTypes.ENUM('added', 'notAdded', 'paid', 'pending'),
+    defaultValue: 'pending'
+  },
+  remarks: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  }
+}, {
+  timestamps: true,
+  tableName: 'rewards'
+})
 
 export default Reward

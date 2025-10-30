@@ -19,21 +19,24 @@ const checkUsers = async () => {
     await connectDB()
     
     // Get all users
-    const allUsers = await User.find({})
+    const allUsers = await User.findAll({})
     console.log(`📊 Total users in database: ${allUsers.length}`)
     
     // Get users by role
-    const userRoleUsers = await User.find({ role: 'user' })
+    const userRoleUsers = await User.findAll({ where: { role: 'user' } })
     console.log(`📊 Users with role 'user': ${userRoleUsers.length}`)
     
-    const ambassadorRoleUsers = await User.find({ role: 'ambassador' })
+    const ambassadorRoleUsers = await User.findAll({ where: { role: 'ambassador' } })
     console.log(`📊 Users with role 'ambassador': ${ambassadorRoleUsers.length}`)
     
-    const adminRoleUsers = await User.find({ role: 'admin' })
+    const adminRoleUsers = await User.findAll({ where: { role: 'admin' } })
     console.log(`📊 Users with role 'admin': ${adminRoleUsers.length}`)
     
     // Show recent users
-    const recentUsers = await User.find({}).sort({ createdAt: -1 }).limit(5)
+    const recentUsers = await User.findAll({ 
+      order: [['createdAt', 'DESC']], 
+      limit: 5 
+    })
     console.log('\n📊 Recent users:')
     recentUsers.forEach((user, index) => {
       console.log(`${index + 1}. ${user.name} (${user.email}) - Role: ${user.role} - Created: ${user.createdAt}`)

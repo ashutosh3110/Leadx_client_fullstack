@@ -13,6 +13,9 @@ import {
   adminSendAsAmbassador,
   adminGetChatStats,
   getMyUsers,
+  getAmbassadorsWithMessages,
+  getTotalConversations,
+  getStudentStats,
 } from "../controllers/Chat.js"
 
 const router = Router()
@@ -53,6 +56,24 @@ router.get(
   authenticate,
   checkRole("admin"),
   adminGetChatStats
+)
+router.get(
+  "/admin/ambassadors-with-messages",
+  authenticate,
+  checkRole("admin"),
+  getAmbassadorsWithMessages
+)
+router.get(
+  "/admin/total-conversations",
+  authenticate,
+  checkRole("admin"),
+  getTotalConversations
+)
+router.get(
+  "/admin/student-stats",
+  authenticate,
+  checkRole("admin"),
+  getStudentStats
 )
 router.put("/message/:messageId", authenticate, editMessage)
 router.delete("/message/:messageId", authenticate, deleteMessage)

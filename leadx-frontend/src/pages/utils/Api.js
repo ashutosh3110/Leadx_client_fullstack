@@ -139,6 +139,24 @@ export const chatAPI = {
     const response = await api.get(`/messages/conversations/${ambassadorId}`);
     return response.data;
   },
+
+  // Get ambassadors with user messages count (admin only)
+  getAmbassadorsWithMessages: async () => {
+    const response = await api.get('/chat/admin/ambassadors-with-messages');
+    return response.data;
+  },
+
+  // Get total conversations count (admin only)
+  getTotalConversations: async () => {
+    const response = await api.get('/chat/admin/total-conversations');
+    return response.data;
+  },
+
+  // Get student statistics (admin only)
+  getStudentStats: async () => {
+    const response = await api.get('/chat/admin/student-stats');
+    return response.data;
+  },
 };
 
 // Rewards API endpoints
